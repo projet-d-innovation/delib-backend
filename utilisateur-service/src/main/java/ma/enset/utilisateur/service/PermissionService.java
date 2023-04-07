@@ -20,6 +20,7 @@ public interface PermissionService {
     Page<Permission> findAll(Pageable pageable);
 
     Permission update(Permission permission) throws PermissionNotFoundException;
+    List<Permission> updateMany(List<Permission> permission) throws PermissionNotFoundException;
 
     void deleteById(int permissionId) throws PermissionNotFoundException;
 

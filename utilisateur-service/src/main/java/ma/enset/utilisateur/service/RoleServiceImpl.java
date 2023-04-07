@@ -1,5 +1,6 @@
 package ma.enset.utilisateur.service;
 
+import jakarta.transaction.Transactional;
 import jakarta.validation.ConstraintViolationException;
 import lombok.AllArgsConstructor;
 import ma.enset.utilisateur.constant.CoreConstants;
@@ -43,27 +44,14 @@ public class RoleServiceImpl implements RoleService {
         return createdRole;
     }
 
+
+    @Transactional
     @Override
     public List<Role> createMany(List<Role> roles) throws RoleAlreadyExistsException, InternalErrorException {
         List<Role> createdRoles = new ArrayList<>();
         for (Role role : roles) {
-            if (roleRepository.existsById(role.getRoleId()))
-                throw RoleAlreadyExistsException.builder()
-                        .key(CoreConstants.BusinessExceptionMessage.ROLE_ALREADY_EXISTS)
-                        .args(new Object[]{"code", role.getRoleId()})
-                        .build();
+           createdRoles.add(this.create(role));
         }
-
-        try {
-            createdRoles = roleRepository.saveAll(roles);
-        } catch (Exception e) {
-            if (e.getCause() instanceof ConstraintViolationException) {
-                throw InternalErrorException.builder()
-                        .key(CoreConstants.BusinessExceptionMessage.INTERNAL_ERROR)
-                        .build();
-            }
-        }
-
         return createdRoles;
     }
 
@@ -102,6 +90,7 @@ public class RoleServiceImpl implements RoleService {
     }
 
 
+    @Transactional
     @Override
     public List<Role> updateMany(List<Role> roles) throws RoleNotFoundException, InternalErrorException {
 
@@ -128,6 +117,7 @@ public class RoleServiceImpl implements RoleService {
         roleRepository.deleteById(codeRole);
     }
 
+    @Transactional
     @Override
     public void deleteManyById(List<String> codeRoles) throws RoleNotFoundException {
         for (String codeRole : codeRoles) {

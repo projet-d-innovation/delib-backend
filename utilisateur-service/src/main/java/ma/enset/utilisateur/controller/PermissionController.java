@@ -121,6 +121,20 @@ public class PermissionController {
         );
     }
 
+    @PutMapping("/many")
+    public ResponseEntity<List<PermissionResponseDTO>> updateMany(
+            @Valid @RequestBody List<PermissionUpdateRequestDTO> permissionUpdateRequests
+    ) {
+        List<Permission> permissions = permissionMapper.updateToPermissions(permissionUpdateRequests);
+        List<Permission> updatedPermissions = permissionService.updateMany(permissions);
+        List<PermissionResponseDTO> permissionResponses = permissionMapper.toPermissionResponses(updatedPermissions);
+        // TODO : verify empty fields , so they will not be updated
+        return new ResponseEntity<>(
+                permissionResponses,
+                HttpStatus.OK
+        );
+    }
+
     @DeleteMapping
     public ResponseEntity<Void> delete(
             @RequestParam int code

@@ -1,5 +1,6 @@
 package ma.enset.utilisateur.service;
 
+import jakarta.transaction.Transactional;
 import jakarta.validation.ConstraintViolationException;
 import lombok.AllArgsConstructor;
 import ma.enset.utilisateur.constant.CoreConstants;
@@ -42,6 +43,7 @@ public class PermissionServiceImpl implements PermissionService {
         return createdPermission;
     }
 
+    @Transactional
     @Override
     public List<Permission> createMany(List<Permission> permissions) throws PermissionAlreadyExistsException {
         List<Permission> createdPermissions = new ArrayList<>();
@@ -97,6 +99,15 @@ public class PermissionServiceImpl implements PermissionService {
 
         return updatedPermission;
     }
+    @Transactional
+    @Override
+    public List<Permission>  updateMany(List<Permission> permissions) throws PermissionNotFoundException {
+        List<Permission> updatedPermissions = new ArrayList<>();
+        for (Permission permission : permissions) {
+            updatedPermissions.add(update(permission));
+        }
+        return updatedPermissions;
+    }
 
     @Override
     public void deleteById(int permissionId) throws PermissionNotFoundException {
@@ -112,6 +123,7 @@ public class PermissionServiceImpl implements PermissionService {
         permissionRepository.deleteById(permissionId);
     }
 
+    @Transactional
     @Override
     public void deleteManyById(List<Integer> permissionIds) throws PermissionNotFoundException {
         for (int permissionId : permissionIds) {

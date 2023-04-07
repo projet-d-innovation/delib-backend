@@ -1,5 +1,6 @@
 package ma.enset.utilisateur.service;
 
+import jakarta.transaction.Transactional;
 import jakarta.validation.ConstraintViolationException;
 import lombok.AllArgsConstructor;
 import ma.enset.utilisateur.constant.CoreConstants;
@@ -75,6 +76,7 @@ public class UtilisateurServiceImpl implements UtilisateurService {
         return createdUtilisateur;
     }
 
+    @Transactional
     @Override
     public List<Utilisateur> createMany(List<Utilisateur> utilisateurs, String roleId) throws UtilisateurAlreadyExistsException, InternalErrorException {
         List<Utilisateur> createdUtilisateurs = new ArrayList<>();
@@ -96,6 +98,7 @@ public class UtilisateurServiceImpl implements UtilisateurService {
         return createdUtilisateurs;
     }
 
+    @Transactional
     @Override
     public List<Utilisateur> createMany(List<Utilisateur> utilisateurs) throws UtilisateurAlreadyExistsException, InternalErrorException {
 
@@ -183,7 +186,7 @@ public class UtilisateurServiceImpl implements UtilisateurService {
 
         return updatedUtilisateur;
     }
-
+    @Transactional
     @Override
     public List<Utilisateur> updateMany(List<Utilisateur> utilisateurs, String roleId) throws UtilisateurNotFoundException, RoleConflictException, InternalErrorException {
         List<Utilisateur> updatedUtilisateurs = new ArrayList<>();
@@ -193,6 +196,7 @@ public class UtilisateurServiceImpl implements UtilisateurService {
         return updatedUtilisateurs;
     }
 
+    @Transactional
     @Override
     public List<Utilisateur> updateMany(List<Utilisateur> utilisateurs) throws UtilisateurNotFoundException, RoleConflictException, InternalErrorException {
         List<Utilisateur> updatedUtilisateurs = new ArrayList<>();
@@ -215,6 +219,7 @@ public class UtilisateurServiceImpl implements UtilisateurService {
         utilisateurRepository.deleteById(codeUtilisateur);
     }
 
+    @Transactional
     @Override
     public void deleteManyById(List<String> codeUtilisateurs, String roleId) throws UtilisateurNotFoundException {
         for (String codeUtilisateur : codeUtilisateurs) {
@@ -222,6 +227,7 @@ public class UtilisateurServiceImpl implements UtilisateurService {
         }
     }
 
+    @Transactional
     @Override
     public void deleteManyById(List<String> codeUtilisateurs) throws UtilisateurNotFoundException {
         for (String codeUtilisateur : codeUtilisateurs) {
