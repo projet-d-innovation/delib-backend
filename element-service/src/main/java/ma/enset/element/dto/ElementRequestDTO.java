@@ -10,7 +10,7 @@ public record ElementRequestDTO(
         @NotBlank()
         String codeElement,
         String intituleElement,
-
+        
         @DecimalMin("0.1")
         @DecimalMax("0.9")
         float coefficientElement,

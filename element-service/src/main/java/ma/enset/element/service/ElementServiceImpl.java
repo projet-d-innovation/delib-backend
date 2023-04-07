@@ -1,5 +1,6 @@
 package ma.enset.element.service;
 
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import ma.enset.element.constant.CoreConstants;
 import ma.enset.element.model.Element;
@@ -43,27 +44,13 @@ public class ElementServiceImpl implements ElementService {
         return createdElement;
     }
 
+    @Transactional
     @Override
     public List<Element> createMany(List<Element> elements) throws ElementAlreadyExistsException {
         List<Element> createdElements = new ArrayList<>();
 
         for (Element element : elements) {
-            if (elementRepository.existsById(element.getCodeElement()))
-                throw ElementAlreadyExistsException.builder()
-                        .key(CoreConstants.BusinessExceptionMessage.ELEMENT_ALREADY_EXISTS)
-                        .args(new Object[]{"code element", element.getCodeElement()})
-                        .build();
-
-            try {
-                createdElements.add(elementRepository.save(element));
-            } catch (Exception e) {
-                if (e.getCause() instanceof ConstraintViolationException) {
-                    throw ElementAlreadyExistsException.builder()
-                            .key(CoreConstants.BusinessExceptionMessage.INTERNAL_ERROR)
-                            .args(new Object[]{"code element", element.getCodeElement()})
-                            .build();
-                }
-            }
+          createdElements.add(create(element));
         }
 
         return createdElements;
@@ -102,6 +89,15 @@ public class ElementServiceImpl implements ElementService {
         }
 
         return updatedElement;
+    }
+
+    @Transactional
+    @Override
+    public List<Element> updateMany(List<Element> elements) throws ElementNotFoundException {
+        List<Element> updatedElements = new ArrayList<>();
+        for (Element element : elements)
+            updatedElements.add(update(element));
+        return updatedElements;
     }
 
     @Override

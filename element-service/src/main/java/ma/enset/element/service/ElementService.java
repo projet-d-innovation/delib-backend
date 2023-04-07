@@ -20,6 +20,7 @@ public interface ElementService {
     Page<Element> findAll(Pageable pageable);
 
     Element update(Element element) throws ElementNotFoundException;
+    List<Element> updateMany(List<Element> elements) throws ElementNotFoundException;
 
     void deleteById(String codeElement) throws ElementNotFoundException;
 

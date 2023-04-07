@@ -4,11 +4,15 @@ import ma.enset.element.dto.ElementRequestDTO;
 import ma.enset.element.dto.ElementResponseDTO;
 import ma.enset.element.model.Element;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 
 import java.util.List;
 
+
 @Mapper
 public interface ElementMapper {
+
     Element toElement(ElementRequestDTO productRequest);
 
     List<Element> toElements(List<ElementRequestDTO> elementRequests);

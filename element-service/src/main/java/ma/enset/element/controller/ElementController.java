@@ -63,6 +63,19 @@ public class ElementController {
         );
     }
 
+    @PutMapping("/many")
+    public ResponseEntity<List<ElementResponseDTO>> updateMany(@Valid @RequestBody List<ElementRequestDTO> elementRequests) {
+        List<Element> elements = elementMapper.toElements(elementRequests);
+        List<Element> updatedElements = elementService.updateMany(elements);
+        List<ElementResponseDTO> elementResponse = elementMapper.toElementResponses(updatedElements);
+
+        return new ResponseEntity<>(
+                elementResponse,
+                HttpStatus.OK
+        );
+    }
+
+
     @DeleteMapping
     public ResponseEntity<Void> delete(@NotBlank @RequestParam String codeElement) {
         elementService.deleteById(codeElement);
