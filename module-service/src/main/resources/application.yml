@@ -20,7 +20,7 @@ spring:
         basename: messages.messages
         encoding: UTF-8
 
-#eureka:
-#    client:
-#        service-url:
-#            defaultZone:
+eureka:
+    client:
+        service-url:
+            defaultZone:
