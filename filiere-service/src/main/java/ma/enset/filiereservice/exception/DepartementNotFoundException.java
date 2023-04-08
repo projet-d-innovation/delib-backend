@@ -3,7 +3,7 @@ package ma.enset.filiereservice.exception;
 
         import lombok.Builder;
 
-public class DepartementNotFoundException extends BusinessException {
+public class DepartementNotFoundException extends ElementNotFoundException {
 
     @Builder
     public DepartementNotFoundException(String key, Object[] args) {

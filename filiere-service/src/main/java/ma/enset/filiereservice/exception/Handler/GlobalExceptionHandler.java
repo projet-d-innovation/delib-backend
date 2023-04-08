@@ -4,10 +4,7 @@ import com.mysql.cj.util.StringUtils;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import ma.enset.filiereservice.constant.CoreConstants;
-import ma.enset.filiereservice.exception.BusinessException;
-import ma.enset.filiereservice.exception.FiliereAlreadyExistsException;
-import ma.enset.filiereservice.exception.FiliereNotFoundException;
-import ma.enset.filiereservice.exception.InternalErrorException;
+import ma.enset.filiereservice.exception.*;
 import ma.enset.filiereservice.exception.Handler.dto.ExceptionResponseDTO;
 import ma.enset.filiereservice.exception.Handler.dto.ValidationExceptionDTO;
 import org.springframework.http.HttpHeaders;
@@ -30,7 +27,7 @@ import java.util.Objects;
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(value = FiliereAlreadyExistsException.class)
-    public ResponseEntity<ExceptionResponseDTO> handleElementAlreadyExistsException(FiliereAlreadyExistsException e) {
+    public ResponseEntity<ExceptionResponseDTO> handleFiliereAlreadyExistsException(FiliereAlreadyExistsException e) {
         return new ResponseEntity<>(
             ExceptionResponseDTO.builder()
                 .code(HttpStatus.CONFLICT.value())
@@ -39,6 +36,18 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .build(),
 
             HttpStatus.CONFLICT
+        );
+    }
+    @ExceptionHandler(value = RegleDeCalculAlreadyExistsException.class)
+    public ResponseEntity<ExceptionResponseDTO> handleRegleDeCalculAlreadyExistsException(RegleDeCalculAlreadyExistsException e) {
+        return new ResponseEntity<>(
+                ExceptionResponseDTO.builder()
+                        .code(HttpStatus.CONFLICT.value())
+                        .status(HttpStatus.CONFLICT)
+                        .message(getMessage(e))
+                        .build(),
+
+                HttpStatus.CONFLICT
         );
     }
 
@@ -54,6 +63,32 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             HttpStatus.NOT_FOUND
         );
     }
+    @ExceptionHandler(value = ElementNotFoundException.class )
+    public ResponseEntity<ExceptionResponseDTO> handleElementNotFoundException(ElementNotFoundException e) {
+        return new ResponseEntity<>(
+                ExceptionResponseDTO.builder()
+                        .code(HttpStatus.NOT_FOUND.value())
+                        .status(HttpStatus.NOT_FOUND)
+                        .message(getMessage(e))
+                        .build(),
+
+                HttpStatus.NOT_FOUND
+        );
+    }
+
+    @ExceptionHandler(value = CannotDeleteRegleDeCalculException.class)
+    public ResponseEntity<ExceptionResponseDTO> handleCannotDeleteRegleDeCalculException(CannotDeleteRegleDeCalculException e) {
+        return new ResponseEntity<>(
+                ExceptionResponseDTO.builder()
+                        .code(HttpStatus.FORBIDDEN.value())
+                        .status(HttpStatus.FORBIDDEN)
+                        .message(getMessage(e))
+                        .build(),
+
+                HttpStatus.FORBIDDEN
+        );
+    }
+
 
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException e, HttpHeaders headers,

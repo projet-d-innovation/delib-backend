@@ -11,7 +11,7 @@ public record FiliereRequestDTO(
         String intituleFiliere,
 
         @NotBlank()
-        String codeRegle,
+        String codeRegleDeCalcul,
         @NotBlank()
         String codeDepartement
 ) {

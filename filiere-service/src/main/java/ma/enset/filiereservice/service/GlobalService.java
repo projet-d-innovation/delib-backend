@@ -19,6 +19,8 @@ public interface GlobalService<T> {
 
     T update(T element) throws BusinessException;
 
+    List<T> updateMany(List<T> elements) throws BusinessException;
+
     void deleteById(String code) throws BusinessException;
 
     void deleteManyById(List<String> codes) throws BusinessException;

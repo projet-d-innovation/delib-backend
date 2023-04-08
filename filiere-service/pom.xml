@@ -6,7 +6,7 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.0.5</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <relativePath/>
     </parent>
     <groupId>ma.enset</groupId>
     <artifactId>filiere-service</artifactId>
@@ -51,7 +51,6 @@
             <artifactId>spring-cloud-starter-openfeign</artifactId>
         </dependency>
 
-        <!-- For Model/DTO mapping -->
         <dependency>
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
@@ -102,11 +101,6 @@
                             <artifactId>lombok</artifactId>
                         </exclude>
                     </excludes>
-                    <!--
-                        Usually lombok does not need to be added to the annotation processor paths
-                        but when adding other annotation processors (mapstruct in our case)
-                        we must add lombok as well else it won't work
-                    -->
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>

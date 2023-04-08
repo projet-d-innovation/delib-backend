@@ -9,8 +9,8 @@ import ma.enset.filiereservice.constant.CoreConstants;
 import ma.enset.filiereservice.dto.FiliereRequestDTO;
 import ma.enset.filiereservice.dto.FiliereResponseDTO;
 import ma.enset.filiereservice.model.Filiere;
-import ma.enset.filiereservice.service.FiliereService;
-import ma.enset.filiereservice.util.FiliereMapper;
+import ma.enset.filiereservice.service.FiliereServiceImpl;
+import ma.enset.filiereservice.util.FiliereMapperImpl;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -26,14 +26,14 @@ import java.util.List;
 @AllArgsConstructor
 @RequestMapping("/api/v1/filieres")
 public class FiliereController {
-    private final FiliereService filiereService;
-    private final FiliereMapper filiereMapper;
+    private final FiliereServiceImpl filiereServiceImpl;
+    private final FiliereMapperImpl filiereMapper;
 
 
     @PostMapping
     public ResponseEntity<FiliereResponseDTO> create(@Valid @RequestBody FiliereRequestDTO filiereRequest) {
         Filiere filiere = filiereMapper.toFiliere(filiereRequest);
-        FiliereResponseDTO filiereResponse = filiereMapper.toFiliereResponse(filiereService.create(filiere));
+        FiliereResponseDTO filiereResponse = filiereMapper.toFiliereResponse(filiereServiceImpl.create(filiere));
 
         return new ResponseEntity<>(
                 filiereResponse,
@@ -43,7 +43,7 @@ public class FiliereController {
     @PostMapping("/many")
     public ResponseEntity<List<FiliereResponseDTO>> createMany(@Valid @RequestBody List<FiliereRequestDTO> filiereRequests) {
         List<Filiere> filieres = filiereMapper.toFilieres(filiereRequests);
-        List<FiliereResponseDTO> filiereResponses = filiereMapper.toFiliereResponses(filiereService.createMany(filieres));
+        List<FiliereResponseDTO> filiereResponses = filiereMapper.toFiliereResponses(filiereServiceImpl.createMany(filieres));
 
         return new ResponseEntity<>(
                 filiereResponses,
@@ -53,7 +53,7 @@ public class FiliereController {
     @PutMapping
     public ResponseEntity<FiliereResponseDTO> update(@Valid @RequestBody FiliereRequestDTO filiereRequest) {
         Filiere filiere = filiereMapper.toFiliere(filiereRequest);
-        FiliereResponseDTO filiereResponses = filiereMapper.toFiliereResponse(filiereService.update(filiere));
+        FiliereResponseDTO filiereResponses = filiereMapper.toFiliereResponse(filiereServiceImpl.update(filiere));
 
         return new ResponseEntity<>(
                 filiereResponses,
@@ -62,12 +62,12 @@ public class FiliereController {
     }
     @DeleteMapping
     public ResponseEntity<Void> delete(@NotBlank @RequestParam String code) {
-        filiereService.deleteById(code);
+        filiereServiceImpl.deleteById(code);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
     @DeleteMapping("/many")
     public ResponseEntity<Void> deleteMany(@RequestParam List<String> code) {
-        filiereService.deleteManyById(code);
+        filiereServiceImpl.deleteManyById(code);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
     @GetMapping
@@ -82,7 +82,7 @@ public class FiliereController {
             int size) {
 
         Pageable pageRequest = PageRequest.of(page, size);
-        Page<Filiere> filieresPage = filiereService.findAll(pageRequest);
+        Page<Filiere> filieresPage = filiereServiceImpl.findAll(pageRequest);
         Page<FiliereResponseDTO> pagedResult = filieresPage.map(filiereMapper::toFiliereResponse);
 
         return new ResponseEntity<>(
@@ -92,7 +92,7 @@ public class FiliereController {
     }
     @GetMapping("/code")
     public ResponseEntity<FiliereResponseDTO> findById(@RequestParam String code) {
-        Filiere filiere = filiereService.findById(code);
+        Filiere filiere = filiereServiceImpl.findById(code);
         FiliereResponseDTO elementResponse = filiereMapper.toFiliereResponse(filiere);
 
         return new ResponseEntity<>(
@@ -102,7 +102,7 @@ public class FiliereController {
     }
     @GetMapping("/code/many")
     public ResponseEntity<List<FiliereResponseDTO>> findByIds(@RequestParam List<String> codes) {
-        List<Filiere> filieres = filiereService.findManyById(codes);
+        List<Filiere> filieres = filiereServiceImpl.findManyById(codes);
         List<FiliereResponseDTO> filiereResponseDTOS = filieres.stream()
                 .map(filiereMapper::toFiliereResponse)
                 .toList();
@@ -115,13 +115,14 @@ public class FiliereController {
 
     @GetMapping("/departement/code")
     public ResponseEntity<Boolean> existsByCodeDepartement(@RequestParam String code) {
-        Boolean exists = filiereService.existsByCodeDepartement(code);
+        Boolean exists = filiereServiceImpl.existsByCodeDepartement(code);
 
         return new ResponseEntity<>(
                 exists,
                 HttpStatus.OK
         );
     }
+
 
 
 

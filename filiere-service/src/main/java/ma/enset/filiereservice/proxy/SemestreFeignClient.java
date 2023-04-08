@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @FeignClient("semestre-service")
 public interface SemestreFeignClient {
-    @GetMapping(value = "/api/v1/semestres/filiere/code", consumes = "application/json")
-    public ResponseEntity<Boolean> existsByCodeFiliere(@RequestParam String code) ;
+
+    @GetMapping(value = "/api/v1/semestres/code", consumes = "application/json")
+    public ResponseEntity<Boolean> existsById(@RequestParam String code) ;
 }

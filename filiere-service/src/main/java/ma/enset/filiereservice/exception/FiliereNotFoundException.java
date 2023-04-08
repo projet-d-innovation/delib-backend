@@ -2,7 +2,7 @@ package ma.enset.filiereservice.exception;
 
 import lombok.Builder;
 
-public class FiliereNotFoundException extends BusinessException {
+public class FiliereNotFoundException extends ElementNotFoundException {
 
     @Builder
     public FiliereNotFoundException(String key, Object[] args) {
