@@ -12,6 +12,7 @@ import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +51,7 @@ public class DepartementServiceImpl implements DepartementService {
     }
 
     @Override
+    @Transactional
     public List<Departement> createMany(List<Departement> departements) throws DepartementAlreadyExistsException {
         List<Departement> createdDepartements = new ArrayList<>();
 
@@ -126,7 +128,18 @@ public class DepartementServiceImpl implements DepartementService {
     }
 
     @Override
-    public void deleteById(String code) throws DepartementNotFoundException ,CannotDeleteDepartementException {
+    @Transactional
+    public List<Departement> updateMany(List<Departement> departements) throws DepartementNotFoundException {
+        List<Departement> updatedDepartements = new ArrayList();
+
+        departements.forEach(departement -> {
+            updatedDepartements.add(update(departement));
+        });
+        return updatedDepartements;
+    }
+
+    @Override
+    public void deleteById(String code) throws DepartementNotFoundException, CannotDeleteDepartementException {
 
         //TODO: check if the user is using the departement
 
@@ -136,7 +149,7 @@ public class DepartementServiceImpl implements DepartementService {
                 throw new Exception();
         } catch (Exception e) {
             throw CannotDeleteDepartementException.builder()
-                    .key(CoreConstants.BusinessExceptionMessage.ELEMENT_NOT_FOUND)
+                    .key(CoreConstants.BusinessExceptionMessage.ELEMENT_ALREADY_USED_IN_ANOTHER_ENTITY)
                     .args(new Object[]{"code Departement", code})
                     .build();
         }
@@ -153,9 +166,8 @@ public class DepartementServiceImpl implements DepartementService {
     }
 
     @Override
+    @Transactional
     public void deleteManyById(List<String> codes) throws DepartementNotFoundException {
-        for (String code : codes) {
-            this.deleteById(code);
-        }
+        codes.forEach(code -> deleteById(code));
     }
 }

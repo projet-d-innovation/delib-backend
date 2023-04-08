@@ -4,12 +4,9 @@ import com.mysql.cj.util.StringUtils;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import ma.enset.departementservice.constant.CoreConstants;
-import ma.enset.departementservice.exception.BusinessException;
-import ma.enset.departementservice.exception.DepartementAlreadyExistsException;
-import ma.enset.departementservice.exception.DepartementNotFoundException;
+import ma.enset.departementservice.exception.*;
 import ma.enset.departementservice.exception.Handler.dto.ExceptionResponseDTO;
 import ma.enset.departementservice.exception.Handler.dto.ValidationExceptionDTO;
-import ma.enset.departementservice.exception.InternalErrorException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -52,6 +49,18 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .build(),
 
             HttpStatus.NOT_FOUND
+        );
+    }
+    @ExceptionHandler(value = CannotDeleteDepartementException.class)
+    public ResponseEntity<ExceptionResponseDTO> handleCannotDeleteDepartementException(CannotDeleteDepartementException e) {
+        return new ResponseEntity<>(
+                ExceptionResponseDTO.builder()
+                        .code(HttpStatus.FORBIDDEN.value())
+                        .status(HttpStatus.FORBIDDEN)
+                        .message(getMessage(e))
+                        .build(),
+
+                HttpStatus.FORBIDDEN
         );
     }
 

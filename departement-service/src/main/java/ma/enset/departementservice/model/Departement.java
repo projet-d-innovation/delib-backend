@@ -17,6 +17,9 @@ public class Departement {
     @Id
 
     private String codeDepartement;
+
+    @NotBlank
+    private String codeChefDepartement;
     @NotBlank
     private String intituleDepartement;
 }

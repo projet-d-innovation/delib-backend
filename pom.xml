@@ -14,6 +14,7 @@
 
     <modules>
         <module>eureka-server</module>
+        <module>departement-service</module>
     </modules>
 
     <properties>

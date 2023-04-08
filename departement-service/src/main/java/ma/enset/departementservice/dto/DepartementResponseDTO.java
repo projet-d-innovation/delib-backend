@@ -4,6 +4,8 @@ public record DepartementResponseDTO(
 
          String codeDepartement,
 
-         String intituleDepartement
+         String intituleDepartement ,
+         String codeChefDepartement
+
 ) {
 }

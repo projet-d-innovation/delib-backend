@@ -60,6 +60,16 @@ public class DepartementController {
                 HttpStatus.OK
         );
     }
+    @PutMapping("/many")
+    public ResponseEntity<List<DepartementResponseDTO>> updateMany(@Valid @RequestBody List<DepartementRequestDTO> departementRequests) {
+        List<Departement> departements = departementMapper.toDepartements(departementRequests);
+        List<DepartementResponseDTO> departementResponses = departementMapper.toDepartementResponses(departementServiceImpl.updateMany(departements));
+
+        return new ResponseEntity<>(
+                departementResponses,
+                HttpStatus.CREATED
+        );
+    }
     @DeleteMapping
     public ResponseEntity<Void> delete(@NotBlank @RequestParam String code) {
         departementServiceImpl.deleteById(code);

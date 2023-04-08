@@ -22,6 +22,8 @@ public interface DepartementService {
 
     Departement update(Departement department) throws DepartementNotFoundException;
 
+    List<Departement> updateMany(List<Departement> departements) throws DepartementNotFoundException;
+
     void deleteById(String code) throws DepartementNotFoundException , CannotDeleteDepartementException;
 
     void deleteManyById(List<String> codes) throws DepartementNotFoundException , CannotDeleteDepartementException;

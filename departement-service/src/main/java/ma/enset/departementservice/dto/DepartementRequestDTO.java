@@ -8,6 +8,8 @@ public record DepartementRequestDTO(
         @NotBlank
         String codeDepartement,
         @NotBlank
-        String intituleDepartement
+        String intituleDepartement ,
+        @NotBlank
+        String codeChefDepartement
 ) {
 }
