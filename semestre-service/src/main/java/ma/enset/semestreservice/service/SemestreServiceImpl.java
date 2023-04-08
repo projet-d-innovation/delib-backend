@@ -2,6 +2,7 @@ package ma.enset.semestreservice.service;
 
 import lombok.AllArgsConstructor;
 import ma.enset.semestreservice.constant.CoreConstants;
+import ma.enset.semestreservice.exception.BusinessException;
 import ma.enset.semestreservice.exception.FiliereNotFoundException;
 import ma.enset.semestreservice.exception.SemestreAlreadyExistsException;
 import ma.enset.semestreservice.exception.SemestreNotFoundException;
@@ -12,6 +13,7 @@ import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,8 +44,8 @@ public class SemestreServiceImpl implements SemestreService{
             filiereFeignClient.findById(semestre.getCodeFiliere());
         } catch (Exception e) {
             throw FiliereNotFoundException.builder()
-                    .key(CoreConstants.BusinessExceptionMessage.ELEMENT_NOT_FOUND)
-                    .args(new Object[]{"code Filiere", semestre.getCodeFiliere()})
+                    .key(CoreConstants.BusinessExceptionMessage.Filiere_NOT_FOUND)
+                    .args(new Object[]{"code", semestre.getCodeFiliere()})
                     .build();
         }
 
@@ -64,41 +66,10 @@ public class SemestreServiceImpl implements SemestreService{
     }
 
     @Override
+    @Transactional
     public List<Semestre> createMany(List<Semestre> semestres) throws SemestreAlreadyExistsException , FiliereNotFoundException {
         List<Semestre> createdSemestres = new ArrayList<>();
-
-        for (Semestre semestre : semestres) {
-            // TODO : trigger the exception from the other departement service
-
-            try {
-                filiereFeignClient.findById(semestre.getCodeFiliere());
-            } catch (Exception e) {
-                throw FiliereNotFoundException.builder()
-                        .key(CoreConstants.BusinessExceptionMessage.ELEMENT_NOT_FOUND)
-                        .args(new Object[]{"code Filiere", semestre.getCodeFiliere()})
-                        .build();
-            }
-
-            if (semestreRepository.existsById(semestre.getCodeSemestre()))
-                throw SemestreAlreadyExistsException.builder()
-                        .key(CoreConstants.BusinessExceptionMessage.ELEMENT_ALREADY_EXISTS)
-                        .args(new Object[]{"code Semestre", semestre.getCodeSemestre()})
-                        .build();
-
-
-
-            try {
-                createdSemestres.add(semestreRepository.save(semestre));
-            } catch (Exception e) {
-                if (e.getCause() instanceof ConstraintViolationException) {
-                    throw SemestreAlreadyExistsException.builder()
-                            .key(CoreConstants.BusinessExceptionMessage.INTERNAL_ERROR)
-                            .args(new Object[]{"code Semestre", semestre.getCodeSemestre()})
-                            .build();
-                }
-            }
-        }
-
+        semestres.forEach(semestre -> createdSemestres.add(create(semestre)));
         return createdSemestres;
     }
 
@@ -141,8 +112,8 @@ public class SemestreServiceImpl implements SemestreService{
             filiereFeignClient.findById(semestre.getCodeFiliere());
         } catch (Exception e) {
             throw FiliereNotFoundException.builder()
-                    .key(CoreConstants.BusinessExceptionMessage.ELEMENT_NOT_FOUND)
-                    .args(new Object[]{"code Filiere", semestre.getCodeFiliere()})
+                    .key(CoreConstants.BusinessExceptionMessage.Filiere_NOT_FOUND)
+                    .args(new Object[]{"code", semestre.getCodeFiliere()})
                     .build();
         }
 
@@ -165,6 +136,14 @@ public class SemestreServiceImpl implements SemestreService{
     }
 
     @Override
+    @Transactional
+    public List<Semestre> updateMany(List<Semestre> elements) throws BusinessException {
+        List<Semestre> updatedElements = new ArrayList<>();
+        elements.forEach(semestre -> updatedElements.add(update(semestre)));
+        return updatedElements;
+    }
+
+    @Override
     public void deleteById(String code) throws SemestreNotFoundException {
 
         // TODO : Check Module and Session
@@ -179,10 +158,9 @@ public class SemestreServiceImpl implements SemestreService{
     }
 
     @Override
+    @Transactional
     public void deleteManyById(List<String> codes) throws SemestreNotFoundException {
-        for (String code : codes) {
-            this.deleteById(code);
-        }
+            codes.forEach(this::deleteById);
     }
 
     public Boolean existsByCodeFiliere(String codeDepartement) throws FiliereNotFoundException {

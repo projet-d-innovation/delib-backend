@@ -4,12 +4,9 @@ import com.mysql.cj.util.StringUtils;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import ma.enset.semestreservice.constant.CoreConstants;
-import ma.enset.semestreservice.exception.BusinessException;
+import ma.enset.semestreservice.exception.*;
 import ma.enset.semestreservice.exception.Handler.dto.ExceptionResponseDTO;
 import ma.enset.semestreservice.exception.Handler.dto.ValidationExceptionDTO;
-import ma.enset.semestreservice.exception.InternalErrorException;
-import ma.enset.semestreservice.exception.SemestreAlreadyExistsException;
-import ma.enset.semestreservice.exception.SemestreNotFoundException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -52,6 +49,19 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .build(),
 
             HttpStatus.NOT_FOUND
+        );
+    }
+
+    @ExceptionHandler(value = FiliereNotFoundException.class)
+    public ResponseEntity<ExceptionResponseDTO> handleFiliereNotFoundException(FiliereNotFoundException e) {
+        return new ResponseEntity<>(
+                ExceptionResponseDTO.builder()
+                        .code(HttpStatus.NOT_FOUND.value())
+                        .status(HttpStatus.NOT_FOUND)
+                        .message(getMessage(e))
+                        .build(),
+
+                HttpStatus.NOT_FOUND
         );
     }
 

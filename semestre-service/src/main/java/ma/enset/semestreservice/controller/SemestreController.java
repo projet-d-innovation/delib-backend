@@ -40,6 +40,7 @@ public class SemestreController {
                 HttpStatus.CREATED
         );
     }
+
     @PostMapping("/many")
     public ResponseEntity<List<SemestreResponseDTO>> createMany(@Valid @RequestBody List<SemestreRequestDTO> semestreRequests) {
         List<Semestre> semestres = semestreMapper.toSemestres(semestreRequests);
@@ -58,6 +59,16 @@ public class SemestreController {
         return new ResponseEntity<>(
                 semestreResponses,
                 HttpStatus.OK
+        );
+    }
+    @PutMapping("/many")
+    public ResponseEntity<List<SemestreResponseDTO>> updateMany(@Valid @RequestBody List<SemestreRequestDTO> semestreRequests) {
+        List<Semestre> semestres = semestreMapper.toSemestres(semestreRequests);
+        List<SemestreResponseDTO> semestreResponses = semestreMapper.toSemestreResponses(semestreServiceImpl.updateMany(semestres));
+
+        return new ResponseEntity<>(
+                semestreResponses,
+                HttpStatus.CREATED
         );
     }
     @DeleteMapping

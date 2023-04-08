@@ -11,10 +11,7 @@ import java.util.List;
 
 public interface SemestreService {
 
-    /// It can throw many exceptions ,
-    // so that's why we use the BusinessException ,
-    // we don't know which exception will be thrown in the future
-    //but all exceptions will inherit from the BusinessException
+
     Semestre create(Semestre element) throws BusinessException;
 
     List<Semestre> createMany(List<Semestre> elements) throws BusinessException;
@@ -25,7 +22,10 @@ public interface SemestreService {
 
     Page<Semestre> findAll(Pageable pageable);
 
+
     Semestre update(Semestre element) throws BusinessException;
+    List<Semestre> updateMany(List<Semestre> elements) throws BusinessException;
+
 
     void deleteById(String code) throws BusinessException;
 
