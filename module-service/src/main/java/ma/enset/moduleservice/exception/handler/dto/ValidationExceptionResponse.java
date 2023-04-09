@@ -4,6 +4,6 @@ import lombok.Builder;
 
 @Builder
 public record ValidationExceptionResponse(
-    String property,
+    String propertyPath,
     String error
 ) {}

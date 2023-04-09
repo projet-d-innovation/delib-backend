@@ -1,9 +1,8 @@
 package ma.enset.moduleservice.exception.handler;
 
 import com.mysql.cj.util.StringUtils;
-import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
-import ma.enset.moduleservice.constant.CoreConstants;
+import jakarta.validation.Path;
 import ma.enset.moduleservice.exception.BusinessException;
 import ma.enset.moduleservice.exception.ElementAlreadyExistsException;
 import ma.enset.moduleservice.exception.ElementNotFoundException;
@@ -22,7 +21,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -63,7 +61,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             .getFieldErrors().stream()
             .map(fieldError ->
                 ValidationExceptionResponse.builder()
-                    .property(fieldError.getField())
+                    .propertyPath(fieldError.getField())
                     .error(getMessage(fieldError))
                     .build()
             ).toList();
@@ -77,18 +75,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(ConstraintViolationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<List<ValidationExceptionResponse>> handleValidationConstraintViolationException(ConstraintViolationException e) {
-        List<ValidationExceptionResponse> validationErrors = new ArrayList<>();
-        String[] splitMessage;
-
-        for (ConstraintViolation<?> constraintViolation : e.getConstraintViolations()) {
-            splitMessage = constraintViolation.getMessage().split(CoreConstants.VALIDATION_MESSAGE_SPLIT_DELIMITER);
-            validationErrors.add(
-                ValidationExceptionResponse.builder()
-                    .property(splitMessage[0])
-                    .error(splitMessage[1])
-                    .build()
-            );
-        }
+        List<ValidationExceptionResponse> validationErrors =
+            e.getConstraintViolations()
+                .stream()
+                .map(constraintViolation ->
+                    ValidationExceptionResponse.builder()
+                        .propertyPath(removeFirstNodeFromPropertyPath(constraintViolation.getPropertyPath()))
+                        .error(constraintViolation.getMessage())
+                        .build()
+                )
+                .toList();
 
         return ResponseEntity
                 .badRequest()
@@ -105,6 +101,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                         .status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .error(getMessage(e))
                         .build());
+    }
+
+    private String removeFirstNodeFromPropertyPath(Path propertyPath) {
+        StringBuilder finalPropertyPath = new StringBuilder(propertyPath.toString());
+
+        if (propertyPath.iterator().hasNext()) {
+            finalPropertyPath.delete(0, finalPropertyPath.indexOf(".") + 1);
+        }
+
+        return finalPropertyPath.toString();
     }
 
     private String getMessage(BusinessException exception) {

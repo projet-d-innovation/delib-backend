@@ -3,7 +3,6 @@ package ma.enset.moduleservice.controller;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
-import ma.enset.moduleservice.constant.CoreConstants;
 import ma.enset.moduleservice.dto.ModuleCreationRequest;
 import ma.enset.moduleservice.dto.ModulePagingResponse;
 import ma.enset.moduleservice.dto.ModuleResponse;
@@ -62,15 +61,8 @@ public class ModuleController {
     }
 
     @GetMapping
-    public ResponseEntity<ModulePagingResponse> getAll(
-        @RequestParam(defaultValue = "0")
-        @Min(value = 0, message = CoreConstants.ValidationMessage.PAGING_PAGE_MIN)
-        int page,
-
-        @RequestParam(defaultValue = "10")
-        @Range(min = 1, max = 10, message = CoreConstants.ValidationMessage.PAGING_SIZE_RANGE)
-        int size
-    ) {
+    public ResponseEntity<ModulePagingResponse> getAll(@RequestParam(defaultValue = "0") @Min(0) int page,
+                                                       @RequestParam(defaultValue = "10") @Range(min = 1, max = 10) int size) {
 
         Pageable pageRequest = PageRequest.of(page, size);
         Page<Module> modulePage = moduleService.findAll(pageRequest);
