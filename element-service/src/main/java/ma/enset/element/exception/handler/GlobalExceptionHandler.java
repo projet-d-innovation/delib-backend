@@ -1,15 +1,14 @@
 package ma.enset.element.exception.handler;
 
 import com.mysql.cj.util.StringUtils;
-import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
-import ma.enset.element.constant.CoreConstants;
+import jakarta.validation.Path;
 import ma.enset.element.exception.BusinessException;
 import ma.enset.element.exception.ElementAlreadyExistsException;
 import ma.enset.element.exception.ElementNotFoundException;
 import ma.enset.element.exception.InternalErrorException;
-import ma.enset.element.exception.handler.dto.ExceptionResponseDTO;
-import ma.enset.element.exception.handler.dto.ValidationExceptionDTO;
+import ma.enset.element.exception.handler.dto.BusinessExceptionResponse;
+import ma.enset.element.exception.handler.dto.ValidationExceptionResponse;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -17,11 +16,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -29,85 +28,89 @@ import java.util.Objects;
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
-    @ExceptionHandler(value = ElementAlreadyExistsException.class)
-    public ResponseEntity<ExceptionResponseDTO> handleElementAlreadyExistsException(ElementAlreadyExistsException e) {
-        return new ResponseEntity<>(
-                ExceptionResponseDTO.builder()
+    @ExceptionHandler(ElementAlreadyExistsException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ResponseEntity<BusinessExceptionResponse> handleElementAlreadyExistsException(ElementAlreadyExistsException e) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(BusinessExceptionResponse.builder()
                         .code(HttpStatus.CONFLICT.value())
                         .status(HttpStatus.CONFLICT)
-                        .message(getMessage(e))
-                        .build(),
-
-                HttpStatus.CONFLICT
-        );
+                        .error(getMessage(e))
+                        .build());
     }
 
-    @ExceptionHandler(value = ElementNotFoundException.class)
-    public ResponseEntity<ExceptionResponseDTO> handleElementNotFoundException(ElementNotFoundException e) {
-        return new ResponseEntity<>(
-                ExceptionResponseDTO.builder()
+    @ExceptionHandler(ElementNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ResponseEntity<BusinessExceptionResponse> handleElementNotFoundException(ElementNotFoundException e) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(BusinessExceptionResponse.builder()
                         .code(HttpStatus.NOT_FOUND.value())
                         .status(HttpStatus.NOT_FOUND)
-                        .message(getMessage(e))
-                        .build(),
-
-                HttpStatus.NOT_FOUND
-        );
+                        .error(getMessage(e))
+                        .build());
     }
 
     @Override
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException e, HttpHeaders headers,
                                                                   HttpStatusCode status, WebRequest request) {
 
-        List<ValidationExceptionDTO> validationErrors = e.getBindingResult()
+        List<ValidationExceptionResponse> validationErrors = e.getBindingResult()
                 .getFieldErrors().stream()
                 .map(fieldError ->
-                        ValidationExceptionDTO.builder()
-                                .property(fieldError.getField())
-                                .message(getMessage(fieldError))
+                        ValidationExceptionResponse.builder()
+                                .propertyPath(fieldError.getField())
+                                .error(getMessage(fieldError))
                                 .build()
                 ).toList();
 
-        return new ResponseEntity<>(
-                validationErrors,
-                HttpStatus.BAD_REQUEST
-        );
+        return ResponseEntity
+                .badRequest()
+                .body(validationErrors);
 
     }
 
-    @ExceptionHandler(value = ConstraintViolationException.class)
-    public ResponseEntity<List<ValidationExceptionDTO>> handleValidationConstraintViolationException(ConstraintViolationException e) {
-        List<ValidationExceptionDTO> validationErrors = new ArrayList<>();
-        String[] splitMessage;
+    @ExceptionHandler(ConstraintViolationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<List<ValidationExceptionResponse>> handleValidationConstraintViolationException(ConstraintViolationException e) {
+        List<ValidationExceptionResponse> validationErrors =
+                e.getConstraintViolations()
+                        .stream()
+                        .map(constraintViolation ->
+                                ValidationExceptionResponse.builder()
+                                        .propertyPath(removeFirstNodeFromPropertyPath(constraintViolation.getPropertyPath()))
+                                        .error(constraintViolation.getMessage())
+                                        .build()
+                        )
+                        .toList();
 
-        for (ConstraintViolation constraintViolation : e.getConstraintViolations()) {
-            splitMessage = constraintViolation.getMessage().split(CoreConstants.VALIDATION_MESSAGE_SPLIT_DELIMITER);
-            validationErrors.add(
-                    ValidationExceptionDTO.builder()
-                            .property(splitMessage[0])
-                            .message(splitMessage[1])
-                            .build()
-            );
-        }
-
-        return new ResponseEntity<>(
-                validationErrors,
-                HttpStatus.BAD_REQUEST
-        );
-
+        return ResponseEntity
+                .badRequest()
+                .body(validationErrors);
     }
 
-    @ExceptionHandler(value = InternalErrorException.class)
-    public ResponseEntity<ExceptionResponseDTO> handleInternalErrorException(InternalErrorException e) {
-        return new ResponseEntity<>(
-                ExceptionResponseDTO.builder()
+    @ExceptionHandler(InternalErrorException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ResponseEntity<BusinessExceptionResponse> handleInternalErrorException(InternalErrorException e) {
+        return ResponseEntity
+                .internalServerError()
+                .body(BusinessExceptionResponse.builder()
                         .code(HttpStatus.INTERNAL_SERVER_ERROR.value())
                         .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .message(getMessage(e))
-                        .build(),
+                        .error(getMessage(e))
+                        .build());
+    }
 
-                HttpStatus.INTERNAL_SERVER_ERROR
-        );
+    private String removeFirstNodeFromPropertyPath(Path propertyPath) {
+        StringBuilder finalPropertyPath = new StringBuilder(propertyPath.toString());
+
+        if (propertyPath.iterator().hasNext()) {
+            finalPropertyPath.delete(0, finalPropertyPath.indexOf(".") + 1);
+        }
+
+        return finalPropertyPath.toString();
     }
 
     private String getMessage(BusinessException exception) {

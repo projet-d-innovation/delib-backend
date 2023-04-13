@@ -1,16 +1,14 @@
 package ma.enset.element.controller;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
-import ma.enset.element.constant.CoreConstants;
-import ma.enset.element.dto.ElementRequestDTO;
-import ma.enset.element.dto.ElementResponseDTO;
+import ma.enset.element.dto.*;
 import ma.enset.element.model.Element;
 import ma.enset.element.service.ElementService;
 import ma.enset.element.util.ElementMapper;
+import org.hibernate.validator.constraints.Range;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -31,159 +29,152 @@ public class ElementController {
 
 
     @PostMapping
-    public ResponseEntity<ElementResponseDTO> create(@Valid @RequestBody ElementRequestDTO elementRequest) {
-        Element element = elementMapper.toElement(elementRequest);
-        ElementResponseDTO elementResponse = elementMapper.toElementResponse(elementService.create(element));
+    public ResponseEntity<ElementResponse> save(@Valid @RequestBody ElementCreationRequest elementCreationRequest) {
+        Element element = elementMapper.toElement(elementCreationRequest);
+        ElementResponse elementResponse = elementMapper.toElementResponse(elementService.save(element));
 
-        return new ResponseEntity<>(
-                elementResponse,
-                HttpStatus.CREATED
-        );
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(elementResponse);
+
     }
 
-    @PostMapping("/many")
-    public ResponseEntity<List<ElementResponseDTO>> createMany(@Valid @RequestBody List<ElementRequestDTO> elementRequests) {
-        List<Element> elements = elementMapper.toElements(elementRequests);
-        List<ElementResponseDTO> elementResponses = elementMapper.toElementResponses(elementService.createMany(elements));
+    @PostMapping("/bulk")
+    public ResponseEntity<List<ElementResponse>> saveAll(@Valid @RequestBody List<ElementCreationRequest> elementRequests) {
+        List<Element> elements = elementMapper.toElementList(elementRequests);
+        List<ElementResponse> elementResponses = elementMapper.toElementResponseList(elementService.saveAll(elements));
 
-        return new ResponseEntity<>(
-                elementResponses,
-                HttpStatus.CREATED
-        );
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(elementResponses);
     }
 
-    @PutMapping
-    public ResponseEntity<ElementResponseDTO> update(@Valid @RequestBody ElementRequestDTO elementRequest) {
-        Element element = elementMapper.toElement(elementRequest);
-        ElementResponseDTO elementResponse = elementMapper.toElementResponse(elementService.update(element));
+    @PatchMapping("/{codeElement}")
+    public ResponseEntity<ElementResponse> update(
+            @PathVariable("codeElement") String codeElement,
+            @Valid @RequestBody ElementUpdateRequest elementUpdateRequest) {
 
-        return new ResponseEntity<>(
-                elementResponse,
-                HttpStatus.OK
-        );
+        Element element = elementService.findByCodeElement(codeElement);
+        elementMapper.updateElementFromDTO(elementUpdateRequest, element);
+
+        Element updatedElement = elementService.update(element);
+        ElementResponse elementResponse = elementMapper.toElementResponse(updatedElement);
+
+        return ResponseEntity
+                .ok()
+                .body(elementResponse);
     }
 
-    @PutMapping("/many")
-    public ResponseEntity<List<ElementResponseDTO>> updateMany(@Valid @RequestBody List<ElementRequestDTO> elementRequests) {
-        List<Element> elements = elementMapper.toElements(elementRequests);
-        List<Element> updatedElements = elementService.updateMany(elements);
-        List<ElementResponseDTO> elementResponse = elementMapper.toElementResponses(updatedElements);
+    @PatchMapping("/bulk")
+    public ResponseEntity<List<ElementResponse>> updateAll(@Valid @RequestBody List<ElementUpdateRequest> elementUpdateRequests) {
 
-        return new ResponseEntity<>(
-                elementResponse,
-                HttpStatus.OK
-        );
+        List<Element> elements = elementService.findAllByCodeElement(elementMapper.toCodeElementList(elementUpdateRequests));
+
+        elementMapper.updateElementFromDTO(elementUpdateRequests, elements);
+
+        List<Element> updatedElements = elementService.updateAll(elements);
+
+        List<ElementResponse> elementResponses = elementMapper.toElementResponseList(updatedElements);
+
+        return ResponseEntity
+                .ok()
+                .body(elementResponses);
     }
 
 
-    @DeleteMapping
-    public ResponseEntity<Void> delete(@NotBlank @RequestParam String codeElement) {
-        elementService.deleteById(codeElement);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    @DeleteMapping("/{codeElement}")
+    public ResponseEntity<Void> delete(
+            @PathVariable("codeElement") String codeElement) {
+        elementService.deleteByCodeElement(codeElement);
+        return ResponseEntity
+                .noContent()
+                .build();
     }
 
-    @DeleteMapping("/many")
-    public ResponseEntity<Void> deleteMany(@RequestParam List<String> codesElement) {
-        elementService.deleteManyById(codesElement);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    @DeleteMapping("/bulk")
+    public ResponseEntity<Void> deleteAll(@RequestParam List<String> codesElement) {
+        elementService.deleteAllByCodeElement(codesElement);
+        return ResponseEntity
+                .noContent()
+                .build();
     }
 
 
     @GetMapping
-    public ResponseEntity<Page<ElementResponseDTO>> findAll(
-            @RequestParam(defaultValue = "0")
-            @Min(value = 0, message = CoreConstants.ValidationMessage.PAGINATION_PAGE_MIN)
-            int page,
-
-            @RequestParam(defaultValue = "20")
-            @Min(value = 1, message = CoreConstants.ValidationMessage.PAGINATION_SIZE_MIN)
-            @Max(value = 20, message = CoreConstants.ValidationMessage.PAGINATION_SIZE_MAX)
-            int size) {
+    public ResponseEntity<ElementPagingResponse> findAll(
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Range(min = 1, max = 10) int size) {
 
         Pageable pageRequest = PageRequest.of(page, size);
         Page<Element> elementsPage = elementService.findAll(pageRequest);
-        Page<ElementResponseDTO> pagedResult = elementsPage.map(elementMapper::toElementResponse);
+        ElementPagingResponse elementPagingResponse = elementMapper.toPagingResponse(elementsPage);
 
-        return new ResponseEntity<>(
-                pagedResult,
-                HttpStatus.OK
-        );
+        return ResponseEntity
+                .ok()
+                .body(elementPagingResponse);
     }
 
-    @GetMapping("/code")
-    public ResponseEntity<ElementResponseDTO> findById(@RequestParam String codeElement) {
-        Element element = elementService.findById(codeElement);
-        ElementResponseDTO elementResponse = elementMapper.toElementResponse(element);
+    @GetMapping("{codeElement}")
+    public ResponseEntity<ElementResponse> findByCodeElement(@PathVariable("codeElement") String codeElement) {
+        Element element = elementService.findByCodeElement(codeElement);
+        ElementResponse elementResponse = elementMapper.toElementResponse(element);
 
-        return new ResponseEntity<>(
-                elementResponse,
-                HttpStatus.OK
-        );
+        return ResponseEntity
+                .ok()
+                .body(elementResponse);
     }
 
-    @GetMapping("/code/many")
-    public ResponseEntity<List<ElementResponseDTO>> findByIds(@RequestParam List<String> codesElement) {
-        List<Element> elements = elementService.findManyById(codesElement);
-        List<ElementResponseDTO> elementResponseDTOS = elements.stream()
-                .map(elementMapper::toElementResponse)
-                .toList();
+    @GetMapping("/bulk")
+    public ResponseEntity<List<ElementResponse>> findByCodeElements(@NotEmpty @RequestParam List<String> codesElement) {
+        List<Element> elements = elementService.findAllByCodeElement(codesElement);
+        List<ElementResponse> elementResponses = elementMapper.toElementResponseList(elements);
 
-        return new ResponseEntity<>(
-                elementResponseDTOS,
-                HttpStatus.OK
-        );
+        return ResponseEntity
+                .ok()
+                .body(elementResponses);
     }
 
-    @GetMapping("/module/many")
-    public ResponseEntity<List<List<ElementResponseDTO>>> findByModules(@RequestParam(required = true) List<String> codesModule) {
-        List<List<Element>> elements = elementService.findManyByModule(codesModule);
-        List<List<ElementResponseDTO>> elementResponseDTOS = elements.stream()
-                .map(elementMapper::toElementResponses)
-                .toList();
+    @GetMapping("/module/bulk")
+    public ResponseEntity<List<ElementByCodeModuleResponse>> findByModules(@NotEmpty @RequestParam List<String> codesModule) {
+        List<List<Element>> elements = elementService.findAllByCodeModule(codesModule);
 
-        return new ResponseEntity<>(
-                elementResponseDTOS,
-                HttpStatus.OK
-        );
+        List<ElementByCodeModuleResponse> elementByCodeModuleResponses = elementMapper.toElementByCodeModuleResponseList(elements);
+
+        return ResponseEntity
+                .ok()
+                .body(elementByCodeModuleResponses);
     }
 
-    @GetMapping("/module")
-    public ResponseEntity<List<ElementResponseDTO>> findByModule(@NotBlank @RequestParam(required = true) String codeModule) {
-        List<Element> elements = elementService.findByModule(codeModule);
-        List<ElementResponseDTO> elementResponseDTOS = elements.stream()
-                .map(elementMapper::toElementResponse)
-                .toList();
+    @GetMapping("/module/{codeModule}")
+    public ResponseEntity<ElementByCodeModuleResponse> findByModule(@PathVariable("codeModule") String codeModule) {
+        List<Element> elements = elementService.findByCodeModule(codeModule);
+        ElementByCodeModuleResponse elementByCodeModuleResponse = elementMapper.toElementByCodeModuleResponse(elements);
 
-        return new ResponseEntity<>(
-                elementResponseDTOS,
-                HttpStatus.OK
-        );
+        return ResponseEntity
+                .ok()
+                .body(elementByCodeModuleResponse);
     }
 
-    @GetMapping("/professeur/many")
-    public ResponseEntity<List<List<ElementResponseDTO>>> findByProfesseurs(@RequestParam(required = true) List<String> codesProfesseur) {
-        List<List<Element>> elements = elementService.findManyByProfesseur(codesProfesseur);
-        List<List<ElementResponseDTO>> elementResponseDTOS = elements.stream()
-                .map(elementMapper::toElementResponses)
-                .toList();
+    @GetMapping("/professeur/bulk")
+    public ResponseEntity<List<ElementByCodeProfesseurResponse>> findByProfesseurs(@NotEmpty @RequestParam List<String> codesProfesseur) {
+        List<List<Element>> elements = elementService.findAllByCodeProfesseur(codesProfesseur);
+        List<ElementByCodeProfesseurResponse> elementByCodeProfesseurResponses = elementMapper.toElementByCodeProfesseurResponseList(elements);
 
-        return new ResponseEntity<>(
-                elementResponseDTOS,
-                HttpStatus.OK
-        );
+        return ResponseEntity
+                .ok()
+                .body(elementByCodeProfesseurResponses);
     }
 
-    @GetMapping("/professeur")
-    public ResponseEntity<List<ElementResponseDTO>> findByProfesseur(@NotBlank @RequestParam(required = true) String codeProfesseur) {
-        List<Element> elements = elementService.findByProfesseur(codeProfesseur);
-        List<ElementResponseDTO> elementResponseDTOS = elements.stream()
-                .map(elementMapper::toElementResponse)
-                .toList();
+    @GetMapping("/professeur/{codeProfesseur}")
+    public ResponseEntity<ElementByCodeProfesseurResponse> findByProfesseur(
+            @PathVariable("codeProfesseur") String codeProfesseur
+    ) {
+        List<Element> elements = elementService.findByCodeProfesseur(codeProfesseur);
+        ElementByCodeProfesseurResponse elementByCodeProfesseurResponse = elementMapper.toElementByCodeProfesseurResponse(elements);
 
-        return new ResponseEntity<>(
-                elementResponseDTOS,
-                HttpStatus.OK
-        );
+        return ResponseEntity
+                .ok()
+                .body(elementByCodeProfesseurResponse);
     }
 
 

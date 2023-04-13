@@ -1,5 +1,6 @@
 package ma.enset.element.service;
 
+import ma.enset.element.exception.InternalErrorException;
 import ma.enset.element.model.Element;
 import ma.enset.element.exception.ElementAlreadyExistsException;
 import ma.enset.element.exception.ElementNotFoundException;
@@ -9,28 +10,28 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 public interface ElementService {
-    Element create(Element element) throws ElementAlreadyExistsException;
+    Element save(Element element) throws ElementAlreadyExistsException, InternalErrorException;
 
-    List<Element> createMany(List<Element> elements) throws ElementAlreadyExistsException;
+    List<Element> saveAll(List<Element> elements) throws ElementAlreadyExistsException, InternalErrorException;
 
-    Element findById(String codeElement) throws ElementNotFoundException;
+    Element findByCodeElement(String codeElement) throws ElementNotFoundException;
 
-    List<Element> findManyById(List<String> codesElement) throws ElementNotFoundException;
+    List<Element> findAllByCodeElement(List<String> codesElement) throws ElementNotFoundException;
 
     Page<Element> findAll(Pageable pageable);
 
-    Element update(Element element) throws ElementNotFoundException;
-    List<Element> updateMany(List<Element> elements) throws ElementNotFoundException;
+    Element update(Element element) throws ElementNotFoundException, InternalErrorException;;
+    List<Element> updateAll(List<Element> elements) throws ElementNotFoundException, InternalErrorException;;
 
-    void deleteById(String codeElement) throws ElementNotFoundException;
+    void deleteByCodeElement(String codeElement) throws ElementNotFoundException;
 
-    void deleteManyById(List<String> codesElement) throws ElementNotFoundException;
+    void deleteAllByCodeElement(List<String> codesElement) throws ElementNotFoundException;
 
-    List<Element> findByModule(String codeModule);// TODO: should throw ModuleNotFoundException
+    List<Element> findByCodeModule(String codeModule);// TODO: should throw ModuleNotFoundException
 
-    List<List<Element>> findManyByModule(List<String> codesModule);// TODO: should throw ModuleNotFoundException
+    List<List<Element>> findAllByCodeModule(List<String> codesModule);// TODO: should throw ModuleNotFoundException
 
-    List<Element> findByProfesseur(String codeProfesseur);// TODO: should throw ProfesseurNotFoundException
+    List<Element> findByCodeProfesseur(String codeProfesseur);// TODO: should throw ProfesseurNotFoundException
 
-    List<List<Element>> findManyByProfesseur(List<String> codesProfesseur);// TODO: should throw ProfesseurNotFoundException
+    List<List<Element>> findAllByCodeProfesseur(List<String> codesProfesseur);// TODO: should throw ProfesseurNotFoundException
 }

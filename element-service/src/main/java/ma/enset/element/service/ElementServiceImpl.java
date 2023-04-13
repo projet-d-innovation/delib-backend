@@ -2,12 +2,13 @@ package ma.enset.element.service;
 
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import ma.enset.element.constant.CoreConstants;
-import ma.enset.element.model.Element;
 import ma.enset.element.exception.ElementAlreadyExistsException;
 import ma.enset.element.exception.ElementNotFoundException;
+import ma.enset.element.exception.InternalErrorException;
+import ma.enset.element.model.Element;
 import ma.enset.element.repository.ElementRepository;
-import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -17,43 +18,39 @@ import java.util.List;
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class ElementServiceImpl implements ElementService {
     private final ElementRepository elementRepository;
 
     @Override
-    public Element create(Element element) throws ElementAlreadyExistsException {
-        Element createdElement = null;
+    public Element save(Element element) throws ElementAlreadyExistsException, InternalErrorException {
 
-        if (elementRepository.existsById(element.getCodeElement()))
+        if (elementRepository.existsByCodeElement(element.getCodeElement()))
             throw ElementAlreadyExistsException.builder()
                     .key(CoreConstants.BusinessExceptionMessage.ELEMENT_ALREADY_EXISTS)
-                    .args(new Object[]{"code element", element.getCodeElement()})
+                    .args(new Object[]{element.getCodeElement()})
                     .build();
 
+        Element savedElement = null;
+
         try {
-            createdElement = elementRepository.save(element);
+            savedElement = elementRepository.save(element);
         } catch (Exception e) {
-            if (e.getCause() instanceof ConstraintViolationException) {
-                throw ElementAlreadyExistsException.builder()
-                        .key(CoreConstants.BusinessExceptionMessage.INTERNAL_ERROR)
-                        .args(new Object[]{"code element", element.getCodeElement()})
-                        .build();
-            }
+            log.error(e.getMessage(), e.getCause());
+            throw new InternalErrorException();
         }
 
-        return createdElement;
+        return savedElement;
     }
 
     @Transactional
     @Override
-    public List<Element> createMany(List<Element> elements) throws ElementAlreadyExistsException {
-        List<Element> createdElements = new ArrayList<>();
+    public List<Element> saveAll(List<Element> elements) throws ElementNotFoundException, InternalErrorException {
+        List<Element> savedElements = new ArrayList<>(elements.size());
 
-        for (Element element : elements) {
-          createdElements.add(create(element));
-        }
+        elements.forEach(element -> savedElements.add(save(element)));
 
-        return createdElements;
+        return savedElements;
     }
 
     @Override
@@ -62,13 +59,10 @@ public class ElementServiceImpl implements ElementService {
     }
 
     @Override
-    public Element update(Element element) throws ElementNotFoundException {
+    public Element update(Element element) throws ElementNotFoundException, InternalErrorException {
 
-        if (!elementRepository.existsById(element.getCodeElement())) {
-            throw ElementNotFoundException.builder()
-                    .key(CoreConstants.BusinessExceptionMessage.ELEMENT_NOT_FOUND)
-                    .args(new Object[]{"code element", element.getCodeElement()})
-                    .build();
+        if (!elementRepository.existsByCodeElement(element.getCodeElement())) {
+            throw elementNotFoundException(element.getCodeElement());
         }
 
         // TODO : check if professeur exists
@@ -80,12 +74,8 @@ public class ElementServiceImpl implements ElementService {
         try {
             updatedElement = elementRepository.save(element);
         } catch (Exception e) {
-            if (e.getCause() instanceof ConstraintViolationException) {
-                throw ElementAlreadyExistsException.builder()
-                        .key(CoreConstants.BusinessExceptionMessage.ELEMENT_ALREADY_EXISTS)
-                        .args(new Object[]{"code element", element.getCodeElement()})
-                        .build();
-            }
+            log.error(e.getMessage(), e.getCause());
+            throw new InternalErrorException();
         }
 
         return updatedElement;
@@ -93,77 +83,73 @@ public class ElementServiceImpl implements ElementService {
 
     @Transactional
     @Override
-    public List<Element> updateMany(List<Element> elements) throws ElementNotFoundException {
+    public List<Element> updateAll(List<Element> elements) throws ElementNotFoundException, InternalErrorException {
         List<Element> updatedElements = new ArrayList<>();
-        for (Element element : elements)
-            updatedElements.add(update(element));
+        elements.forEach(element -> updatedElements.add(update(element)));
         return updatedElements;
     }
 
     @Override
-    public void deleteById(String codeElement) throws ElementNotFoundException {
-        if (!elementRepository.existsById(codeElement)) {
-            throw ElementNotFoundException.builder()
-                    .key(CoreConstants.BusinessExceptionMessage.ELEMENT_NOT_FOUND)
-                    .args(new Object[]{"code element", codeElement})
-                    .build();
+    public void deleteByCodeElement(String codeElement) throws ElementNotFoundException {
+        if (!elementRepository.existsByCodeElement(codeElement)) {
+            throw elementNotFoundException(codeElement);
         }
 
-        elementRepository.deleteById(codeElement);
+        elementRepository.deleteByCodeElement(codeElement);
     }
 
     @Override
-    public void deleteManyById(List<String> codeElements) throws ElementNotFoundException {
-        for (String codeElement : codeElements) {
-            this.deleteById(codeElement);
-        }
+    @Transactional
+    public void deleteAllByCodeElement(List<String> codeElements) throws ElementNotFoundException {
+        codeElements.forEach(this::deleteByCodeElement);
     }
 
     @Override
-    public Element findById(String codeElement) throws ElementNotFoundException {
-        return elementRepository.findById(codeElement)
+    public Element findByCodeElement(String codeElement) throws ElementNotFoundException {
+        return elementRepository.findByCodeElement(codeElement)
                 .orElseThrow(() ->
-                        ElementNotFoundException.builder()
-                                .key(CoreConstants.BusinessExceptionMessage.ELEMENT_NOT_FOUND)
-                                .args(new Object[]{"code element", codeElement})
-                                .build()
+                        elementNotFoundException(codeElement)
                 );
     }
 
     @Override
-    public List<Element> findManyById(List<String> codeElements) throws ElementNotFoundException {
+    public List<Element> findAllByCodeElement(List<String> codeElements) throws ElementNotFoundException {
         List<Element> elements = new ArrayList<>();
-        for (String codeElement : codeElements) {
-            elements.add(findById(codeElement));
-        }
+        codeElements.forEach(codeElement -> elements.add(this.findByCodeElement(codeElement)));
         return elements;
     }
 
     @Override
-    public List<Element> findByModule(String codeModule) {
+    public List<Element> findByCodeModule(String codeModule) { // TODO : should throw ModuleNotFoundException
         // TODO : check if module exists
         return elementRepository.findByCodeModule(codeModule);
     }
 
     @Override
-    public List<List<Element>> findManyByModule(List<String> codesModule) {
+    public List<List<Element>> findAllByCodeModule(List<String> codesModule) { // TODO : should throw ModuleNotFoundException
         List<List<Element>> elements = new ArrayList<>();
-        codesModule.forEach(codeModule -> elements.add(this.findByModule(codeModule)));
+        codesModule.forEach(codeModule -> elements.add(this.findByCodeModule(codeModule)));
         return elements;
     }
 
     @Override
-    public List<Element> findByProfesseur(String codeProfesseur) {
+    public List<Element> findByCodeProfesseur(String codeProfesseur) { // TODO : should throw ProfesseurNotFoundException
         // TODO : check if professeur exists
         return elementRepository.findByCodeProfesseur(codeProfesseur);
     }
 
     @Override
-    public List<List<Element>> findManyByProfesseur(List<String> codesProfesseur) {
+    public List<List<Element>> findAllByCodeProfesseur(List<String> codesProfesseur) { // TODO : should throw ProfesseurNotFoundException
         List<List<Element>> elements = new ArrayList<>();
-        codesProfesseur.forEach(codeProf -> elements.add(this.findByProfesseur(codeProf)));
+        codesProfesseur.forEach(codeProf -> elements.add(this.findByCodeProfesseur(codeProf)));
         return elements;
     }
 
+    private ElementNotFoundException elementNotFoundException(String codeModule) {
+        return ElementNotFoundException.builder()
+                .key(CoreConstants.BusinessExceptionMessage.ELEMENT_NOT_FOUND)
+                .args(new Object[]{codeModule})
+                .build();
+    }
 
 }

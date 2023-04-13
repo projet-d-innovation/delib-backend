@@ -4,8 +4,8 @@ import lombok.Builder;
 import org.springframework.http.HttpStatus;
 
 @Builder
-public record ExceptionResponseDTO(
-    int code,
-    HttpStatus status,
-    String message
+public record BusinessExceptionResponse(
+        int code,
+        HttpStatus status,
+        String error
 ) {}

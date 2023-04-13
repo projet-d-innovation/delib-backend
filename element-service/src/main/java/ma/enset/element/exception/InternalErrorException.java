@@ -1,11 +1,10 @@
 package ma.enset.element.exception;
 
-import lombok.Builder;
+import ma.enset.element.constant.CoreConstants;
 
 public class InternalErrorException extends BusinessException {
-
-    @Builder
-    public InternalErrorException(String key, Object[] args) {
-        super(key, args);
+    public InternalErrorException() {
+        super(CoreConstants.BusinessExceptionMessage.INTERNAL_ERROR, null);
     }
 }
+

@@ -1,6 +1,9 @@
 package ma.enset.element.dto;
 
-public record ElementResponseDTO(
+import lombok.Builder;
+
+@Builder
+public record ElementResponse(
         String codeElement,
         String intituleElement,
         float coefficientElement,
