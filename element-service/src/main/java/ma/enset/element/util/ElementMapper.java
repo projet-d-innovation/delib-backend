@@ -16,9 +16,14 @@ public interface ElementMapper {
 
     Element toElement(ElementCreationRequest elementCreationRequest);
 
+    @Mapping(
+            target = "coefficientElement",
+            expression = "java(new java.math.BigDecimal( String.valueOf(element.getCoefficientElement())) )"
+    )
     ElementResponse toElementResponse(Element element);
 
     List<Element> toElementList(List<ElementCreationRequest> elementCreationRequestList);
+
 
     List<Element> toElementListUpdate(List<ElementUpdateRequest> elementUpdateRequestList);
 
@@ -37,7 +42,6 @@ public interface ElementMapper {
     void updateElementFromDTO(ElementUpdateRequest elementUpdateRequest, @MappingTarget Element element);
 
 
-    // TODO : FIX THIS , IT'S NOT WORKING
     default void updateElementFromDTO(List<ElementUpdateRequest> elementUpdateRequest, List<Element> element) {
         for (int i = 0; i < element.size(); i++) {
             updateElementFromDTO(elementUpdateRequest.get(i), element.get(i));

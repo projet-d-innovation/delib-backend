@@ -2,11 +2,13 @@ package ma.enset.element.dto;
 
 import lombok.Builder;
 
+import java.math.BigDecimal;
+
 @Builder
 public record ElementResponse(
         String codeElement,
         String intituleElement,
-        float coefficientElement,
+        BigDecimal coefficientElement,
         String codeModule,
         String codeProfesseur
 ) {
