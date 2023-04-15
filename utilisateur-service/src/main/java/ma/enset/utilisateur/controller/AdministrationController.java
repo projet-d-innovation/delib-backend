@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/utilisateurs/admin")
+@RequestMapping("/api/v1/administration/utilisateurs")
 @AllArgsConstructor
 @Validated
 public class AdministrationController {
@@ -31,7 +31,7 @@ public class AdministrationController {
     private final UtilisateurService utilisateurService;
 
 
-    @GetMapping("perms/{code}")
+    @GetMapping("{code}/perms")
     public ResponseEntity<UtilisateurNestedRolesResponseDTO> findPermsByCode(
             @PathVariable String code
     ) {

@@ -69,8 +69,6 @@ public class RoleServiceImpl implements RoleService {
                 () -> roleNotFoundException(role.getRoleId())
         );
 
-        roleToUpdate = extractNullValues(role, roleToUpdate); // TODO : to be deleted
-
         checkPermissions(roleToUpdate);
 
         Role updatedRole = null;

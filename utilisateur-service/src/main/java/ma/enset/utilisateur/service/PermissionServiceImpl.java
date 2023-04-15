@@ -58,7 +58,6 @@ public class PermissionServiceImpl implements PermissionService {
     @Override
     public Permission update(Permission permission) throws ElementNotFoundException {
 
-        log.debug("Permission to be updated: " + permission.getPermissionId());
         if (!permissionRepository.existsByPermissionId(permission.getPermissionId())) {
             throw permissionNotFoundException(String.valueOf(permission.getPermissionId()));
         }
@@ -101,7 +100,6 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     public Permission findByPermissionId(int permissionId) throws ElementNotFoundException {
-        log.debug("Permission to be found: " + permissionId);
         return permissionRepository.findByPermissionId(permissionId)
                 .orElseThrow(() ->
                         permissionNotFoundException(String.valueOf(permissionId))

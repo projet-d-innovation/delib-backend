@@ -39,7 +39,7 @@ public class UtilisateurServiceImpl implements UtilisateurService {
         try {
             savedUtilisateur = utilisateurRepository.save(utilisateur);
         } catch (Exception e) {
-           log.error(e.getMessage(), e.getCause());
+            log.error(e.getMessage(), e.getCause());
             throw new InternalErrorException();
         }
 
@@ -52,7 +52,7 @@ public class UtilisateurServiceImpl implements UtilisateurService {
             throw utilisateurAlreadyExistsException(utilisateur.getCode());
 
         utilisateur.getRoles().forEach(role ->
-            roleService.findByRoleId(role.getRoleId())
+                roleService.findByRoleId(role.getRoleId())
         );
 
         Utilisateur savedUtilisateur = null;
@@ -98,17 +98,14 @@ public class UtilisateurServiceImpl implements UtilisateurService {
     @Override
     public Utilisateur update(Utilisateur utilisateur, String roleId) throws ElementNotFoundException, RoleConflictException, InternalErrorException {
 
-        Utilisateur toBeUpdated = excludeNullValue(
-                this.getUtilisateurAndCheckRole(utilisateur.getCode(), roleId),
-                utilisateur
-        );
+        Utilisateur toBeUpdated = this.getUtilisateurAndCheckRole(utilisateur.getCode(), roleId);
 
         Utilisateur updatedUtilisateur = null;
 
         try {
             updatedUtilisateur = utilisateurRepository.save(toBeUpdated);
         } catch (Exception e) {
-           log.error(e.getMessage(), e.getCause());
+            log.error(e.getMessage(), e.getCause());
             throw new InternalErrorException();
         }
 
@@ -118,22 +115,20 @@ public class UtilisateurServiceImpl implements UtilisateurService {
     @Override
     public Utilisateur update(Utilisateur utilisateur) throws ElementNotFoundException, RoleConflictException, InternalErrorException {
 
-        Utilisateur toBeUpdated = excludeNullValue(
-                this.getUtilisateur(utilisateur.getCode()),
-                utilisateur
-        );
+        Utilisateur toBeUpdated = this.getUtilisateur(utilisateur.getCode());
 
         Utilisateur updatedUtilisateur = null;
 
         try {
             updatedUtilisateur = utilisateurRepository.save(toBeUpdated);
         } catch (Exception e) {
-           log.error(e.getMessage(), e.getCause());
+            log.error(e.getMessage(), e.getCause());
             throw new InternalErrorException();
         }
 
         return updatedUtilisateur;
     }
+
     @Transactional
     @Override
     public List<Utilisateur> updateAll(List<Utilisateur> utilisateurs, String roleId) throws ElementNotFoundException, RoleConflictException, InternalErrorException {
@@ -249,38 +244,6 @@ public class UtilisateurServiceImpl implements UtilisateurService {
 
         return utilisateur;
     }
-
-    private Utilisateur excludeNullValue(Utilisateur utilisateur, Utilisateur toBeUpdated) {
-        if (utilisateur.getCin() != null)
-            toBeUpdated.setCin(utilisateur.getCin());
-        if (utilisateur.getCne() != null)
-            toBeUpdated.setCne(utilisateur.getCne());
-        if (utilisateur.getNom() != null)
-            toBeUpdated.setNom(utilisateur.getNom());
-        if (utilisateur.getPrenom() != null)
-            toBeUpdated.setPrenom(utilisateur.getPrenom());
-        if (utilisateur.getAdresse() != null)
-            toBeUpdated.setAdresse(utilisateur.getAdresse());
-        if (utilisateur.getTelephone() != null)
-            toBeUpdated.setTelephone(utilisateur.getTelephone());
-        if (utilisateur.getPhoto() != null)
-            toBeUpdated.setPhoto(utilisateur.getPhoto());
-        if (utilisateur.getDateNaissance() != null)
-            toBeUpdated.setDateNaissance(utilisateur.getDateNaissance());
-        if (utilisateur.getVille() != null)
-            toBeUpdated.setVille(utilisateur.getVille());
-        if (utilisateur.getPays() != null)
-            toBeUpdated.setPays(utilisateur.getPays());
-        if (utilisateur.getRoles() != null)
-            toBeUpdated.setRoles(utilisateur.getRoles());
-        if (utilisateur.getCodeDepartement() != null)
-            toBeUpdated.setCodeDepartement(utilisateur.getCodeDepartement());
-        if (utilisateur.getElementIds() != null)
-            toBeUpdated.setElementIds(utilisateur.getElementIds());
-
-        return toBeUpdated;
-    }
-
 
     private ElementAlreadyExistsException utilisateurAlreadyExistsException(String codeUtilisateur) {
         return ElementAlreadyExistsException.builder()
