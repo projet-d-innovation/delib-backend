@@ -1,11 +1,12 @@
 package ma.enset.utilisateur.service;
 
 import jakarta.transaction.Transactional;
-import jakarta.validation.ConstraintViolationException;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import ma.enset.utilisateur.constant.CoreConstants;
-import ma.enset.utilisateur.exception.PermissionAlreadyExistsException;
-import ma.enset.utilisateur.exception.PermissionNotFoundException;
+import ma.enset.utilisateur.exception.ElementAlreadyExistsException;
+import ma.enset.utilisateur.exception.ElementNotFoundException;
+import ma.enset.utilisateur.exception.InternalErrorException;
 import ma.enset.utilisateur.model.Permission;
 import ma.enset.utilisateur.repository.PermissionRepository;
 import org.springframework.data.domain.Page;
@@ -17,55 +18,35 @@ import java.util.List;
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class PermissionServiceImpl implements PermissionService {
     private final PermissionRepository permissionRepository;
 
     @Override
-    public Permission create(Permission permission) throws PermissionAlreadyExistsException {
-        Permission createdPermission = null;
-        if (permissionRepository.existsById(permission.getPermissionId()))
-            throw PermissionAlreadyExistsException.builder()
+    public Permission save(Permission permission) throws ElementAlreadyExistsException {
+        Permission savedPermission = null;
+        if (permissionRepository.existsByPermissionId(permission.getPermissionId()))
+            throw ElementAlreadyExistsException.builder()
                     .key(CoreConstants.BusinessExceptionMessage.PERMISSION_ALREADY_EXISTS)
-                    .args(new Object[]{"code", permission.getPermissionId()})
+                    .args(new Object[]{permission.getPermissionId()})
                     .build();
 
         try {
-            createdPermission = permissionRepository.save(permission);
+            savedPermission = permissionRepository.save(permission);
         } catch (Exception e) {
-            if (e.getCause() instanceof ConstraintViolationException) {
-                throw PermissionAlreadyExistsException.builder()
-                        .key(CoreConstants.BusinessExceptionMessage.INTERNAL_ERROR)
-                        .args(new Object[]{"code", permission.getPermissionId()})
-                        .build();
-            }
+            log.error(e.getMessage(), e.getCause());
+            throw new InternalErrorException();
         }
 
-        return createdPermission;
+        return savedPermission;
     }
 
     @Transactional
     @Override
-    public List<Permission> createMany(List<Permission> permissions) throws PermissionAlreadyExistsException {
-        List<Permission> createdPermissions = new ArrayList<>();
-        for (Permission permission : permissions) {
-            if (permissionRepository.existsById(permission.getPermissionId()))
-                throw PermissionAlreadyExistsException.builder()
-                        .key(CoreConstants.BusinessExceptionMessage.PERMISSION_ALREADY_EXISTS)
-                        .args(new Object[]{"code", permission.getPermissionId()})
-                        .build();
-        }
-
-        try {
-            createdPermissions = permissionRepository.saveAll(permissions);
-        } catch (Exception e) {
-            if (e.getCause() instanceof ConstraintViolationException) {
-                throw PermissionAlreadyExistsException.builder()
-                        .key(CoreConstants.BusinessExceptionMessage.INTERNAL_ERROR)
-                        .build();
-            }
-        }
-
-        return createdPermissions;
+    public List<Permission> saveAll(List<Permission> permissions) throws ElementAlreadyExistsException {
+        List<Permission> savedPermissions = new ArrayList<>();
+        permissions.forEach(permission -> savedPermissions.add(save(permission)));
+        return savedPermissions;
     }
 
     @Override
@@ -75,13 +56,11 @@ public class PermissionServiceImpl implements PermissionService {
 
 
     @Override
-    public Permission update(Permission permission) throws PermissionNotFoundException {
+    public Permission update(Permission permission) throws ElementNotFoundException {
 
-        if (!permissionRepository.existsById(permission.getPermissionId())) {
-            throw PermissionNotFoundException.builder()
-                    .key(CoreConstants.BusinessExceptionMessage.PERMISSION_NOT_FOUND)
-                    .args(new Object[]{"code", permission.getPermissionId()})
-                    .build();
+        log.debug("Permission to be updated: " + permission.getPermissionId());
+        if (!permissionRepository.existsByPermissionId(permission.getPermissionId())) {
+            throw permissionNotFoundException(String.valueOf(permission.getPermissionId()));
         }
 
         Permission updatedPermission = null;
@@ -89,67 +68,58 @@ public class PermissionServiceImpl implements PermissionService {
         try {
             updatedPermission = permissionRepository.save(permission);
         } catch (Exception e) {
-            if (e.getCause() instanceof ConstraintViolationException) {
-                throw PermissionAlreadyExistsException.builder()
-                        .key(CoreConstants.BusinessExceptionMessage.PERMISSION_ALREADY_EXISTS)
-                        .args(new Object[]{"code", permission.getPermissionId()})
-                        .build();
-            }
+            log.error(e.getMessage(), e.getCause());
+            throw new InternalErrorException();
         }
 
         return updatedPermission;
     }
+
     @Transactional
     @Override
-    public List<Permission>  updateMany(List<Permission> permissions) throws PermissionNotFoundException {
+    public List<Permission> updateAll(List<Permission> permissions) throws ElementNotFoundException {
         List<Permission> updatedPermissions = new ArrayList<>();
-        for (Permission permission : permissions) {
-            updatedPermissions.add(update(permission));
-        }
+        permissions.forEach(permission -> updatedPermissions.add(update(permission)));
         return updatedPermissions;
     }
 
     @Override
-    public void deleteById(int permissionId) throws PermissionNotFoundException {
+    public void deleteByPermissionId(int permissionId) throws ElementNotFoundException {
 
-        Permission toBeDeleted = permissionRepository.findById(permissionId).orElse(null);
+        Permission toBeDeleted = permissionRepository.findByPermissionId(permissionId).orElse(null);
 
-        if (toBeDeleted == null)
-            throw PermissionNotFoundException.builder()
-                    .key(CoreConstants.BusinessExceptionMessage.PERMISSION_NOT_FOUND)
-                    .args(new Object[]{"code", permissionId})
-                    .build();
+        if (toBeDeleted == null) throw permissionNotFoundException(String.valueOf(permissionId));
 
-        permissionRepository.deleteById(permissionId);
+        permissionRepository.deleteByPermissionId(permissionId);
     }
 
     @Transactional
     @Override
-    public void deleteManyById(List<Integer> permissionIds) throws PermissionNotFoundException {
-        for (int permissionId : permissionIds) {
-            this.deleteById(permissionId);
-        }
+    public void deleteAllByPermissionId(List<Integer> permissionIds) throws ElementNotFoundException {
+        permissionIds.forEach(this::deleteByPermissionId);
     }
 
     @Override
-    public Permission findById(int permissionId) throws PermissionNotFoundException {
-        return permissionRepository.findById(permissionId)
+    public Permission findByPermissionId(int permissionId) throws ElementNotFoundException {
+        log.debug("Permission to be found: " + permissionId);
+        return permissionRepository.findByPermissionId(permissionId)
                 .orElseThrow(() ->
-                        PermissionNotFoundException.builder()
-                                .key(CoreConstants.BusinessExceptionMessage.PERMISSION_NOT_FOUND)
-                                .args(new Object[]{"code", permissionId})
-                                .build()
+                        permissionNotFoundException(String.valueOf(permissionId))
                 );
     }
 
     @Override
-    public List<Permission> findManyById(List<Integer> permissionIds) throws PermissionNotFoundException {
+    public List<Permission> findAllByPermissionId(List<Integer> permissionIds) throws ElementNotFoundException {
         List<Permission> permissions = new ArrayList<>();
-        for (int permissionId : permissionIds) {
-            permissions.add(findById(permissionId));
-        }
+        permissionIds.forEach(permissionId -> permissions.add(findByPermissionId(permissionId)));
         return permissions;
     }
 
+    private ElementNotFoundException permissionNotFoundException(String codePermission) {
+        return ElementNotFoundException.builder()
+                .key(CoreConstants.BusinessExceptionMessage.PERMISSION_NOT_FOUND)
+                .args(new Object[]{codePermission})
+                .build();
+    }
 
 }

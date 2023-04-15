@@ -1,13 +1,11 @@
 package ma.enset.utilisateur.dto;
 
-import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
 
 import java.time.LocalDateTime;
 
 @Builder
 public record EtudiantUpdateRequestDTO(
-        @NotBlank()
         String code,
         String cin,
         String cne,

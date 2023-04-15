@@ -1,5 +1,6 @@
 package ma.enset.utilisateur.repository;
 
+import jakarta.transaction.Transactional;
 import ma.enset.utilisateur.model.Role;
 import ma.enset.utilisateur.model.Utilisateur;
 import org.springframework.data.domain.Page;
@@ -17,5 +18,13 @@ public interface UtilisateurRepository extends JpaRepository<Utilisateur, String
 
 
     Page<Utilisateur> findAllByRolesContains(Role role, Pageable pageable);
+
+
+    boolean existsByCode(String code);
+
+    Optional<Utilisateur> findByCode(String code);
+
+    @Transactional
+    void deleteByCode(String code);
 
 }

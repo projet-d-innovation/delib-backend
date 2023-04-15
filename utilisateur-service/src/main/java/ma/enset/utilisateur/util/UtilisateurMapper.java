@@ -1,19 +1,19 @@
 package ma.enset.utilisateur.util;
 
-import ma.enset.utilisateur.dto.UtilisateurCreateRequestDTO;
-import ma.enset.utilisateur.dto.UtilisateurNestedRolesResponseDTO;
-import ma.enset.utilisateur.dto.UtilisateurResponseDTO;
-import ma.enset.utilisateur.dto.UtilisateurUpdateRequestDTO;
+import ma.enset.utilisateur.dto.*;
 import ma.enset.utilisateur.model.Role;
 import ma.enset.utilisateur.model.Utilisateur;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.Named;
+import org.mapstruct.*;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Mapper
+
+@Mapper(
+        componentModel = MappingConstants.ComponentModel.SPRING,
+        injectionStrategy = InjectionStrategy.CONSTRUCTOR
+)
 public interface UtilisateurMapper {
 
     @Named("toUtilisateurWithoutRoleResponse")
@@ -37,21 +37,11 @@ public interface UtilisateurMapper {
     List<UtilisateurNestedRolesResponseDTO> toUtilisateurWithRoleAndPermsResponses(List<Utilisateur> utilisateurs);
 
 
-    @Named("toUtilisateurCreateRequestDTO")
     @Mapping(target = "roles", source = "roles", qualifiedByName = "mapRoleIdsToRoles")
     Utilisateur toUtilisateur(UtilisateurCreateRequestDTO utilisateurCreateRequestDTO);
 
-    @Named("toUtilisateurCreateRequestDTOs")
     @Mapping(target = "roles", source = "roles", qualifiedByName = "mapRoleIdsToRoles")
     List<Utilisateur> createToUtilisateurs(List<UtilisateurCreateRequestDTO> utilisateurCreateRequestsDTO);
-
-    @Named("toUtilisateurUpdateRequestDTO")
-    @Mapping(target = "roles", source = "roles", qualifiedByName = "mapRoleIdsToRoles")
-    Utilisateur toUtilisateur(UtilisateurUpdateRequestDTO utilisateurCreateRequestDTO);
-
-    @Named("toUtilisateurUpdateRequestDTOs")
-    @Mapping(target = "roles", source = "roles", qualifiedByName = "mapRoleIdsToRoles")
-    List<Utilisateur> updateToUtilisateurs(List<UtilisateurUpdateRequestDTO> utilisateurCreateRequestsDTO);
 
 
     Role mapRoleIdToRole(String roleId);
@@ -65,4 +55,30 @@ public interface UtilisateurMapper {
                 .map(this::mapRoleIdToRole)
                 .collect(Collectors.toList());
     }
+
+
+    List<String> toUtilisateurCodes(List<UtilisateurUpdateRequestDTO> utilisateurs);
+
+    default String toUtilisateurCode(UtilisateurUpdateRequestDTO utilisateur) {
+        return utilisateur.code();
+    }
+
+
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void updateRequestToUtilisateur(UtilisateurUpdateRequestDTO utilisateurUpdateRequestDTO, @MappingTarget Utilisateur utilisateur);
+
+
+    default void updateRequestsToUtilisateurs(List<UtilisateurUpdateRequestDTO> utilisateurUpdateRequestDTOs, List<Utilisateur> utilisateurs) {
+        for (int i = 0; i < utilisateurUpdateRequestDTOs.size(); i++) {
+            updateRequestToUtilisateur(utilisateurUpdateRequestDTOs.get(i), utilisateurs.get(i));
+        }
+    }
+
+
+    @Mapping(target = "page", expression = "java(utilisateurPage.getNumber())")
+    @Mapping(target = "size", expression = "java(utilisateurPage.getSize())")
+    @Mapping(target = "totalPages", expression = "java(utilisateurPage.getTotalPages())")
+    @Mapping(target = "totalElements", expression = "java(utilisateurPage.getNumberOfElements())")
+    @Mapping(source = "content", target = "records")
+    PagingResponse<UtilisateurResponseDTO> toPagingResponse(Page<UtilisateurResponseDTO> utilisateurPage);
 }

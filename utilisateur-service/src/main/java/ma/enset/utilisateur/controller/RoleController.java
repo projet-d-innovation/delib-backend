@@ -1,17 +1,17 @@
 package ma.enset.utilisateur.controller;
 
-import io.micrometer.common.lang.Nullable;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
-import ma.enset.utilisateur.constant.CoreConstants;
+import ma.enset.utilisateur.dto.PagingResponse;
 import ma.enset.utilisateur.dto.RoleCreateRequestDTO;
 import ma.enset.utilisateur.dto.RoleResponseDTO;
 import ma.enset.utilisateur.dto.RoleUpdateRequestDTO;
 import ma.enset.utilisateur.model.Role;
 import ma.enset.utilisateur.service.RoleService;
 import ma.enset.utilisateur.util.RoleMapper;
+import org.hibernate.validator.constraints.Range;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -32,140 +32,132 @@ public class RoleController {
     private final RoleService roleService;
 
 
-    @GetMapping("/code")
+    @GetMapping("{code}")
     public ResponseEntity<RoleResponseDTO> findByCode(
-            @RequestParam String code,
-            @Nullable @RequestParam(defaultValue = "false") boolean includePerms
+            @PathVariable String code
     ) {
-        Role role = roleService.findById(code);
+        Role role = roleService.findByRoleId(code);
 
-        RoleResponseDTO roleResponse;
+        RoleResponseDTO roleResponse = roleMapper.toRoleResponse(role);
 
-        if (includePerms)
-            roleResponse = roleMapper.toRoleWithPermsResponse(role);
-        else
-            roleResponse = roleMapper.toRoleWithoutPermsResponse(role);
-
-
-        return new ResponseEntity<>(
-                roleResponse,
-                HttpStatus.OK
-        );
+        return ResponseEntity
+                .ok()
+                .body(roleResponse);
     }
 
-    @GetMapping("/code/many")
+    @GetMapping("/bulk")
     public ResponseEntity<Iterable<RoleResponseDTO>> findByCodes(
-            @RequestParam List<String> codes,
-            @Nullable @RequestParam(defaultValue = "false") boolean includePerms
+            @NotEmpty @RequestParam List<String> codes
     ) {
-        List<Role> roles = roleService.findManyById(codes);
-        List<RoleResponseDTO> roleResponses;
-        if (includePerms)
-            roleResponses = roleMapper.toRoleWithPermsResponses(roles);
-        else
-            roleResponses = roleMapper.toRoleWithoutPermsResponses(roles);
+        List<Role> roles = roleService.findAllByRoleId(codes);
+        List<RoleResponseDTO> roleResponses = roleMapper.toRoleResponses(roles);
 
-        return new ResponseEntity<>(
-                roleResponses,
-                HttpStatus.OK
-        );
+        return ResponseEntity
+                .ok()
+                .body(roleResponses);
     }
 
     @PostMapping
-    public ResponseEntity<RoleResponseDTO> create(
+    public ResponseEntity<RoleResponseDTO> save(
             @Valid @RequestBody RoleCreateRequestDTO roleRequest
     ) {
         Role role = roleMapper.toRole(roleRequest);
-        Role createdRole = roleService.create(role);
-        RoleResponseDTO roleResponse = roleMapper.toRoleWithPermsResponse(createdRole);
+        Role savedRole = roleService.save(role);
+        RoleResponseDTO roleResponse = roleMapper.toRoleResponse(savedRole);
 
-        return new ResponseEntity<>(
-                roleResponse,
-                HttpStatus.CREATED
-        );
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(roleResponse);
     }
 
-    @PostMapping("/many")
-    public ResponseEntity<List<RoleResponseDTO>> createMany(
-            @Valid @RequestBody List<RoleCreateRequestDTO> roleRequests
+    @PostMapping("/bulk")
+    public ResponseEntity<List<RoleResponseDTO>> saveAll(
+            @RequestBody List<@Valid RoleCreateRequestDTO> roleRequests
     ) {
         List<Role> roles = roleMapper.createToRoles(roleRequests);
-        List<Role> createdRoles = roleService.createMany(roles);
-        List<RoleResponseDTO> roleResponses = roleMapper.toRoleWithPermsResponses(createdRoles);
+        List<Role> savedRoles = roleService.saveAll(roles);
+        List<RoleResponseDTO> roleResponses = roleMapper.toRoleResponses(savedRoles);
 
-        return new ResponseEntity<>(
-                roleResponses,
-                HttpStatus.CREATED
-        );
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(roleResponses);
     }
 
     @GetMapping
-    public ResponseEntity<Page<RoleResponseDTO>> findAll(
-            @RequestParam(defaultValue = "0")
-            @Min(value = 0, message = CoreConstants.ValidationMessage.PAGINATION_PAGE_MIN)
-            int page,
-
-            @RequestParam(defaultValue = "20")
-            @Min(value = 1, message = CoreConstants.ValidationMessage.PAGINATION_SIZE_MIN)
-            @Max(value = 20, message = CoreConstants.ValidationMessage.PAGINATION_SIZE_MAX)
-            int size,
-            @Nullable @RequestParam(defaultValue = "false") boolean includePerms
+    public ResponseEntity<PagingResponse<RoleResponseDTO>> findAll(
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Range(min = 1, max = 10) int size
     ) {
 
         Pageable pageRequest = PageRequest.of(page, size);
         Page<Role> elementsPage = roleService.findAll(pageRequest);
 
-        Page<RoleResponseDTO> pagedResult;
-        if (includePerms)
-            pagedResult = elementsPage.map(roleMapper::toRoleWithPermsResponse);
-        else
-            pagedResult = elementsPage.map(roleMapper::toRoleWithoutPermsResponse);
-        return new ResponseEntity<>(
-                pagedResult,
-                HttpStatus.OK
-        );
+        PagingResponse<RoleResponseDTO> pagedResult = roleMapper.toPagingResponse(elementsPage);
+
+        return ResponseEntity
+                .ok()
+                .body(pagedResult);
     }
 
-    @PutMapping
+    @PatchMapping("/{code}")
     public ResponseEntity<RoleResponseDTO> update(
+            @PathVariable String code,
             @Valid @RequestBody RoleUpdateRequestDTO roleUpdateRequest
     ) {
-        Role role = roleMapper.toRole(roleUpdateRequest);
+        
+        Role role = roleService.findByRoleId(code);
+
+        roleMapper.updateRequestToRole(roleUpdateRequest, role);
+
+        role.setRoleId(code);
+
         Role updatedRole = roleService.update(role);
-        RoleResponseDTO roleResponse = roleMapper.toRoleWithPermsResponse(updatedRole);
-        return new ResponseEntity<>(
-                roleResponse,
-                HttpStatus.OK
-        );
+
+        RoleResponseDTO roleResponse = roleMapper.toRoleResponse(updatedRole);
+
+        return ResponseEntity
+                .ok()
+                .body(roleResponse);
     }
 
-    @PutMapping("/many")
-    public ResponseEntity<List<RoleResponseDTO>> updateMany(
-            @Valid @RequestBody List<RoleUpdateRequestDTO> roleUpdateRequests
+    @PatchMapping("/bulk")
+    public ResponseEntity<List<RoleResponseDTO>> updateAll(
+            @RequestBody List<@Valid RoleUpdateRequestDTO> roleUpdateRequests
     ) {
-        List<Role> roles = roleMapper.updateToRoles(roleUpdateRequests);
-        List<Role> updatedRoles = roleService.updateMany(roles);
-        List<RoleResponseDTO> roleResponses = roleMapper.toRoleWithPermsResponses(updatedRoles);
-        return new ResponseEntity<>(
-                roleResponses,
-                HttpStatus.OK
-        );
+
+        List<String> ids = roleMapper.toRoleIds(roleUpdateRequests);
+
+        List<Role> roles = roleService.findAllByRoleId(ids);
+
+        roleMapper.updateRequestsToRoles(roleUpdateRequests, roles);
+
+        List<Role> updatedRoles = roleService.updateAll(roles);
+
+        List<RoleResponseDTO> roleResponses = roleMapper.toRoleResponses(updatedRoles);
+
+        return ResponseEntity
+                .ok()
+                .body(roleResponses);
     }
 
-    @DeleteMapping
+    @DeleteMapping("/{code}")
     public ResponseEntity<Void> delete(
-            @RequestParam String code
+            @PathVariable String code
     ) {
-        roleService.deleteById(code);
-        return new ResponseEntity<>(HttpStatus.OK);
+        roleService.deleteByRoleId(code);
+        return ResponseEntity
+                .noContent()
+                .build();
     }
 
-    @DeleteMapping("/many")
-    public ResponseEntity<Void> deleteMany(
-            @RequestParam List<String> codes
+    @DeleteMapping("/bulk")
+    public ResponseEntity<Void> deleteAll(
+            @NotEmpty @RequestParam List<String> codes
     ) {
-        roleService.deleteManyById(codes);
-        return new ResponseEntity<>(HttpStatus.OK);
+        roleService.deleteAllByRoleId(codes);
+        return ResponseEntity
+                .noContent()
+                .build();
     }
 
 

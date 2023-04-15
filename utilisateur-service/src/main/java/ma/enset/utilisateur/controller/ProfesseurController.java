@@ -1,16 +1,17 @@
 package ma.enset.utilisateur.controller;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
-import ma.enset.utilisateur.constant.CoreConstants;
+import ma.enset.utilisateur.dto.PagingResponse;
 import ma.enset.utilisateur.dto.ProfesseurCreateRequestDTO;
 import ma.enset.utilisateur.dto.ProfesseurResponseDTO;
 import ma.enset.utilisateur.dto.ProfesseurUpdateRequestDTO;
 import ma.enset.utilisateur.model.Utilisateur;
 import ma.enset.utilisateur.service.UtilisateurService;
 import ma.enset.utilisateur.util.ProfesseurMapper;
+import org.hibernate.validator.constraints.Range;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -33,80 +34,70 @@ public class ProfesseurController {
     private final String ROLE_ID = "PROFESSEUR";
 
 
-    @GetMapping("/code")
+    @GetMapping("{code}")
     public ResponseEntity<ProfesseurResponseDTO> findByCode(
-            @RequestParam String code
+            @PathVariable String code
     ) {
-        Utilisateur professeur = professeurService.findById(code, ROLE_ID);
+        Utilisateur professeur = professeurService.findByCodeUtilisateur(code, ROLE_ID);
 
         ProfesseurResponseDTO professeurResponse = professeurMapper.toProfesseurResponse(professeur);
 
-        return new ResponseEntity<>(
-                professeurResponse,
-                HttpStatus.OK
-        );
+        return ResponseEntity
+                .ok()
+                .body(professeurResponse);
     }
 
-    @GetMapping("/code/many")
+    @GetMapping("/bulk")
     public ResponseEntity<Iterable<ProfesseurResponseDTO>> findByCodes(
-            @RequestParam List<String> codes
+            @NotEmpty @RequestParam List<String> codes
     ) {
-        List<Utilisateur> professeurs = professeurService.findManyById(codes, ROLE_ID);
+        List<Utilisateur> professeurs = professeurService.findAllByCodeUtilisateur(codes, ROLE_ID);
         List<ProfesseurResponseDTO> professeurResponses = professeurMapper.toProfesseurResponses(professeurs);
 
-        return new ResponseEntity<>(
-                professeurResponses,
-                HttpStatus.OK
-        );
+        return ResponseEntity
+                .ok()
+                .body(professeurResponses);
     }
 
     @PostMapping
-    public ResponseEntity<ProfesseurResponseDTO> create(
+    public ResponseEntity<ProfesseurResponseDTO> save(
             @Valid @RequestBody ProfesseurCreateRequestDTO professeurCreateRequest
     ) {
         Utilisateur professeur = professeurMapper.toUtilisateur(professeurCreateRequest);
-        Utilisateur createdProfesseur = professeurService.create(professeur, ROLE_ID);
+        Utilisateur savedProfesseur = professeurService.save(professeur, ROLE_ID);
 
-        ProfesseurResponseDTO professeurResponse = professeurMapper.toProfesseurResponse(createdProfesseur);
+        ProfesseurResponseDTO professeurResponse = professeurMapper.toProfesseurResponse(savedProfesseur);
 
-        return new ResponseEntity<>(
-                professeurResponse,
-                HttpStatus.CREATED
-        );
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(professeurResponse);
     }
 
-    @PostMapping("/many")
-    public ResponseEntity<List<ProfesseurResponseDTO>> createMany(
-            @Valid @RequestBody List<ProfesseurCreateRequestDTO> professeurCreateRequests
+    @PostMapping("/bulk")
+    public ResponseEntity<List<ProfesseurResponseDTO>> saveAll(
+            @NotEmpty @RequestBody List<@Valid ProfesseurCreateRequestDTO> professeurCreateRequests
     ) {
         List<Utilisateur> professeurs = professeurMapper.createToUtilisateurs(professeurCreateRequests);
-        List<Utilisateur> createdProfesseurs = professeurService.createMany(professeurs, ROLE_ID);
+        List<Utilisateur> savedProfesseurs = professeurService.saveAll(professeurs, ROLE_ID);
 
-        List<ProfesseurResponseDTO> professeurResponses = professeurMapper.toProfesseurResponses(createdProfesseurs);
+        List<ProfesseurResponseDTO> professeurResponses = professeurMapper.toProfesseurResponses(savedProfesseurs);
 
-        return new ResponseEntity<>(
-                professeurResponses,
-                HttpStatus.CREATED
-        );
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(professeurResponses);
     }
 
 
     @GetMapping
-    public ResponseEntity<Page<ProfesseurResponseDTO>> findAll(
-            @RequestParam(defaultValue = "0")
-            @Min(value = 0, message = CoreConstants.ValidationMessage.PAGINATION_PAGE_MIN)
-            int page,
-
-            @RequestParam(defaultValue = "20")
-            @Min(value = 1, message = CoreConstants.ValidationMessage.PAGINATION_SIZE_MIN)
-            @Max(value = 20, message = CoreConstants.ValidationMessage.PAGINATION_SIZE_MAX)
-            int size
+    public ResponseEntity<PagingResponse<ProfesseurResponseDTO>> findAll(
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Range(min = 1, max = 10) int size
     ) {
 
         Pageable pageRequest = PageRequest.of(page, size);
         Page<Utilisateur> elementsPage = professeurService.findAll(pageRequest, ROLE_ID);
 
-        Page<ProfesseurResponseDTO> pagedResult = elementsPage.map(professeurMapper::toProfesseurResponse);
+        PagingResponse<ProfesseurResponseDTO> pagedResult = professeurMapper.toPagingResponse(elementsPage);
 
 
         return new ResponseEntity<>(
@@ -115,50 +106,64 @@ public class ProfesseurController {
         );
     }
 
-    @PutMapping
+    @PatchMapping("/{code}")
     public ResponseEntity<ProfesseurResponseDTO> update(
+            @PathVariable String code,
             @Valid @RequestBody ProfesseurUpdateRequestDTO professeurUpdateRequest
     ) {
-        Utilisateur professeur = professeurMapper.toUtilisateur(professeurUpdateRequest);
+        Utilisateur professeur = professeurService.findByCodeUtilisateur(code, ROLE_ID);
+
+        professeurMapper.updateRequestToProfesseur(professeurUpdateRequest, professeur);
+
+        professeur.setCode(code);
+
         Utilisateur updatedProfesseur = professeurService.update(professeur, ROLE_ID);
 
         ProfesseurResponseDTO professeurResponse = professeurMapper.toProfesseurResponse(updatedProfesseur);
 
-        return new ResponseEntity<>(
-                professeurResponse,
-                HttpStatus.OK
-        );
+        return ResponseEntity
+                .ok()
+                .body(professeurResponse);
     }
 
-    @PutMapping("/many")
-    public ResponseEntity<List<ProfesseurResponseDTO>> updateMany(
-            @Valid @RequestBody List<ProfesseurUpdateRequestDTO> professeurUpdateRequests
+    @PatchMapping("/bulk")
+    public ResponseEntity<List<ProfesseurResponseDTO>> updateAll(
+            @NotEmpty @RequestBody List<@Valid ProfesseurUpdateRequestDTO> professeurUpdateRequests
     ) {
-        List<Utilisateur> professeurs = professeurMapper.updateToUtilisateurs(professeurUpdateRequests);
-        List<Utilisateur> updatedProfesseurs = professeurService.updateMany(professeurs, ROLE_ID);
+
+        List<String> codes = professeurMapper.toProfesseurCodes(professeurUpdateRequests);
+
+        List<Utilisateur> professeurs = professeurService.findAllByCodeUtilisateur(codes, ROLE_ID);
+
+        professeurMapper.updateRequestsToProfesseurs(professeurUpdateRequests, professeurs);
+
+        List<Utilisateur> updatedProfesseurs = professeurService.updateAll(professeurs, ROLE_ID);
 
         List<ProfesseurResponseDTO> professeurResponses = professeurMapper.toProfesseurResponses(updatedProfesseurs);
 
-        return new ResponseEntity<>(
-                professeurResponses,
-                HttpStatus.OK
-        );
+        return ResponseEntity
+                .ok()
+                .body(professeurResponses);
     }
 
-    @DeleteMapping
+    @DeleteMapping("/{code}")
     public ResponseEntity<Void> delete(
-            @RequestParam String code
+            @PathVariable String code
     ) {
-        professeurService.deleteById(code, ROLE_ID);
-        return new ResponseEntity<>(HttpStatus.OK);
+        professeurService.deleteByCodeUtilisateur(code, ROLE_ID);
+        return ResponseEntity
+                .noContent()
+                .build();
     }
 
-    @DeleteMapping("/many")
-    public ResponseEntity<Void> deleteMany(
-            @RequestParam List<String> codes
+    @DeleteMapping("/bulk")
+    public ResponseEntity<Void> deleteAll(
+            @NotEmpty @RequestParam List<String> codes
     ) {
-        professeurService.deleteManyById(codes, ROLE_ID);
-        return new ResponseEntity<>(HttpStatus.OK);
+        professeurService.deleteAllByCodeUtilisateur(codes, ROLE_ID);
+        return ResponseEntity
+                .noContent()
+                .build();
     }
 
 

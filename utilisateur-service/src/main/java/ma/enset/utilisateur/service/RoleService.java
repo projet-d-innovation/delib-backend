@@ -1,8 +1,8 @@
 package ma.enset.utilisateur.service;
 
 import ma.enset.utilisateur.exception.InternalErrorException;
-import ma.enset.utilisateur.exception.RoleAlreadyExistsException;
-import ma.enset.utilisateur.exception.RoleNotFoundException;
+import ma.enset.utilisateur.exception.ElementAlreadyExistsException;
+import ma.enset.utilisateur.exception.ElementNotFoundException;
 import ma.enset.utilisateur.model.Role;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,22 +10,22 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 public interface RoleService {
-    Role create(Role role) throws RoleAlreadyExistsException, InternalErrorException;
+    Role save(Role role) throws ElementAlreadyExistsException, InternalErrorException;
 
-    List<Role> createMany(List<Role> roles) throws RoleAlreadyExistsException, InternalErrorException;
+    List<Role> saveAll(List<Role> roles) throws ElementAlreadyExistsException, InternalErrorException;
 
-    Role findById(String codeRole) throws RoleNotFoundException;
+    Role findByRoleId(String codeRole) throws ElementNotFoundException;
 
-    List<Role> findManyById(List<String> codeRoles) throws RoleNotFoundException;
+    List<Role> findAllByRoleId(List<String> codeRoles) throws ElementNotFoundException;
 
     Page<Role> findAll(Pageable pageable);
 
-    Role update(Role role) throws RoleNotFoundException, InternalErrorException;
+    Role update(Role role) throws ElementNotFoundException, InternalErrorException;
 
-    List<Role> updateMany(List<Role> roles) throws RoleNotFoundException, InternalErrorException;
+    List<Role> updateAll(List<Role> roles) throws ElementNotFoundException, InternalErrorException;
 
-    void deleteById(String codeRole) throws RoleNotFoundException;
+    void deleteByRoleId(String codeRole) throws ElementNotFoundException;
 
-    void deleteManyById(List<String> codesRole) throws RoleNotFoundException;
+    void deleteAllByRoleId(List<String> codesRole) throws ElementNotFoundException;
 
 }

@@ -1,53 +1,33 @@
 package ma.enset.utilisateur.util;
 
-import ma.enset.utilisateur.dto.RoleCreateRequestDTO;
-import ma.enset.utilisateur.dto.RoleResponseDTO;
-import ma.enset.utilisateur.dto.RoleUpdateRequestDTO;
+import ma.enset.utilisateur.dto.*;
 import ma.enset.utilisateur.model.Permission;
 import ma.enset.utilisateur.model.Role;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.Named;
+import org.mapstruct.*;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Mapper
+
+@Mapper(
+        componentModel = MappingConstants.ComponentModel.SPRING,
+        injectionStrategy = InjectionStrategy.CONSTRUCTOR
+)
 public interface RoleMapper {
-    @Named("toRoleWithPermsResponse")
-    RoleResponseDTO toRoleWithPermsResponse(Role role);
+    RoleResponseDTO toRoleResponse(Role role);
 
-    @Named("toRoleWithPermsResponses")
-    List<RoleResponseDTO> toRoleWithPermsResponses(List<Role> roles);
+    List<RoleResponseDTO> toRoleResponses(List<Role> roles);
 
-    @Named("toRoleWithoutPermsResponse")
-    @Mapping(target = "permissions", ignore = true)
-    RoleResponseDTO toRoleWithoutPermsResponse(Role role);
-
-    @Named("toRoleWithoutPermsResponses")
-    @Mapping(target = "permissions", ignore = true)
-    List<RoleResponseDTO> toRoleWithoutPermsResponses(List<Role> roles);
-
-    @Named("toRoleCreateRequestDTO")
-    @Mapping(target = "permissions", source = "permissions", qualifiedByName = "mapPermissionIdsToPermissions")
+    @Mapping(target = "permissions", source = "permissions")
     Role toRole(RoleCreateRequestDTO roleCreateRequestDTO);
 
-    @Named("toRoleUpdateRequestDTO")
-    @Mapping(target = "permissions", source = "permissions", qualifiedByName = "mapPermissionIdsToPermissions")
-    Role toRole(RoleUpdateRequestDTO roleUpdateRequestDTO);
-
-    @Named("toRoleCreateRequestDTOs")
-    @Mapping(target = "permissions", source = "permissions", qualifiedByName = "mapPermissionIdsToPermissions")
+    @Mapping(target = "permissions", source = "permissions")
     List<Role> createToRoles(List<RoleCreateRequestDTO> roleCreateRequestDTOS);
-
-    @Named("toRoleUpdateRequestDTOs")
-    @Mapping(target = "permissions", source = "permissions", qualifiedByName = "mapPermissionIdsToPermissions")
-    List<Role> updateToRoles(List<RoleUpdateRequestDTO> roleUpdateRequestDTOS);
 
 
     Permission mapPermissionIdToPermission(Integer permissionId);
 
-    @Named("mapPermissionIdsToPermissions")
     default List<Permission> mapPermissionIdsToPermissions(List<Integer> permissionIds) {
         if (permissionIds == null) {
             return null;
@@ -56,5 +36,31 @@ public interface RoleMapper {
                 .map(this::mapPermissionIdToPermission)
                 .collect(Collectors.toList());
     }
+
+    List<String> toRoleIds(List<RoleUpdateRequestDTO> roles);
+
+    default String toRoleId(RoleUpdateRequestDTO role) {
+        return role.roleId();
+
+    }
+
+
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void updateRequestToRole(RoleUpdateRequestDTO roleUpdateRequestDTO, @MappingTarget Role role);
+
+
+    default void updateRequestsToRoles(List<RoleUpdateRequestDTO> roleUpdateRequestDTOs, List<Role> roles) {
+        for (int i = 0; i < roleUpdateRequestDTOs.size(); i++) {
+            updateRequestToRole(roleUpdateRequestDTOs.get(i), roles.get(i));
+        }
+    }
+
+
+    @Mapping(target = "page", expression = "java(rolePage.getNumber())")
+    @Mapping(target = "size", expression = "java(rolePage.getSize())")
+    @Mapping(target = "totalPages", expression = "java(rolePage.getTotalPages())")
+    @Mapping(target = "totalElements", expression = "java(rolePage.getNumberOfElements())")
+    @Mapping(source = "content", target = "records")
+    PagingResponse<RoleResponseDTO> toPagingResponse(Page<Role> rolePage);
 
 }

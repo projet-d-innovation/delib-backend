@@ -2,18 +2,15 @@ package ma.enset.utilisateur.controller;
 
 import io.micrometer.common.lang.Nullable;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
-import ma.enset.utilisateur.constant.CoreConstants;
-import ma.enset.utilisateur.dto.UtilisateurCreateRequestDTO;
-import ma.enset.utilisateur.dto.UtilisateurNestedRolesResponseDTO;
-import ma.enset.utilisateur.dto.UtilisateurResponseDTO;
-import ma.enset.utilisateur.dto.UtilisateurUpdateRequestDTO;
+import ma.enset.utilisateur.dto.*;
 import ma.enset.utilisateur.model.Utilisateur;
 import ma.enset.utilisateur.service.UtilisateurService;
 import ma.enset.utilisateur.util.UtilisateurMapper;
+import org.hibernate.validator.constraints.Range;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -34,72 +31,54 @@ public class AdministrationController {
     private final UtilisateurService utilisateurService;
 
 
-    @GetMapping("perms")
+    @GetMapping("perms/{code}")
     public ResponseEntity<UtilisateurNestedRolesResponseDTO> findPermsByCode(
-            @NotBlank @RequestParam String code
+            @PathVariable String code
     ) {
-        Utilisateur utilisateur = utilisateurService.findById(code);
+        Utilisateur utilisateur = utilisateurService.findByCodeUtilisateur(code);
 
         UtilisateurNestedRolesResponseDTO utilisateurResponse = utilisateurMapper.toUtilisateurWithRoleAndPermsResponse(utilisateur);
 
-        return new ResponseEntity<>(
-                utilisateurResponse,
-                HttpStatus.OK
-        );
+        return ResponseEntity
+                .ok()
+                .body(utilisateurResponse);
     }
 
-    @GetMapping("perms/many")
-    public ResponseEntity<List<UtilisateurNestedRolesResponseDTO>> findManyPermsByCode(
-            @RequestParam List<String> codes
+    @GetMapping("perms/bulk")
+    public ResponseEntity<List<UtilisateurNestedRolesResponseDTO>> findAllPermsByCode(
+            @NotEmpty @RequestParam List<String> codes
     ) {
 
-        List<Utilisateur> utilisateurs = utilisateurService.findManyById(codes);
+        List<Utilisateur> utilisateurs = utilisateurService.findAllByCodeUtilisateur(codes);
 
         List<UtilisateurNestedRolesResponseDTO> utilisateurResponse = utilisateurMapper.toUtilisateurWithRoleAndPermsResponses(utilisateurs);
 
-        return new ResponseEntity<>(
-                utilisateurResponse,
-                HttpStatus.OK
-        );
+        return ResponseEntity
+                .ok()
+                .body(utilisateurResponse);
     }
 
 
-    @GetMapping("/code")
+    @GetMapping("{code}")
     public ResponseEntity<UtilisateurResponseDTO> findByCode(
-            @RequestParam String code,
-            @Nullable @RequestParam(defaultValue = "false")
-            boolean includeRole
+            @PathVariable String code
     ) {
-        Utilisateur utilisateur = utilisateurService.findById(code);
+        Utilisateur utilisateur = utilisateurService.findByCodeUtilisateur(code);
 
-        UtilisateurResponseDTO utilisateurResponse = null;
+        UtilisateurResponseDTO utilisateurResponse = utilisateurMapper.toUtilisateurWithRoleResponse(utilisateur);
 
-        if (includeRole)
-            utilisateurResponse = utilisateurMapper.toUtilisateurWithRoleResponse(utilisateur);
-        else
-            utilisateurResponse = utilisateurMapper.toUtilisateurWithoutRoleResponse(utilisateur);
-
-        return new ResponseEntity<>(
-                utilisateurResponse,
-                HttpStatus.OK
-        );
+        return ResponseEntity
+                .ok()
+                .body(utilisateurResponse);
     }
 
 
-    @GetMapping("code/many")
+    @GetMapping("/bulk")
     public ResponseEntity<Iterable<UtilisateurResponseDTO>> findByCodes(
-            @RequestParam List<String> codes,
-            @Nullable @RequestParam(defaultValue = "false")
-            boolean includeRole
+            @NotEmpty @RequestParam List<String> codes
     ) {
-        List<Utilisateur> utilisateurs = utilisateurService.findManyById(codes);
-        List<UtilisateurResponseDTO> utilisateurResponses = null;
-
-        if (includeRole)
-            utilisateurResponses = utilisateurMapper.toUtilisateurWithRoleResponses(utilisateurs);
-        else
-            utilisateurResponses = utilisateurMapper.toUtilisateurWithoutRoleResponses(utilisateurs);
-
+        List<Utilisateur> utilisateurs = utilisateurService.findAllByCodeUtilisateur(codes);
+        List<UtilisateurResponseDTO> utilisateurResponses = utilisateurMapper.toUtilisateurWithRoleResponses(utilisateurs);
         return new ResponseEntity<>(
                 utilisateurResponses,
                 HttpStatus.OK
@@ -107,29 +86,28 @@ public class AdministrationController {
     }
 
     @PostMapping
-    public ResponseEntity<UtilisateurResponseDTO> create(
+    public ResponseEntity<UtilisateurResponseDTO> save(
             @Valid @RequestBody UtilisateurCreateRequestDTO utilisateurCreateRequest
     ) {
         Utilisateur utilisateur = utilisateurMapper.toUtilisateur(utilisateurCreateRequest);
-        Utilisateur createdUtilisateur = utilisateurService.create(utilisateur);
+        Utilisateur savedUtilisateur = utilisateurService.save(utilisateur);
 
-        UtilisateurResponseDTO utilisateurResponse = utilisateurMapper.toUtilisateurWithRoleResponse(createdUtilisateur);
+        UtilisateurResponseDTO utilisateurResponse = utilisateurMapper.toUtilisateurWithRoleResponse(savedUtilisateur);
 
-        return new ResponseEntity<>(
-                utilisateurResponse,
-                HttpStatus.CREATED
-        );
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(utilisateurResponse);
     }
 
-    @PostMapping("/many")
-    public ResponseEntity<List<UtilisateurResponseDTO>> createMany(
-            @Valid @RequestBody List<UtilisateurCreateRequestDTO> utilisateurCreateRequests
+    @PostMapping("/bulk")
+    public ResponseEntity<List<UtilisateurResponseDTO>> saveAll(
+            @NotEmpty @RequestBody List<@Valid UtilisateurCreateRequestDTO> utilisateurCreateRequests
     ) {
         List<Utilisateur> utilisateurs = utilisateurMapper.createToUtilisateurs(utilisateurCreateRequests);
 
-        List<Utilisateur> createdUtilisateurs = utilisateurService.createMany(utilisateurs);
+        List<Utilisateur> savedUtilisateurs = utilisateurService.saveAll(utilisateurs);
 
-        List<UtilisateurResponseDTO> utilisateurResponses = utilisateurMapper.toUtilisateurWithRoleResponses(createdUtilisateurs);
+        List<UtilisateurResponseDTO> utilisateurResponses = utilisateurMapper.toUtilisateurWithRoleResponses(savedUtilisateurs);
 
         return new ResponseEntity<>(
                 utilisateurResponses,
@@ -139,14 +117,9 @@ public class AdministrationController {
 
 
     @GetMapping
-    public ResponseEntity<Page<UtilisateurResponseDTO>> findAll(
-            @RequestParam(defaultValue = "0")
-            @Min(value = 0, message = CoreConstants.ValidationMessage.PAGINATION_PAGE_MIN)
-            int page,
-            @RequestParam(defaultValue = "20")
-            @Min(value = 1, message = CoreConstants.ValidationMessage.PAGINATION_SIZE_MIN)
-            @Max(value = 20, message = CoreConstants.ValidationMessage.PAGINATION_SIZE_MAX)
-            int size,
+    public ResponseEntity<PagingResponse<UtilisateurResponseDTO>> findAll(
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Range(min = 1, max = 10) int size,
             @Nullable @RequestParam(defaultValue = "false")
             boolean includeRole
     ) {
@@ -160,64 +133,68 @@ public class AdministrationController {
         else
             pagedResult = utilisateursPage.map(utilisateurMapper::toUtilisateurWithoutRoleResponse);
 
-        return new ResponseEntity<>(
-                pagedResult,
-                HttpStatus.OK
-        );
+
+        PagingResponse<UtilisateurResponseDTO> response = utilisateurMapper.toPagingResponse(pagedResult);
+
+
+        return ResponseEntity
+                .ok()
+                .body(response);
     }
 
-    @GetMapping("{role}")
-    public ResponseEntity<Page<UtilisateurResponseDTO>> findAllByRole(
+    @GetMapping("role/{role}")
+    public ResponseEntity<PagingResponse<UtilisateurResponseDTO>> findAllByRole(
             @NotBlank @PathVariable String role,
-            @RequestParam(defaultValue = "0")
-            @Min(value = 0, message = CoreConstants.ValidationMessage.PAGINATION_PAGE_MIN)
-            int page,
-
-            @RequestParam(defaultValue = "20")
-            @Min(value = 1, message = CoreConstants.ValidationMessage.PAGINATION_SIZE_MIN)
-            @Max(value = 20, message = CoreConstants.ValidationMessage.PAGINATION_SIZE_MAX)
-            int size,
-            @Nullable @RequestParam(defaultValue = "false")
-            boolean includeRole
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Range(min = 1, max = 10) int size
     ) {
 
         Pageable pageRequest = PageRequest.of(page, size);
         Page<Utilisateur> utilisateursPage = utilisateurService.findAll(pageRequest, role);
 
-        Page<UtilisateurResponseDTO> pagedResult = null;
+        Page<UtilisateurResponseDTO> pagedResult = utilisateursPage.map(utilisateurMapper::toUtilisateurWithRoleResponse);
 
-        if (includeRole)
-            pagedResult = utilisateursPage.map(utilisateurMapper::toUtilisateurWithRoleResponse);
-        else
-            pagedResult = utilisateursPage.map(utilisateurMapper::toUtilisateurWithoutRoleResponse);
+        PagingResponse<UtilisateurResponseDTO> response = utilisateurMapper.toPagingResponse(pagedResult);
 
-        return new ResponseEntity<>(
-                pagedResult,
-                HttpStatus.OK
-        );
+        return ResponseEntity
+                .ok()
+                .body(response);
     }
 
-    @PutMapping
+    @PatchMapping("{code}")
     public ResponseEntity<UtilisateurResponseDTO> update(
+            @PathVariable String code,
             @Valid @RequestBody UtilisateurUpdateRequestDTO utilisateurUpdateRequest
     ) {
-        Utilisateur utilisateur = utilisateurMapper.toUtilisateur(utilisateurUpdateRequest);
+
+        Utilisateur utilisateur = utilisateurService.findByCodeUtilisateur(code);
+
+        utilisateurMapper.updateRequestToUtilisateur(utilisateurUpdateRequest, utilisateur);
+
+        utilisateur.setCode(code);
+
         Utilisateur updatedUtilisateur = utilisateurService.update(utilisateur);
 
         UtilisateurResponseDTO utilisateurResponse = utilisateurMapper.toUtilisateurWithRoleResponse(updatedUtilisateur);
 
-        return new ResponseEntity<>(
-                utilisateurResponse,
-                HttpStatus.OK
-        );
+        return ResponseEntity
+                .ok()
+                .body(utilisateurResponse);
     }
 
-    @PutMapping("many")
-    public ResponseEntity<List<UtilisateurResponseDTO>> updateMany(
-            @Valid @RequestBody List<UtilisateurUpdateRequestDTO> utilisateurUpdateRequests
+    @PatchMapping("bulk")
+    public ResponseEntity<List<UtilisateurResponseDTO>> updateAll(
+            @NotEmpty @RequestBody List<@Valid UtilisateurUpdateRequestDTO> utilisateurUpdateRequests
     ) {
-        List<Utilisateur> utilisateurs = utilisateurMapper.updateToUtilisateurs(utilisateurUpdateRequests);
-        List<Utilisateur> updatedUtilisateurs = utilisateurService.updateMany(utilisateurs);
+
+        List<String> codes = utilisateurMapper.toUtilisateurCodes(utilisateurUpdateRequests);
+
+
+        List<Utilisateur> utilisateurs = utilisateurService.findAllByCodeUtilisateur(codes);
+
+        utilisateurMapper.updateRequestsToUtilisateurs(utilisateurUpdateRequests, utilisateurs);
+
+        List<Utilisateur> updatedUtilisateurs = utilisateurService.updateAll(utilisateurs);
 
         List<UtilisateurResponseDTO> utilisateurResponses = utilisateurMapper.toUtilisateurWithRoleResponses(updatedUtilisateurs);
 
@@ -227,19 +204,19 @@ public class AdministrationController {
         );
     }
 
-    @DeleteMapping
+    @DeleteMapping("{code}")
     public ResponseEntity<Void> delete(
-            @RequestParam String code
+            @PathVariable String code
     ) {
-        utilisateurService.deleteById(code);
+        utilisateurService.deleteByCodeUtilisateur(code);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    @DeleteMapping("many")
-    public ResponseEntity<Void> deleteMany(
-            @RequestParam List<String> codes
+    @DeleteMapping("bulk")
+    public ResponseEntity<Void> deleteAll(
+            @NotEmpty @RequestParam List<String> codes
     ) {
-        utilisateurService.deleteManyById(codes);
+        utilisateurService.deleteAllByCodeUtilisateur(codes);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 

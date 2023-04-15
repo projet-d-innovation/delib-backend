@@ -8,40 +8,40 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 public interface UtilisateurService {
-    Utilisateur create(Utilisateur utilisateur, String roleId) throws UtilisateurAlreadyExistsException, InternalErrorException, RoleNotFoundException;
+    Utilisateur save(Utilisateur utilisateur, String roleId) throws ElementAlreadyExistsException, InternalErrorException;
 
-    Utilisateur create(Utilisateur utilisateur) throws UtilisateurAlreadyExistsException, InternalErrorException, RoleNotFoundException;
+    Utilisateur save(Utilisateur utilisateur) throws ElementAlreadyExistsException, InternalErrorException;
 
-    List<Utilisateur> createMany(List<Utilisateur> utilisateur, String roleId) throws UtilisateurAlreadyExistsException, InternalErrorException, RoleNotFoundException;
+    List<Utilisateur> saveAll(List<Utilisateur> utilisateur, String roleId) throws ElementAlreadyExistsException, InternalErrorException;
 
-    List<Utilisateur> createMany(List<Utilisateur> utilisateurs) throws UtilisateurAlreadyExistsException, InternalErrorException, RoleNotFoundException;
+    List<Utilisateur> saveAll(List<Utilisateur> utilisateurs) throws ElementAlreadyExistsException, InternalErrorException;
 
-    Utilisateur findById(String codeUtilisateur, String roleId) throws UtilisateurNotFoundException;
+    Utilisateur findByCodeUtilisateur(String codeUtilisateur, String roleId) throws ElementNotFoundException;
 
-    Utilisateur findById(String codeUtilisateur) throws UtilisateurNotFoundException;
+    Utilisateur findByCodeUtilisateur(String codeUtilisateur) throws ElementNotFoundException;
 
-    List<Utilisateur> findManyById(List<String> codeUtilisateurs, String roleId) throws UtilisateurNotFoundException;
+    List<Utilisateur> findAllByCodeUtilisateur(List<String> codeUtilisateurs, String roleId) throws ElementNotFoundException;
 
-    List<Utilisateur> findManyById(List<String> codeUtilisateurs) throws UtilisateurNotFoundException;
+    List<Utilisateur> findAllByCodeUtilisateur(List<String> codeUtilisateurs) throws ElementNotFoundException;
 
     Page<Utilisateur> findAll(Pageable pageable);
 
-    Page<Utilisateur> findAll(Pageable pageable, String roleId);
+    Page<Utilisateur> findAll(Pageable pageable, String roleId) throws ElementNotFoundException;
 
-    Utilisateur update(Utilisateur utilisateur, String roleId) throws UtilisateurNotFoundException, RoleConflictException, InternalErrorException;
+    Utilisateur update(Utilisateur utilisateur, String roleId) throws ElementNotFoundException, RoleConflictException, InternalErrorException;
 
-    Utilisateur update(Utilisateur utilisateur) throws UtilisateurNotFoundException, RoleConflictException, InternalErrorException;
+    Utilisateur update(Utilisateur utilisateur) throws ElementNotFoundException, RoleConflictException, InternalErrorException;
 
-    List<Utilisateur> updateMany(List<Utilisateur> utilisateurs, String roleId) throws UtilisateurNotFoundException, RoleConflictException, InternalErrorException;
+    List<Utilisateur> updateAll(List<Utilisateur> utilisateurs, String roleId) throws ElementNotFoundException, RoleConflictException, InternalErrorException;
 
-    List<Utilisateur> updateMany(List<Utilisateur> utilisateurs) throws UtilisateurNotFoundException, RoleConflictException, InternalErrorException;
+    List<Utilisateur> updateAll(List<Utilisateur> utilisateurs) throws ElementNotFoundException, RoleConflictException, InternalErrorException;
 
-    void deleteById(String codeUtilisateur, String roleId) throws UtilisateurNotFoundException;
+    void deleteByCodeUtilisateur(String codeUtilisateur, String roleId) throws ElementNotFoundException;
 
-    void deleteById(String codeUtilisateur) throws UtilisateurNotFoundException;
+    void deleteByCodeUtilisateur(String codeUtilisateur) throws ElementNotFoundException;
 
-    void deleteManyById(List<String> codesUtilisateur, String roleId) throws UtilisateurNotFoundException;
+    void deleteAllByCodeUtilisateur(List<String> codesUtilisateur, String roleId) throws ElementNotFoundException;
 
-    void deleteManyById(List<String> codesUtilisateur) throws UtilisateurNotFoundException;
+    void deleteAllByCodeUtilisateur(List<String> codesUtilisateur) throws ElementNotFoundException;
 
 }

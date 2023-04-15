@@ -1,16 +1,17 @@
 package ma.enset.utilisateur.controller;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
-import ma.enset.utilisateur.constant.CoreConstants;
 import ma.enset.utilisateur.dto.EtudiantCreateRequestDTO;
 import ma.enset.utilisateur.dto.EtudiantResponseDTO;
 import ma.enset.utilisateur.dto.EtudiantUpdateRequestDTO;
+import ma.enset.utilisateur.dto.PagingResponse;
 import ma.enset.utilisateur.model.Utilisateur;
 import ma.enset.utilisateur.service.UtilisateurService;
 import ma.enset.utilisateur.util.EtudiantMapper;
+import org.hibernate.validator.constraints.Range;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -33,162 +34,135 @@ public class EtudiantController {
     private final String ROLE_ID = "ETUDIANT";
 
 
-    @GetMapping("/code")
+    @GetMapping("{code}")
     public ResponseEntity<EtudiantResponseDTO> findByCode(
-            @RequestParam String code
+            @PathVariable String code
     ) {
-        Utilisateur etudiant = etudiantService.findById(code, ROLE_ID);
+        Utilisateur etudiant = etudiantService.findByCodeUtilisateur(code, ROLE_ID);
 
         EtudiantResponseDTO etudiantResponse = etudiantMapper.toEtudiantResponse(etudiant);
 
-        return new ResponseEntity<>(
-                etudiantResponse,
-                HttpStatus.OK
-        );
+        return ResponseEntity
+                .ok()
+                .body(etudiantResponse);
     }
-//
-//    @GetMapping("/perms")
-//    public ResponseEntity<EtudiantNestedRolesResponseDTO> findPermsByCode(
-//            @NotBlank @RequestParam String code
-//    ) {
-//        Utilisateur etudiant = etudiantService.findById(code, ROLE_ID);
-//
-//        EtudiantNestedRolesResponseDTO etudiantResponse = etudiantMapper.toEtudiantWithRoleAndPermsResponse(etudiant);
-//
-//        return new ResponseEntity<>(
-//                etudiantResponse,
-//                HttpStatus.OK
-//        );
-//    }
-//
-//    @GetMapping("/perms/many")
-//    public ResponseEntity<List<EtudiantNestedRolesResponseDTO>> findManyPermsByCode(
-//            @RequestParam List<String> codes
-//    ) {
-//
-//        List<Utilisateur> etudiants = etudiantService.findManyById(codes, ROLE_ID);
-//
-//        List<EtudiantNestedRolesResponseDTO> etudiantResponse = etudiantMapper.toEtudiantWithRoleAndPermsResponses(etudiants);
-//
-//        return new ResponseEntity<>(
-//                etudiantResponse,
-//                HttpStatus.OK
-//        );
-//    }
 
 
-    @GetMapping("/code/many")
+    @GetMapping("/bulk")
     public ResponseEntity<Iterable<EtudiantResponseDTO>> findByCodes(
-            @RequestParam List<String> codes
+            @NotEmpty @RequestParam List<String> codes
     ) {
-        List<Utilisateur> etudiants = etudiantService.findManyById(codes, ROLE_ID);
+        List<Utilisateur> etudiants = etudiantService.findAllByCodeUtilisateur(codes, ROLE_ID);
         List<EtudiantResponseDTO> etudiantResponses = etudiantMapper.toEtudiantResponses(etudiants);
 
-        return new ResponseEntity<>(
-                etudiantResponses,
-                HttpStatus.OK
-        );
+        return ResponseEntity
+                .ok()
+                .body(etudiantResponses);
     }
 
     @PostMapping
-    public ResponseEntity<EtudiantResponseDTO> create(
+    public ResponseEntity<EtudiantResponseDTO> save(
             @Valid @RequestBody EtudiantCreateRequestDTO etudiantCreateRequest
     ) {
         Utilisateur etudiant = etudiantMapper.toUtilisateur(etudiantCreateRequest);
-        Utilisateur createdEtudiant = etudiantService.create(etudiant, ROLE_ID);
+        Utilisateur savedEtudiant = etudiantService.save(etudiant, ROLE_ID);
 
-        EtudiantResponseDTO etudiantResponse = etudiantMapper.toEtudiantResponse(createdEtudiant);
+        EtudiantResponseDTO etudiantResponse = etudiantMapper.toEtudiantResponse(savedEtudiant);
 
-        return new ResponseEntity<>(
-                etudiantResponse,
-                HttpStatus.CREATED
-        );
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(etudiantResponse);
     }
 
-    @PostMapping("/many")
-    public ResponseEntity<List<EtudiantResponseDTO>> createMany(
-            @Valid @RequestBody List<EtudiantCreateRequestDTO> etudiantCreateRequests
+    @PostMapping("/bulk")
+    public ResponseEntity<List<EtudiantResponseDTO>> saveAll(
+            @NotEmpty @RequestBody List<@Valid EtudiantCreateRequestDTO> etudiantCreateRequests
     ) {
         List<Utilisateur> etudiants = etudiantMapper.createToUtilisateurs(etudiantCreateRequests);
-        List<Utilisateur> createdEtudiants = etudiantService.createMany(etudiants, ROLE_ID);
+        List<Utilisateur> savedEtudiants = etudiantService.saveAll(etudiants, ROLE_ID);
 
-        List<EtudiantResponseDTO> etudiantResponses = etudiantMapper.toEtudiantResponses(createdEtudiants);
+        List<EtudiantResponseDTO> etudiantResponses = etudiantMapper.toEtudiantResponses(savedEtudiants);
 
-        return new ResponseEntity<>(
-                etudiantResponses,
-                HttpStatus.CREATED
-        );
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(etudiantResponses);
     }
 
 
     @GetMapping
-    public ResponseEntity<Page<EtudiantResponseDTO>> findAll(
-            @RequestParam(defaultValue = "0")
-            @Min(value = 0, message = CoreConstants.ValidationMessage.PAGINATION_PAGE_MIN)
-            int page,
-
-            @RequestParam(defaultValue = "20")
-            @Min(value = 1, message = CoreConstants.ValidationMessage.PAGINATION_SIZE_MIN)
-            @Max(value = 20, message = CoreConstants.ValidationMessage.PAGINATION_SIZE_MAX)
-            int size
+    public ResponseEntity<PagingResponse<EtudiantResponseDTO>> findAll(
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Range(min = 1, max = 10) int size
     ) {
 
         Pageable pageRequest = PageRequest.of(page, size);
         Page<Utilisateur> elementsPage = etudiantService.findAll(pageRequest, ROLE_ID);
 
-        Page<EtudiantResponseDTO> pagedResult = elementsPage.map(etudiantMapper::toEtudiantResponse);
+        PagingResponse<EtudiantResponseDTO> pagedResult = etudiantMapper.toPagingResponse(elementsPage);
 
-
-        return new ResponseEntity<>(
-                pagedResult,
-                HttpStatus.OK
-        );
+        return ResponseEntity
+                .ok()
+                .body(pagedResult);
     }
 
-    @PutMapping
+    @PatchMapping({"{code}"})
     public ResponseEntity<EtudiantResponseDTO> update(
+            @PathVariable String code,
             @Valid @RequestBody EtudiantUpdateRequestDTO etudiantUpdateRequest
     ) {
-        Utilisateur etudiant = etudiantMapper.toUtilisateur(etudiantUpdateRequest);
+        Utilisateur etudiant = etudiantService.findByCodeUtilisateur(code, ROLE_ID);
+
+        etudiantMapper.updateRequestToEtudiant(etudiantUpdateRequest, etudiant);
+
+        etudiant.setCode(code);
+
         Utilisateur updatedEtudiant = etudiantService.update(etudiant, ROLE_ID);
 
         EtudiantResponseDTO etudiantResponse = etudiantMapper.toEtudiantResponse(updatedEtudiant);
 
-        return new ResponseEntity<>(
-                etudiantResponse,
-                HttpStatus.OK
-        );
+        return ResponseEntity
+                .ok()
+                .body(etudiantResponse);
     }
 
-    @PutMapping("/many")
-    public ResponseEntity<List<EtudiantResponseDTO>> updateMany(
-            @Valid @RequestBody List<EtudiantUpdateRequestDTO> etudiantUpdateRequests
+    @PatchMapping("/bulk")
+    public ResponseEntity<List<EtudiantResponseDTO>> updateAll(
+            @NotEmpty @RequestBody List<@Valid EtudiantUpdateRequestDTO> etudiantUpdateRequests
     ) {
-        List<Utilisateur> etudiants = etudiantMapper.updateToUtilisateurs(etudiantUpdateRequests);
-        List<Utilisateur> updatedEtudiants = etudiantService.updateMany(etudiants, ROLE_ID);
+
+        List<String> codes = etudiantMapper.toEtudiantCodes(etudiantUpdateRequests);
+
+        List<Utilisateur> etudiants = etudiantService.findAllByCodeUtilisateur(codes, ROLE_ID);
+
+        etudiantMapper.updateRequestsToEtudiants(etudiantUpdateRequests, etudiants);
+
+        List<Utilisateur> updatedEtudiants = etudiantService.updateAll(etudiants, ROLE_ID);
 
         List<EtudiantResponseDTO> etudiantResponses = etudiantMapper.toEtudiantResponses(updatedEtudiants);
 
-        return new ResponseEntity<>(
-                etudiantResponses,
-                HttpStatus.OK
-        );
+        return ResponseEntity
+                .ok()
+                .body(etudiantResponses);
     }
 
-    @DeleteMapping
+    @DeleteMapping({"{code}"})
     public ResponseEntity<Void> delete(
-            @RequestParam String code
+            @PathVariable String code
     ) {
-        etudiantService.deleteById(code, ROLE_ID);
-        return new ResponseEntity<>(HttpStatus.OK);
+        etudiantService.deleteByCodeUtilisateur(code, ROLE_ID);
+        return ResponseEntity
+                .noContent()
+                .build();
     }
 
-    @DeleteMapping("/many")
-    public ResponseEntity<Void> deleteMany(
-            @RequestParam List<String> codes
+    @DeleteMapping("/bulk")
+    public ResponseEntity<Void> deleteAll(
+            @NotEmpty @RequestParam List<String> codes
     ) {
-        etudiantService.deleteManyById(codes, ROLE_ID);
-        return new ResponseEntity<>(HttpStatus.OK);
+        etudiantService.deleteAllByCodeUtilisateur(codes, ROLE_ID);
+        return ResponseEntity
+                .noContent()
+                .build();
     }
 
 

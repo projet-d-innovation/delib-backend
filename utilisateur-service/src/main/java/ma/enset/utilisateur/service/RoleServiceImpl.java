@@ -1,12 +1,13 @@
 package ma.enset.utilisateur.service;
 
 import jakarta.transaction.Transactional;
-import jakarta.validation.ConstraintViolationException;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import ma.enset.utilisateur.constant.CoreConstants;
+import ma.enset.utilisateur.exception.ElementAlreadyExistsException;
+import ma.enset.utilisateur.exception.ElementNotFoundException;
 import ma.enset.utilisateur.exception.InternalErrorException;
-import ma.enset.utilisateur.exception.RoleAlreadyExistsException;
-import ma.enset.utilisateur.exception.RoleNotFoundException;
+import ma.enset.utilisateur.model.Permission;
 import ma.enset.utilisateur.model.Role;
 import ma.enset.utilisateur.repository.RoleRepository;
 import org.springframework.data.domain.Page;
@@ -18,41 +19,41 @@ import java.util.List;
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class RoleServiceImpl implements RoleService {
     private final RoleRepository roleRepository;
 
+    private final PermissionService permissionService;
+
     @Override
-    public Role create(Role role) throws RoleAlreadyExistsException {
-        Role createdRole = null;
-        if (roleRepository.existsById(role.getRoleId()))
-            throw RoleAlreadyExistsException.builder()
+    public Role save(Role role) throws ElementAlreadyExistsException {
+        if (roleRepository.existsByRoleId(role.getRoleId()))
+            throw ElementAlreadyExistsException.builder()
                     .key(CoreConstants.BusinessExceptionMessage.ROLE_ALREADY_EXISTS)
-                    .args(new Object[]{"code", role.getRoleId()})
+                    .args(new Object[]{role.getRoleId()})
                     .build();
 
+        checkPermissions(role);
+
+        Role savedRole = null;
+
         try {
-            createdRole = roleRepository.save(role);
+            savedRole = roleRepository.save(role);
         } catch (Exception e) {
-            if (e.getCause() instanceof ConstraintViolationException) {
-                throw RoleAlreadyExistsException.builder()
-                        .key(CoreConstants.BusinessExceptionMessage.INTERNAL_ERROR)
-                        .args(new Object[]{"code", role.getRoleId()})
-                        .build();
-            }
+            log.error(e.getMessage(), e.getCause());
+            throw new InternalErrorException();
         }
 
-        return createdRole;
+        return savedRole;
     }
 
 
     @Transactional
     @Override
-    public List<Role> createMany(List<Role> roles) throws RoleAlreadyExistsException, InternalErrorException {
-        List<Role> createdRoles = new ArrayList<>();
-        for (Role role : roles) {
-           createdRoles.add(this.create(role));
-        }
-        return createdRoles;
+    public List<Role> saveAll(List<Role> roles) throws ElementAlreadyExistsException, InternalErrorException {
+        List<Role> savedRoles = new ArrayList<>();
+        roles.forEach(role -> savedRoles.add(save(role)));
+        return savedRoles;
     }
 
     @Override
@@ -62,28 +63,23 @@ public class RoleServiceImpl implements RoleService {
 
 
     @Override
-    public Role update(Role role) throws RoleNotFoundException, InternalErrorException {
+    public Role update(Role role) throws ElementNotFoundException, InternalErrorException {
 
-        Role roleToUpdate = roleRepository.findById(role.getRoleId()).orElseThrow(
-                () -> RoleNotFoundException.builder()
-                        .key(CoreConstants.BusinessExceptionMessage.ROLE_NOT_FOUND)
-                        .args(new Object[]{"code", role.getRoleId()})
-                        .build()
+        Role roleToUpdate = roleRepository.findByRoleId(role.getRoleId()).orElseThrow(
+                () -> roleNotFoundException(role.getRoleId())
         );
 
-        roleToUpdate = extractNullValues(role, roleToUpdate);
+        roleToUpdate = extractNullValues(role, roleToUpdate); // TODO : to be deleted
+
+        checkPermissions(roleToUpdate);
 
         Role updatedRole = null;
 
         try {
             updatedRole = roleRepository.save(roleToUpdate);
         } catch (Exception e) {
-            if (e.getCause() instanceof ConstraintViolationException) {
-                throw InternalErrorException.builder()
-                        .key(CoreConstants.BusinessExceptionMessage.ROLE_ALREADY_EXISTS)
-                        .args(new Object[]{"code", role.getRoleId()})
-                        .build();
-            }
+            log.error(e.getMessage(), e.getCause());
+            throw new InternalErrorException();
         }
 
         return updatedRole;
@@ -92,57 +88,56 @@ public class RoleServiceImpl implements RoleService {
 
     @Transactional
     @Override
-    public List<Role> updateMany(List<Role> roles) throws RoleNotFoundException, InternalErrorException {
+    public List<Role> updateAll(List<Role> roles) throws ElementNotFoundException, InternalErrorException {
 
         List<Role> updatedRoles = new ArrayList<>();
 
-        for (Role role : roles) {
-            updatedRoles.add(this.update(role));
-        }
+        roles.forEach(role -> updatedRoles.add(update(role)));
 
         return updatedRoles;
     }
 
     @Override
-    public void deleteById(String codeRole) throws RoleNotFoundException {
+    public void deleteByRoleId(String codeRole) throws ElementNotFoundException {
 
-        Role toBeDeleted = roleRepository.findById(codeRole).orElse(null);
+        if (!roleRepository.existsByRoleId(codeRole))
+            throw roleNotFoundException(codeRole);
 
-        if (toBeDeleted == null)
-            throw RoleNotFoundException.builder()
-                    .key(CoreConstants.BusinessExceptionMessage.ROLE_NOT_FOUND)
-                    .args(new Object[]{"code", codeRole})
-                    .build();
-
-        roleRepository.deleteById(codeRole);
+        roleRepository.deleteByRoleId(codeRole);
     }
 
     @Transactional
     @Override
-    public void deleteManyById(List<String> codeRoles) throws RoleNotFoundException {
-        for (String codeRole : codeRoles) {
-            this.deleteById(codeRole);
-        }
+    public void deleteAllByRoleId(List<String> codeRoles) throws ElementNotFoundException {
+        codeRoles.forEach(this::deleteByRoleId);
     }
 
     @Override
-    public Role findById(String codeRole) throws RoleNotFoundException {
-        return roleRepository.findById(codeRole)
+    public Role findByRoleId(String codeRole) throws ElementNotFoundException {
+        return roleRepository.findByRoleId(codeRole)
                 .orElseThrow(() ->
-                        RoleNotFoundException.builder()
-                                .key(CoreConstants.BusinessExceptionMessage.ROLE_NOT_FOUND)
-                                .args(new Object[]{"code", codeRole})
-                                .build()
+                        roleNotFoundException(codeRole)
                 );
     }
 
     @Override
-    public List<Role> findManyById(List<String> codeRoles) throws RoleNotFoundException {
+    public List<Role> findAllByRoleId(List<String> codeRoles) throws ElementNotFoundException {
         List<Role> roles = new ArrayList<>();
-        for (String codeRole : codeRoles) {
-            roles.add(findById(codeRole));
-        }
+        codeRoles.forEach(codeRole -> roles.add(findByRoleId(codeRole)));
         return roles;
+    }
+
+
+    private void checkPermissions(Role role) {
+
+        if (role.getPermissions() == null) return;
+
+        List<Integer> permissions = role.getPermissions()
+                .stream()
+                .map(Permission::getPermissionId)
+                .toList();
+
+        permissionService.findAllByPermissionId(permissions);
     }
 
 
@@ -152,6 +147,13 @@ public class RoleServiceImpl implements RoleService {
         if (role.getPermissions() != null)
             roleToUpdate.setPermissions(role.getPermissions());
         return roleToUpdate;
+    }
+
+    private ElementNotFoundException roleNotFoundException(String codeRole) {
+        return ElementNotFoundException.builder()
+                .key(CoreConstants.BusinessExceptionMessage.ROLE_NOT_FOUND)
+                .args(new Object[]{codeRole})
+                .build();
     }
 
 }
