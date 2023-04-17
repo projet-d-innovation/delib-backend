@@ -1,16 +1,16 @@
 package ma.enset.departementservice.contoller;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
-import ma.enset.departementservice.constant.CoreConstants;
-import ma.enset.departementservice.dto.DepartementRequestDTO;
-import ma.enset.departementservice.dto.DepartementResponseDTO;
+import ma.enset.departementservice.dto.DepartementCreationRequest;
+import ma.enset.departementservice.dto.DepartementPagingResponse;
+import ma.enset.departementservice.dto.DepartementResponse;
+import ma.enset.departementservice.dto.DepartementUpdateRequest;
 import ma.enset.departementservice.model.Departement;
-import ma.enset.departementservice.service.DepartementServiceImpl;
+import ma.enset.departementservice.service.DepartementService;
 import ma.enset.departementservice.util.DepartementMapper;
+import org.hibernate.validator.constraints.Range;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -26,101 +26,86 @@ import java.util.List;
 @AllArgsConstructor
 @RequestMapping("/api/v1/departements")
 public class DepartementController {
-    private final DepartementServiceImpl departementServiceImpl;
+    private final DepartementService departementService;
     private final DepartementMapper departementMapper;
 
-
     @PostMapping
-    public ResponseEntity<DepartementResponseDTO> create(@Valid @RequestBody DepartementRequestDTO departementRequest) {
-        Departement departement = departementMapper.toDepartement(departementRequest);
-        DepartementResponseDTO departementResponse = departementMapper.toDepartementResponse(departementServiceImpl.create(departement));
+    public ResponseEntity<DepartementResponse> save(@Valid @RequestBody DepartementCreationRequest departementCreationRequest) {
+        Departement departement = departementMapper.toDepartement(departementCreationRequest);
+        DepartementResponse departementResponse = departementMapper.toDepartementResponse(departementService.save(departement));
 
-        return new ResponseEntity<>(
-                departementResponse,
-                HttpStatus.CREATED
-        );
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(departementResponse);
     }
-    @PostMapping("/many")
-    public ResponseEntity<List<DepartementResponseDTO>> createMany(@Valid @RequestBody List<DepartementRequestDTO> departementRequests) {
-        List<Departement> departements = departementMapper.toDepartements(departementRequests);
-        List<DepartementResponseDTO> departementResponses = departementMapper.toDepartementResponses(departementServiceImpl.createMany(departements));
 
-        return new ResponseEntity<>(
-                departementResponses,
-                HttpStatus.CREATED
-        );
-    }
-    @PutMapping
-    public ResponseEntity<DepartementResponseDTO> update(@Valid @RequestBody DepartementRequestDTO departementRequest) {
-        Departement departement = departementMapper.toDepartement(departementRequest);
-        DepartementResponseDTO departementResponses = departementMapper.toDepartementResponse(departementServiceImpl.update(departement));
+    @PostMapping("/bulk")
+    public ResponseEntity<List<DepartementResponse>> saveAll(@RequestBody List<@Valid DepartementCreationRequest> departementCreationRequestList) {
+        List<Departement> departementList = departementMapper.toDepartementList(departementCreationRequestList);
+        List<DepartementResponse> departementResponseList = departementMapper.toDepartementResponseList(departementService.saveAll(departementList));
 
-        return new ResponseEntity<>(
-                departementResponses,
-                HttpStatus.OK
-        );
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(departementResponseList);
     }
-    @PutMapping("/many")
-    public ResponseEntity<List<DepartementResponseDTO>> updateMany(@Valid @RequestBody List<DepartementRequestDTO> departementRequests) {
-        List<Departement> departements = departementMapper.toDepartements(departementRequests);
-        List<DepartementResponseDTO> departementResponses = departementMapper.toDepartementResponses(departementServiceImpl.updateMany(departements));
 
-        return new ResponseEntity<>(
-                departementResponses,
-                HttpStatus.CREATED
-        );
+    @GetMapping("/{codeDepartement}")
+    public ResponseEntity<DepartementResponse> get(@PathVariable("codeDepartement") String codeDepartement) {
+
+        Departement foundDepartement = departementService.findByCodeDepartement(codeDepartement);
+        DepartementResponse foundDepartementResponse = departementMapper.toDepartementResponse(foundDepartement);
+
+        return ResponseEntity
+                .ok()
+                .body(foundDepartementResponse);
     }
-    @DeleteMapping
-    public ResponseEntity<Void> delete(@NotBlank @RequestParam String code) {
-        departementServiceImpl.deleteById(code);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-    }
-    @DeleteMapping("/many")
-    public ResponseEntity<Void> deleteMany(@RequestParam List<String> code) {
-        departementServiceImpl.deleteManyById(code);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-    }
+
     @GetMapping
-    public ResponseEntity<Page<DepartementResponseDTO>> findAll(
-            @RequestParam(defaultValue = "0")
-            @Min(value = 0, message = CoreConstants.ValidationMessage.PAGINATION_PAGE_MIN)
-            int page,
-
-            @RequestParam(defaultValue = "20")
-            @Min(value = 1, message = CoreConstants.ValidationMessage.PAGINATION_SIZE_MIN)
-            @Max(value = 20, message = CoreConstants.ValidationMessage.PAGINATION_SIZE_MAX)
-            int size) {
+    public ResponseEntity<DepartementPagingResponse> getAll(@RequestParam(defaultValue = "0") @Min(0) int page,
+                                                            @RequestParam(defaultValue = "10") @Range(min = 1, max = 10) int size) {
 
         Pageable pageRequest = PageRequest.of(page, size);
-        Page<Departement> departementsPage = departementServiceImpl.findAll(pageRequest);
-        Page<DepartementResponseDTO> pagedResult = departementsPage.map(departementMapper::toDepartementResponse);
+        Page<Departement> departementPage = departementService.findAll(pageRequest);
+        DepartementPagingResponse pagedResponse = departementMapper.toPagingResponse(departementPage);
 
-        return new ResponseEntity<>(
-                pagedResult,
-                HttpStatus.OK
-        );
+        return ResponseEntity
+                .ok()
+                .body(pagedResponse);
     }
-    @GetMapping("/code")
-    public ResponseEntity<DepartementResponseDTO> findById(@RequestParam String code) {
-        Departement departement = departementServiceImpl.findById(code);
-        DepartementResponseDTO elementResponse = departementMapper.toDepartementResponse(departement);
 
-        return new ResponseEntity<>(
-                elementResponse,
-                HttpStatus.OK
-        );
+    @PatchMapping("/{codeDepartement}")
+    public ResponseEntity<DepartementResponse> update(
+            @PathVariable("codeDepartement") String codeDepartement,
+            @Valid @RequestBody DepartementUpdateRequest departementUpdateRequest
+    ) {
+
+        Departement departement = departementService.findByCodeDepartement(codeDepartement);
+        departementMapper.updateDepartementFromDTO(departementUpdateRequest, departement);
+
+        Departement updatedDepartement = departementService.update(departement);
+        DepartementResponse updatedDepartementResponse = departementMapper.toDepartementResponse(updatedDepartement);
+
+        return ResponseEntity
+                .ok()
+                .body(updatedDepartementResponse);
     }
-    @GetMapping("/code/many")
-    public ResponseEntity<List<DepartementResponseDTO>> findByIds(@RequestParam List<String> codes) {
-        List<Departement> departements = departementServiceImpl.findManyById(codes);
-        List<DepartementResponseDTO> departementResponseDTOS = departements.stream()
-                .map(departementMapper::toDepartementResponse)
-                .toList();
 
-        return new ResponseEntity<>(
-                departementResponseDTOS,
-                HttpStatus.OK
-        );
+    @DeleteMapping("/{codeDepartement}")
+    public ResponseEntity<?> delete(@PathVariable("codeDepartement") String codeDepartement) {
+        departementService.deleteByCodeDepartement(codeDepartement);
+
+        return ResponseEntity
+                .noContent()
+                .build();
+    }
+
+    @DeleteMapping("/bulk")
+    public ResponseEntity<?> deleteAll(@RequestBody List<String> codeDepartementList) {
+        departementService.deleteAllByCodeDepartement(codeDepartementList);
+
+        return ResponseEntity
+                .noContent()
+                .build();
     }
 
 

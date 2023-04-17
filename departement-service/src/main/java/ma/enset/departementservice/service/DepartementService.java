@@ -1,8 +1,8 @@
 package ma.enset.departementservice.service;
 
-import ma.enset.departementservice.exception.CannotDeleteDepartementException;
-import ma.enset.departementservice.exception.DepartementAlreadyExistsException;
-import ma.enset.departementservice.exception.DepartementNotFoundException;
+import ma.enset.departementservice.exception.ElementAlreadyExistsException;
+import ma.enset.departementservice.exception.ElementNotFoundException;
+import ma.enset.departementservice.exception.InternalErrorException;
 import ma.enset.departementservice.model.Departement;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,23 +10,13 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 public interface DepartementService {
-    Departement create(Departement departement) throws DepartementAlreadyExistsException;
-
-    List<Departement> createMany(List<Departement> departements) throws DepartementAlreadyExistsException;
-
-    Departement findById(String code) throws DepartementNotFoundException;
-
-    List<Departement> findManyById(List<String> codes) throws DepartementNotFoundException;
-
+    Departement save(Departement module) throws ElementAlreadyExistsException, InternalErrorException;
+    List<Departement> saveAll(List<Departement> modules) throws ElementAlreadyExistsException, InternalErrorException;
+    Departement findByCodeDepartement(String codeDepartement) throws ElementNotFoundException;
     Page<Departement> findAll(Pageable pageable);
-
-    Departement update(Departement department) throws DepartementNotFoundException;
-
-    List<Departement> updateMany(List<Departement> departements) throws DepartementNotFoundException;
-
-    void deleteById(String code) throws DepartementNotFoundException , CannotDeleteDepartementException;
-
-    void deleteManyById(List<String> codes) throws DepartementNotFoundException , CannotDeleteDepartementException;
+    Departement update(Departement module) throws ElementNotFoundException, InternalErrorException;
+    void deleteByCodeDepartement(String codeDepartement) throws ElementNotFoundException;
+    void deleteAllByCodeDepartement(List<String> codesDepartements) throws ElementNotFoundException;
 
 
 }

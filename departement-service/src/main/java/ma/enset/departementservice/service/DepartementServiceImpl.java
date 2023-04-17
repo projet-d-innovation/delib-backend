@@ -1,14 +1,13 @@
 package ma.enset.departementservice.service;
 
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import ma.enset.departementservice.constant.CoreConstants;
-import ma.enset.departementservice.exception.CannotDeleteDepartementException;
-import ma.enset.departementservice.exception.DepartementAlreadyExistsException;
-import ma.enset.departementservice.exception.DepartementNotFoundException;
+import ma.enset.departementservice.exception.ElementAlreadyExistsException;
+import ma.enset.departementservice.exception.ElementNotFoundException;
+import ma.enset.departementservice.exception.InternalErrorException;
 import ma.enset.departementservice.model.Departement;
-import ma.enset.departementservice.proxy.FiliereFeignClient;
 import ma.enset.departementservice.repository.DepartementRepository;
-import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -19,82 +18,45 @@ import java.util.List;
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class DepartementServiceImpl implements DepartementService {
     DepartementRepository departementRepository;
 
-    FiliereFeignClient filiereFeignClient;
-
     @Override
-    public Departement create(Departement departement) throws DepartementAlreadyExistsException {
+    public Departement save(Departement departement) throws ElementAlreadyExistsException, InternalErrorException {
+        if (departementRepository.existsByCodeDepartement(departement.getCodeDepartement())) {
+            throw ElementAlreadyExistsException.builder()
+                    .key(CoreConstants.BusinessExceptionMessage.DEPARTEMENT_ALREADY_EXISTS)
+                    .args(new Object[]{departement.getCodeDepartement()})
+                    .build();
+        }
 
         Departement createdDepartement = null;
-
-        if (departementRepository.existsById(departement.getCodeDepartement()))
-            throw DepartementAlreadyExistsException.builder()
-                    .key(CoreConstants.BusinessExceptionMessage.ELEMENT_ALREADY_EXISTS)
-                    .args(new Object[]{"code Departement", departement.getCodeDepartement()})
-                    .build();
 
         try {
             createdDepartement = departementRepository.save(departement);
         } catch (Exception e) {
-            if (e.getCause() instanceof ConstraintViolationException) {
-                throw DepartementAlreadyExistsException.builder()
-                        .key(CoreConstants.BusinessExceptionMessage.INTERNAL_ERROR)
-                        .args(new Object[]{"code Departement", departement.getCodeDepartement()})
-                        .build();
-            }
+            log.error(e.getMessage(), e.getCause());
+            throw new InternalErrorException();
         }
 
         return createdDepartement;
-
     }
 
     @Override
     @Transactional
-    public List<Departement> createMany(List<Departement> departements) throws DepartementAlreadyExistsException {
-        List<Departement> createdDepartements = new ArrayList<>();
+    public List<Departement> saveAll(List<Departement> departements) throws ElementAlreadyExistsException, InternalErrorException {
+        List<Departement> createdDepartements = new ArrayList<>(departements.size());
 
-        for (Departement departement : departements) {
-            if (departementRepository.existsById(departement.getCodeDepartement()))
-                throw DepartementAlreadyExistsException.builder()
-                        .key(CoreConstants.BusinessExceptionMessage.ELEMENT_ALREADY_EXISTS)
-                        .args(new Object[]{"code Departement", departement.getCodeDepartement()})
-                        .build();
-
-            try {
-                createdDepartements.add(departementRepository.save(departement));
-            } catch (Exception e) {
-                if (e.getCause() instanceof ConstraintViolationException) {
-                    throw DepartementAlreadyExistsException.builder()
-                            .key(CoreConstants.BusinessExceptionMessage.INTERNAL_ERROR)
-                            .args(new Object[]{"code Departement", departement.getCodeDepartement()})
-                            .build();
-                }
-            }
-        }
+        departements.forEach(departement -> createdDepartements.add(save(departement)));
 
         return createdDepartements;
     }
 
     @Override
-    public Departement findById(String code) throws DepartementNotFoundException {
-        return departementRepository.findById(code)
-                .orElseThrow(() ->
-                        DepartementNotFoundException.builder()
-                                .key(CoreConstants.BusinessExceptionMessage.ELEMENT_NOT_FOUND)
-                                .args(new Object[]{"code Departement", code})
-                                .build()
-                );
-    }
-
-    @Override
-    public List<Departement> findManyById(List<String> codes) throws DepartementNotFoundException {
-        List<Departement> departements = new ArrayList<>();
-        for (String codeElement : codes) {
-            departements.add(findById(codeElement));
-        }
-        return departements;
+    public Departement findByCodeDepartement(String codeDepartement) throws ElementNotFoundException {
+        return departementRepository.findByCodeDepartement(codeDepartement)
+                .orElseThrow(() -> departementNotFoundException(codeDepartement));
     }
 
     @Override
@@ -103,12 +65,9 @@ public class DepartementServiceImpl implements DepartementService {
     }
 
     @Override
-    public Departement update(Departement departement) throws DepartementNotFoundException {
-        if (!departementRepository.existsById(departement.getCodeDepartement())) {
-            throw DepartementNotFoundException.builder()
-                    .key(CoreConstants.BusinessExceptionMessage.ELEMENT_NOT_FOUND)
-                    .args(new Object[]{"code Departement", departement.getCodeDepartement()})
-                    .build();
+    public Departement update(Departement departement) throws ElementNotFoundException, InternalErrorException {
+        if (!departementRepository.existsByCodeDepartement(departement.getCodeDepartement())) {
+            throw departementNotFoundException(departement.getCodeDepartement());
         }
 
         Departement updatedDepartement = null;
@@ -116,58 +75,32 @@ public class DepartementServiceImpl implements DepartementService {
         try {
             updatedDepartement = departementRepository.save(departement);
         } catch (Exception e) {
-            if (e.getCause() instanceof ConstraintViolationException) {
-                throw DepartementAlreadyExistsException.builder()
-                        .key(CoreConstants.BusinessExceptionMessage.ELEMENT_ALREADY_EXISTS)
-                        .args(new Object[]{"code Departement", departement.getCodeDepartement()})
-                        .build();
-            }
+            log.error(e.getMessage(), e.getCause());
+            throw new InternalErrorException();
         }
 
         return updatedDepartement;
     }
 
     @Override
-    @Transactional
-    public List<Departement> updateMany(List<Departement> departements) throws DepartementNotFoundException {
-        List<Departement> updatedDepartements = new ArrayList();
-
-        departements.forEach(departement -> {
-            updatedDepartements.add(update(departement));
-        });
-        return updatedDepartements;
-    }
-
-    @Override
-    public void deleteById(String code) throws DepartementNotFoundException, CannotDeleteDepartementException {
-
-        //TODO: check if the user is using the departement
-
-        try {
-            boolean exists = filiereFeignClient.existsByCodeDepartement(code).getBody();
-            if (exists)
-                throw new Exception();
-        } catch (Exception e) {
-            throw CannotDeleteDepartementException.builder()
-                    .key(CoreConstants.BusinessExceptionMessage.ELEMENT_ALREADY_USED_IN_ANOTHER_ENTITY)
-                    .args(new Object[]{"code Departement", code})
-                    .build();
+    public void deleteByCodeDepartement(String codeDepartement) throws ElementNotFoundException {
+        if (!departementRepository.existsByCodeDepartement(codeDepartement)) {
+            throw departementNotFoundException(codeDepartement);
         }
 
-        if (!departementRepository.existsById(code)) {
-            throw DepartementNotFoundException.builder()
-                    .key(CoreConstants.BusinessExceptionMessage.ELEMENT_NOT_FOUND)
-                    .args(new Object[]{"code Departement", code})
-                    .build();
-        }
-
-
-        departementRepository.deleteById(code);
+        departementRepository.deleteByCodeDepartement(codeDepartement);
     }
 
     @Override
     @Transactional
-    public void deleteManyById(List<String> codes) throws DepartementNotFoundException {
-        codes.forEach(code -> deleteById(code));
+    public void deleteAllByCodeDepartement(List<String> codesDepartements) throws ElementNotFoundException {
+        codesDepartements.forEach(this::deleteByCodeDepartement);
+    }
+
+    private ElementNotFoundException departementNotFoundException(String codeDepartement) {
+        return ElementNotFoundException.builder()
+                .key(CoreConstants.BusinessExceptionMessage.DEPARTEMENT_NOT_FOUND)
+                .args(new Object[]{codeDepartement})
+                .build();
     }
 }
