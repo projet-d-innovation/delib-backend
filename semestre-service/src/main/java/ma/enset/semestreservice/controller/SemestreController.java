@@ -1,16 +1,16 @@
 package ma.enset.semestreservice.controller;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
-import ma.enset.semestreservice.constant.CoreConstants;
-import ma.enset.semestreservice.dto.SemestreRequestDTO;
-import ma.enset.semestreservice.dto.SemestreResponseDTO;
+import ma.enset.semestreservice.dto.SemestreCreationRequest;
+import ma.enset.semestreservice.dto.SemestrePagingResponse;
+import ma.enset.semestreservice.dto.SemestreResponse;
+import ma.enset.semestreservice.dto.SemestreUpdateRequest;
 import ma.enset.semestreservice.model.Semestre;
-import ma.enset.semestreservice.service.SemestreServiceImpl;
+import ma.enset.semestreservice.service.SemestreService;
 import ma.enset.semestreservice.util.SemestreMapper;
+import org.hibernate.validator.constraints.Range;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -26,112 +26,91 @@ import java.util.List;
 @AllArgsConstructor
 @RequestMapping("/api/v1/semestres")
 public class SemestreController {
-    private final SemestreServiceImpl semestreServiceImpl;
+    private final SemestreService semestreService;
     private final SemestreMapper semestreMapper;
 
 
+
     @PostMapping
-    public ResponseEntity<SemestreResponseDTO> create(@Valid @RequestBody SemestreRequestDTO semestreRequest) {
-        Semestre semestre = semestreMapper.toSemestre(semestreRequest);
-        SemestreResponseDTO semestreResponse = semestreMapper.toSemestreResponse(semestreServiceImpl.create(semestre));
+    public ResponseEntity<SemestreResponse> save(@Valid @RequestBody SemestreCreationRequest semestreCreationRequest) {
+        Semestre semestre = semestreMapper.toSemestre(semestreCreationRequest);
+        SemestreResponse semestreResponse = semestreMapper.toSemestreResponse(semestreService.save(semestre));
 
-        return new ResponseEntity<>(
-                semestreResponse,
-                HttpStatus.CREATED
-        );
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(semestreResponse);
     }
 
-    @PostMapping("/many")
-    public ResponseEntity<List<SemestreResponseDTO>> createMany(@Valid @RequestBody List<SemestreRequestDTO> semestreRequests) {
-        List<Semestre> semestres = semestreMapper.toSemestres(semestreRequests);
-        List<SemestreResponseDTO> semestreResponses = semestreMapper.toSemestreResponses(semestreServiceImpl.createMany(semestres));
+    @PostMapping("/bulk")
+    public ResponseEntity<List<SemestreResponse>> saveAll(@RequestBody List<@Valid SemestreCreationRequest> semestreCreationRequestList) {
+        List<Semestre> semestreList = semestreMapper.toSemestreList(semestreCreationRequestList);
+        List<SemestreResponse> semestreResponseList = semestreMapper.toSemestreResponseList(semestreService.saveAll(semestreList));
 
-        return new ResponseEntity<>(
-                semestreResponses,
-                HttpStatus.CREATED
-        );
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(semestreResponseList);
     }
-    @PutMapping
-    public ResponseEntity<SemestreResponseDTO> update(@Valid @RequestBody SemestreRequestDTO semestreRequest) {
-        Semestre semestre = semestreMapper.toSemestre(semestreRequest);
-        SemestreResponseDTO semestreResponses = semestreMapper.toSemestreResponse(semestreServiceImpl.update(semestre));
 
-        return new ResponseEntity<>(
-                semestreResponses,
-                HttpStatus.OK
-        );
-    }
-    @PutMapping("/many")
-    public ResponseEntity<List<SemestreResponseDTO>> updateMany(@Valid @RequestBody List<SemestreRequestDTO> semestreRequests) {
-        List<Semestre> semestres = semestreMapper.toSemestres(semestreRequests);
-        List<SemestreResponseDTO> semestreResponses = semestreMapper.toSemestreResponses(semestreServiceImpl.updateMany(semestres));
+    @GetMapping("/{codeSemestre}")
+    public ResponseEntity<SemestreResponse> get(@PathVariable("codeSemestre") String codeSemestre) {
 
-        return new ResponseEntity<>(
-                semestreResponses,
-                HttpStatus.CREATED
-        );
+        Semestre foundSemestre = semestreService.findByCodeSemestre(codeSemestre);
+        SemestreResponse foundSemestreResponse = semestreMapper.toSemestreResponse(foundSemestre);
+
+        return ResponseEntity
+                .ok()
+                .body(foundSemestreResponse);
     }
-    @DeleteMapping
-    public ResponseEntity<Void> delete(@NotBlank @RequestParam String code) {
-        semestreServiceImpl.deleteById(code);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-    }
-    @DeleteMapping("/many")
-    public ResponseEntity<Void> deleteMany(@RequestParam List<String> code) {
-        semestreServiceImpl.deleteManyById(code);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-    }
+
     @GetMapping
-    public ResponseEntity<Page<SemestreResponseDTO>> findAll(
-            @RequestParam(defaultValue = "0")
-            @Min(value = 0, message = CoreConstants.ValidationMessage.PAGINATION_PAGE_MIN)
-            int page,
-
-            @RequestParam(defaultValue = "20")
-            @Min(value = 1, message = CoreConstants.ValidationMessage.PAGINATION_SIZE_MIN)
-            @Max(value = 20, message = CoreConstants.ValidationMessage.PAGINATION_SIZE_MAX)
-            int size) {
+    public ResponseEntity<SemestrePagingResponse> getAll(@RequestParam(defaultValue = "0") @Min(0) int page,
+                                                         @RequestParam(defaultValue = "10") @Range(min = 1, max = 10) int size) {
 
         Pageable pageRequest = PageRequest.of(page, size);
-        Page<Semestre> semestresPage = semestreServiceImpl.findAll(pageRequest);
-        Page<SemestreResponseDTO> pagedResult = semestresPage.map(semestreMapper::toSemestreResponse);
+        Page<Semestre> semestrePage = semestreService.findAll(pageRequest);
+        SemestrePagingResponse pagedResponse = semestreMapper.toPagingResponse(semestrePage);
 
-        return new ResponseEntity<>(
-                pagedResult,
-                HttpStatus.OK
-        );
+        return ResponseEntity
+                .ok()
+                .body(pagedResponse);
     }
-    @GetMapping("/code")
-    public ResponseEntity<SemestreResponseDTO> findById(@RequestParam String code) {
-        Semestre semestre = semestreServiceImpl.findById(code);
-        SemestreResponseDTO elementResponse = semestreMapper.toSemestreResponse(semestre);
 
-        return new ResponseEntity<>(
-                elementResponse,
-                HttpStatus.OK
-        );
-    }
-    @GetMapping("/code/many")
-    public ResponseEntity<List<SemestreResponseDTO>> findByIds(@RequestParam List<String> codes) {
-        List<Semestre> semestres = semestreServiceImpl.findManyById(codes);
-        List<SemestreResponseDTO> semestreResponseDTOS = semestres.stream()
-                .map(semestreMapper::toSemestreResponse)
-                .toList();
+    @PatchMapping("/{codeSemestre}")
+    public ResponseEntity<SemestreResponse> update(
+            @PathVariable("codeSemestre") String codeSemestre,
+            @Valid @RequestBody SemestreUpdateRequest semestreUpdateRequest
+    ) {
 
-        return new ResponseEntity<>(
-                semestreResponseDTOS,
-                HttpStatus.OK
-        );
-    }
-    @GetMapping("/filiere/code")
-    public ResponseEntity<Boolean> existsByCodeFiliere(@RequestParam String code) {
-        Boolean exists = semestreServiceImpl.existsByCodeFiliere(code);
+        Semestre semestre = semestreService.findByCodeSemestre(codeSemestre);
+        semestreMapper.updateSemestreFromDTO(semestreUpdateRequest, semestre);
 
-        return new ResponseEntity<>(
-                exists,
-                HttpStatus.OK
-        );
+        Semestre updatedSemestre = semestreService.update(semestre);
+        SemestreResponse updatedSemestreResponse = semestreMapper.toSemestreResponse(updatedSemestre);
+
+        return ResponseEntity
+                .ok()
+                .body(updatedSemestreResponse);
     }
+
+    @DeleteMapping("/{codeSemestre}")
+    public ResponseEntity<?> delete(@PathVariable("codeSemestre") String codeSemestre) {
+        semestreService.deleteByCodeSemestre(codeSemestre);
+
+        return ResponseEntity
+                .noContent()
+                .build();
+    }
+
+    @DeleteMapping("/bulk")
+    public ResponseEntity<?> deleteAll(@RequestBody List<String> codeSemestreList) {
+        semestreService.deleteAllByCodeSemestre(codeSemestreList);
+
+        return ResponseEntity
+                .noContent()
+                .build();
+    }
+
+
 
 
 

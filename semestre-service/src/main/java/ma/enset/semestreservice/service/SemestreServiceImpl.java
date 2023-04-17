@@ -1,15 +1,13 @@
 package ma.enset.semestreservice.service;
 
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import ma.enset.semestreservice.constant.CoreConstants;
-import ma.enset.semestreservice.exception.BusinessException;
-import ma.enset.semestreservice.exception.FiliereNotFoundException;
-import ma.enset.semestreservice.exception.SemestreAlreadyExistsException;
-import ma.enset.semestreservice.exception.SemestreNotFoundException;
+import ma.enset.semestreservice.exception.ElementAlreadyExistsException;
+import ma.enset.semestreservice.exception.ElementNotFoundException;
+import ma.enset.semestreservice.exception.InternalErrorException;
 import ma.enset.semestreservice.model.Semestre;
-import ma.enset.semestreservice.proxy.FiliereFeignClient;
 import ma.enset.semestreservice.repository.SemestreRepository;
-import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -19,78 +17,46 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@Slf4j
 @AllArgsConstructor
 public class SemestreServiceImpl implements SemestreService{
     SemestreRepository semestreRepository;
 
-    FiliereFeignClient filiereFeignClient;
-
-
     @Override
-    public Semestre create(Semestre semestre) throws SemestreAlreadyExistsException, FiliereNotFoundException {
-
-        Semestre createdSemestre = null;
-
-
-        if (semestreRepository.existsById(semestre.getCodeSemestre()))
-            throw SemestreAlreadyExistsException.builder()
-                    .key(CoreConstants.BusinessExceptionMessage.ELEMENT_ALREADY_EXISTS)
-                    .args(new Object[]{"code semestre", semestre.getCodeSemestre()})
-                    .build();
-
-        // TODO : trigger the exception from the other Filiere service
-
-        try {
-            filiereFeignClient.findById(semestre.getCodeFiliere());
-        } catch (Exception e) {
-            throw FiliereNotFoundException.builder()
-                    .key(CoreConstants.BusinessExceptionMessage.Filiere_NOT_FOUND)
-                    .args(new Object[]{"code", semestre.getCodeFiliere()})
+    public Semestre save(Semestre semestre) throws ElementAlreadyExistsException, InternalErrorException {
+        if (semestreRepository.existsByCodeSemestre(semestre.getCodeSemestre())) {
+            throw ElementAlreadyExistsException.builder()
+                    .key(CoreConstants.BusinessExceptionMessage.SEMESTRE_ALREADY_EXISTS)
+                    .args(new Object[]{semestre.getCodeSemestre()})
                     .build();
         }
 
+        Semestre createdSemestre = null;
 
         try {
             createdSemestre = semestreRepository.save(semestre);
         } catch (Exception e) {
-            if (e.getCause() instanceof ConstraintViolationException) {
-                throw SemestreAlreadyExistsException.builder()
-                        .key(CoreConstants.BusinessExceptionMessage.INTERNAL_ERROR)
-                        .args(new Object[]{"code semestre", semestre.getCodeSemestre()})
-                        .build();
-            }
+            log.error(e.getMessage(), e.getCause());
+            throw new InternalErrorException();
         }
 
         return createdSemestre;
-
     }
 
     @Override
     @Transactional
-    public List<Semestre> createMany(List<Semestre> semestres) throws SemestreAlreadyExistsException , FiliereNotFoundException {
-        List<Semestre> createdSemestres = new ArrayList<>();
-        semestres.forEach(semestre -> createdSemestres.add(create(semestre)));
+    public List<Semestre> saveAll(List<Semestre> semestres) throws ElementAlreadyExistsException, InternalErrorException {
+        List<Semestre> createdSemestres = new ArrayList<>(semestres.size());
+
+        semestres.forEach(semestre -> createdSemestres.add(save(semestre)));
+
         return createdSemestres;
     }
 
     @Override
-    public Semestre findById(String code) throws SemestreNotFoundException {
-        return semestreRepository.findById(code)
-                .orElseThrow(() ->
-                        SemestreNotFoundException.builder()
-                                .key(CoreConstants.BusinessExceptionMessage.ELEMENT_NOT_FOUND)
-                                .args(new Object[]{"code semestre", code})
-                                .build()
-                );
-    }
-
-    @Override
-    public List<Semestre> findManyById(List<String> codes) throws SemestreNotFoundException {
-        List<Semestre> semestres = new ArrayList<>();
-        for (String codeElement : codes) {
-            semestres.add(findById(codeElement));
-        }
-        return semestres;
+    public Semestre findByCodeSemestre(String codeSemestre) throws ElementNotFoundException {
+        return semestreRepository.findByCodeSemestre(codeSemestre)
+                .orElseThrow(() -> semestreNotFoundException(codeSemestre));
     }
 
     @Override
@@ -99,82 +65,42 @@ public class SemestreServiceImpl implements SemestreService{
     }
 
     @Override
-    public Semestre update(Semestre semestre) throws SemestreNotFoundException, FiliereNotFoundException {
-        if (!semestreRepository.existsById(semestre.getCodeSemestre())) {
-            throw SemestreNotFoundException.builder()
-                    .key(CoreConstants.BusinessExceptionMessage.ELEMENT_NOT_FOUND)
-                    .args(new Object[]{"code semestre", semestre.getCodeSemestre()})
-                    .build();
+    public Semestre update(Semestre semestre) throws ElementNotFoundException, InternalErrorException {
+        if (!semestreRepository.existsByCodeSemestre(semestre.getCodeSemestre())) {
+            throw semestreNotFoundException(semestre.getCodeSemestre());
         }
-        // TODO : trigger the exception from the other departement service
-
-        try {
-            filiereFeignClient.findById(semestre.getCodeFiliere());
-        } catch (Exception e) {
-            throw FiliereNotFoundException.builder()
-                    .key(CoreConstants.BusinessExceptionMessage.Filiere_NOT_FOUND)
-                    .args(new Object[]{"code", semestre.getCodeFiliere()})
-                    .build();
-        }
-
-
 
         Semestre updatedSemestre = null;
 
         try {
             updatedSemestre = semestreRepository.save(semestre);
         } catch (Exception e) {
-            if (e.getCause() instanceof ConstraintViolationException) {
-                throw SemestreAlreadyExistsException.builder()
-                        .key(CoreConstants.BusinessExceptionMessage.ELEMENT_ALREADY_EXISTS)
-                        .args(new Object[]{"code semestre", semestre.getCodeSemestre()})
-                        .build();
-            }
+            log.error(e.getMessage(), e.getCause());
+            throw new InternalErrorException();
         }
 
         return updatedSemestre;
     }
 
     @Override
-    @Transactional
-    public List<Semestre> updateMany(List<Semestre> elements) throws BusinessException {
-        List<Semestre> updatedElements = new ArrayList<>();
-        elements.forEach(semestre -> updatedElements.add(update(semestre)));
-        return updatedElements;
-    }
-
-    @Override
-    public void deleteById(String code) throws SemestreNotFoundException {
-
-        // TODO : Check Module and Session
-        if (!semestreRepository.existsById(code)) {
-            throw SemestreNotFoundException.builder()
-                    .key(CoreConstants.BusinessExceptionMessage.ELEMENT_NOT_FOUND)
-                    .args(new Object[]{"code semestre", code})
-                    .build();
+    public void deleteByCodeSemestre(String codeSemestre) throws ElementNotFoundException {
+        if (!semestreRepository.existsByCodeSemestre(codeSemestre)) {
+            throw semestreNotFoundException(codeSemestre);
         }
 
-        semestreRepository.deleteById(code);
+        semestreRepository.deleteByCodeSemestre(codeSemestre);
     }
 
     @Override
     @Transactional
-    public void deleteManyById(List<String> codes) throws SemestreNotFoundException {
-            codes.forEach(this::deleteById);
+    public void deleteAllByCodeSemestre(List<String> codesSemestres) throws ElementNotFoundException {
+        codesSemestres.forEach(this::deleteByCodeSemestre);
     }
 
-    public Boolean existsByCodeFiliere(String codeDepartement) throws FiliereNotFoundException {
-        boolean exists = false;
-        try {
-            exists = semestreRepository.existsByCodeFiliere(codeDepartement);
-        }
-        catch (Exception e){
-            throw FiliereNotFoundException.builder()
-                    .key(CoreConstants.BusinessExceptionMessage.ELEMENT_NOT_FOUND)
-                    .args(new Object[]{"code Filiere", codeDepartement})
-                    .build();
-        }
-        return exists;
-
+    private ElementNotFoundException semestreNotFoundException(String codeSemestre) {
+        return ElementNotFoundException.builder()
+                .key(CoreConstants.BusinessExceptionMessage.SEMESTRE_NOT_FOUND)
+                .args(new Object[]{codeSemestre})
+                .build();
     }
 }

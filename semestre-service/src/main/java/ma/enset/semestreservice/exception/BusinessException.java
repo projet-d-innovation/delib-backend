@@ -6,8 +6,8 @@ public class BusinessException extends RuntimeException {
     private final Object[] args;
 
 
-    public BusinessException(String key, Object[] args ,String message) {
-        super(message);
+    public BusinessException(String key, Object[] args) {
+        super();
         this.key = key;
         this.args = args;
     }

@@ -1,8 +1,9 @@
 package ma.enset.semestreservice.service;
 
 
-import ma.enset.semestreservice.exception.BusinessException;
-import ma.enset.semestreservice.exception.FiliereNotFoundException;
+import ma.enset.semestreservice.exception.ElementAlreadyExistsException;
+import ma.enset.semestreservice.exception.ElementNotFoundException;
+import ma.enset.semestreservice.exception.InternalErrorException;
 import ma.enset.semestreservice.model.Semestre;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,26 +12,12 @@ import java.util.List;
 
 public interface SemestreService {
 
-
-    Semestre create(Semestre element) throws BusinessException;
-
-    List<Semestre> createMany(List<Semestre> elements) throws BusinessException;
-
-    Semestre findById(String code) throws BusinessException;
-
-    List<Semestre> findManyById(List<String> codes) throws BusinessException;
-
+    Semestre save(Semestre module) throws ElementAlreadyExistsException, InternalErrorException;
+    List<Semestre> saveAll(List<Semestre> modules) throws ElementAlreadyExistsException, InternalErrorException;
+    Semestre findByCodeSemestre(String codeSemestre) throws ElementNotFoundException;
     Page<Semestre> findAll(Pageable pageable);
-
-
-    Semestre update(Semestre element) throws BusinessException;
-    List<Semestre> updateMany(List<Semestre> elements) throws BusinessException;
-
-
-    void deleteById(String code) throws BusinessException;
-
-    void deleteManyById(List<String> codes) throws BusinessException;
-
-    public Boolean existsByCodeFiliere(String codeDepartement) throws FiliereNotFoundException;
+    Semestre update(Semestre module) throws ElementNotFoundException, InternalErrorException;
+    void deleteByCodeSemestre(String codeSemestre) throws ElementNotFoundException;
+    void deleteAllByCodeSemestre(List<String> codesSemestres) throws ElementNotFoundException;
 
 }

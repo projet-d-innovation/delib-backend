@@ -1,15 +1,12 @@
 package ma.enset.semestreservice.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.Builder;
 
-@Builder
-public record SemestreRequestDTO(
+public record SemestreCreationRequest(
         @NotBlank
         String codeSemestre,
         @NotBlank
         String codeFiliere,
         @NotBlank
         String intituleSemestre
-) {
-}
+) {}
