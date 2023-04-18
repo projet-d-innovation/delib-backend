@@ -1,7 +1,6 @@
 package ma.enset.filiereservice.dto;
 
-public record RegleDeCalculResponseDTO(
-
+public record RegleResponse(
         String codeRegle,
 
         float noteValidationModule,
@@ -9,5 +8,4 @@ public record RegleDeCalculResponseDTO(
         float noteCompensationModule,
         float noteValidationAnnee,
         int nbrModulesDerogation
-) {
-}
+) { }

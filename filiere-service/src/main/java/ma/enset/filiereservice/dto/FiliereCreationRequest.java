@@ -1,18 +1,17 @@
 package ma.enset.filiereservice.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.Builder;
 
-@Builder
-public record FiliereRequestDTO(
+public record FiliereCreationRequest(
         @NotBlank()
         String codeFiliere,
         @NotBlank()
         String intituleFiliere,
+        @NotBlank()
+        String codeDepartement,
+        @NotBlank
+        String codeChefFiliere ,
+        @NotBlank()
+        String codeRegleDeCalcul
 
-        @NotBlank()
-        String codeRegleDeCalcul,
-        @NotBlank()
-        String codeDepartement
-) {
-}
+) {}

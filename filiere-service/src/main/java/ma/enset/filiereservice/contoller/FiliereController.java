@@ -1,16 +1,16 @@
 package ma.enset.filiereservice.contoller;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
-import ma.enset.filiereservice.constant.CoreConstants;
-import ma.enset.filiereservice.dto.FiliereRequestDTO;
-import ma.enset.filiereservice.dto.FiliereResponseDTO;
+import ma.enset.filiereservice.dto.FiliereCreationRequest;
+import ma.enset.filiereservice.dto.FilierePagingResponse;
+import ma.enset.filiereservice.dto.FiliereResponse;
 import ma.enset.filiereservice.model.Filiere;
-import ma.enset.filiereservice.service.FiliereServiceImpl;
-import ma.enset.filiereservice.util.FiliereMapperImpl;
+import ma.enset.filiereservice.service.FiliereService;
+import ma.enset.filiereservice.service.RegleDeCalculService;
+import ma.enset.filiereservice.util.FiliereMapper;
+import org.hibernate.validator.constraints.Range;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -26,106 +26,107 @@ import java.util.List;
 @AllArgsConstructor
 @RequestMapping("/api/v1/filieres")
 public class FiliereController {
-    private final FiliereServiceImpl filiereServiceImpl;
-    private final FiliereMapperImpl filiereMapper;
 
+
+    private final FiliereService filiereService;
+    private final FiliereMapper filiereMapper;
+
+    private RegleDeCalculService regleDeCalculService;
 
     @PostMapping
-    public ResponseEntity<FiliereResponseDTO> create(@Valid @RequestBody FiliereRequestDTO filiereRequest) {
-        Filiere filiere = filiereMapper.toFiliere(filiereRequest);
-        FiliereResponseDTO filiereResponse = filiereMapper.toFiliereResponse(filiereServiceImpl.create(filiere));
+    public ResponseEntity<FiliereResponse> save(@Valid @RequestBody FiliereCreationRequest filiereCreationRequest) {
+        Filiere filiere = filiereMapper.toFiliere(filiereCreationRequest, regleDeCalculService);
+        FiliereResponse filiereResponse = filiereMapper.toFiliereResponse(filiereService.save(filiere));
 
-        return new ResponseEntity<>(
-                filiereResponse,
-                HttpStatus.CREATED
-        );
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(filiereResponse);
     }
-    @PostMapping("/many")
-    public ResponseEntity<List<FiliereResponseDTO>> createMany(@Valid @RequestBody List<FiliereRequestDTO> filiereRequests) {
-        List<Filiere> filieres = filiereMapper.toFilieres(filiereRequests);
-        List<FiliereResponseDTO> filiereResponses = filiereMapper.toFiliereResponses(filiereServiceImpl.createMany(filieres));
 
-        return new ResponseEntity<>(
-                filiereResponses,
-                HttpStatus.CREATED
-        );
-    }
-    @PutMapping
-    public ResponseEntity<FiliereResponseDTO> update(@Valid @RequestBody FiliereRequestDTO filiereRequest) {
-        Filiere filiere = filiereMapper.toFiliere(filiereRequest);
-        FiliereResponseDTO filiereResponses = filiereMapper.toFiliereResponse(filiereServiceImpl.update(filiere));
+    @PostMapping("/bulk")
+    public ResponseEntity<List<FiliereResponse>> saveAll(@RequestBody List<@Valid FiliereCreationRequest> filiereCreationRequestList) {
+        List<Filiere> filiereList = filiereMapper.toFiliereList(filiereCreationRequestList, regleDeCalculService);
+        List<FiliereResponse> filiereResponseList = filiereMapper.toFiliereResponseList(filiereService.saveAll(filiereList));
 
-        return new ResponseEntity<>(
-                filiereResponses,
-                HttpStatus.OK
-        );
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(filiereResponseList);
     }
-    @DeleteMapping
-    public ResponseEntity<Void> delete(@NotBlank @RequestParam String code) {
-        filiereServiceImpl.deleteById(code);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+
+    @GetMapping("/{codeFiliere}")
+    public ResponseEntity<FiliereResponse> getByCodeFiliere(@PathVariable("codeFiliere") String codeFiliere) {
+
+        Filiere foundFiliere = filiereService.findByCodeFiliere(codeFiliere);
+        FiliereResponse foundFiliereDeResponse = filiereMapper.toFiliereResponse(foundFiliere);
+
+        return ResponseEntity
+                .ok()
+                .body(foundFiliereDeResponse);
     }
-    @DeleteMapping("/many")
-    public ResponseEntity<Void> deleteMany(@RequestParam List<String> code) {
-        filiereServiceImpl.deleteManyById(code);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+
+    @GetMapping("/byCodeDepartement/{codeDepartement}")
+    public ResponseEntity<List<FiliereResponse>> getByCodeDepartement(@PathVariable("codeDepartement") String codeDepartement) {
+
+        List<Filiere> foundFilieres = filiereService.findByCodeDepartement(codeDepartement);
+        List<FiliereResponse> foundFiliereResponseList = filiereMapper.toFiliereResponseList(foundFilieres);
+
+        return ResponseEntity
+                .ok()
+                .body(foundFiliereResponseList);
+    }
+    @GetMapping("/byCodeDeRegle/{codeRegle}")
+    public ResponseEntity<List<FiliereResponse>> getByCodeRegle(@PathVariable("codeRegle") String codeRegle) {
+
+        List<Filiere> foundFilieres = filiereService.findByCodeRegle(codeRegle);
+        List<FiliereResponse> foundFiliereResponseList = filiereMapper.toFiliereResponseList(foundFilieres);
+
+        return ResponseEntity
+                .ok()
+                .body(foundFiliereResponseList);
+    }
+
+
+    @GetMapping("/byCodeChef/{codeChef}")
+    public ResponseEntity<FiliereResponse> getByCodeChefFiliere(@PathVariable("codeChef") String codeChef) {
+        Filiere foundFiliere = filiereService.findByCodeChefFiliere(codeChef);
+
+        FiliereResponse foundFiliereDeResponse = filiereMapper.toFiliereResponse(foundFiliere);
+
+        return ResponseEntity
+                .ok()
+                .body(foundFiliereDeResponse);
     }
     @GetMapping
-    public ResponseEntity<Page<FiliereResponseDTO>> findAll(
-            @RequestParam(defaultValue = "0")
-            @Min(value = 0, message = CoreConstants.ValidationMessage.PAGINATION_PAGE_MIN)
-            int page,
-
-            @RequestParam(defaultValue = "20")
-            @Min(value = 1, message = CoreConstants.ValidationMessage.PAGINATION_SIZE_MIN)
-            @Max(value = 20, message = CoreConstants.ValidationMessage.PAGINATION_SIZE_MAX)
-            int size) {
+    public ResponseEntity<FilierePagingResponse> getAll(@RequestParam(defaultValue = "0") @Min(0) int page,
+                                                        @RequestParam(defaultValue = "10") @Range(min = 1, max = 10) int size) {
 
         Pageable pageRequest = PageRequest.of(page, size);
-        Page<Filiere> filieresPage = filiereServiceImpl.findAll(pageRequest);
-        Page<FiliereResponseDTO> pagedResult = filieresPage.map(filiereMapper::toFiliereResponse);
+        Page<Filiere> filierePage = filiereService.findAll(pageRequest);
+        FilierePagingResponse pagedResponse = filiereMapper.toPagingResponse(filierePage);
 
-        return new ResponseEntity<>(
-                pagedResult,
-                HttpStatus.OK
-        );
-    }
-    @GetMapping("/code")
-    public ResponseEntity<FiliereResponseDTO> findById(@RequestParam String code) {
-        Filiere filiere = filiereServiceImpl.findById(code);
-        FiliereResponseDTO elementResponse = filiereMapper.toFiliereResponse(filiere);
-
-        return new ResponseEntity<>(
-                elementResponse,
-                HttpStatus.OK
-        );
-    }
-    @GetMapping("/code/many")
-    public ResponseEntity<List<FiliereResponseDTO>> findByIds(@RequestParam List<String> codes) {
-        List<Filiere> filieres = filiereServiceImpl.findManyById(codes);
-        List<FiliereResponseDTO> filiereResponseDTOS = filieres.stream()
-                .map(filiereMapper::toFiliereResponse)
-                .toList();
-
-        return new ResponseEntity<>(
-                filiereResponseDTOS,
-                HttpStatus.OK
-        );
-    }
-
-    @GetMapping("/departement/code")
-    public ResponseEntity<Boolean> existsByCodeDepartement(@RequestParam String code) {
-        Boolean exists = filiereServiceImpl.existsByCodeDepartement(code);
-
-        return new ResponseEntity<>(
-                exists,
-                HttpStatus.OK
-        );
+        return ResponseEntity
+                .ok()
+                .body(pagedResponse);
     }
 
 
+    @DeleteMapping("/{codeFiliere}")
+    public ResponseEntity<?> delete(@PathVariable("codeFiliere") String codeFiliere) {
+        filiereService.deleteByCodeFiliere(codeFiliere);
 
+        return ResponseEntity
+                .noContent()
+                .build();
+    }
 
+    @DeleteMapping("/bulk")
+    public ResponseEntity<?> deleteAll(@RequestBody List<String> codeFiliere) {
+        filiereService.deleteAllByCodeFiliere(codeFiliere);
+
+        return ResponseEntity
+                .noContent()
+                .build();
+    }
 
 
 }

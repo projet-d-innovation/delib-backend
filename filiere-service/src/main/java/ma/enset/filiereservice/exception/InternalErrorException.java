@@ -1,11 +1,9 @@
 package ma.enset.filiereservice.exception;
 
-import lombok.Builder;
+import ma.enset.filiereservice.constant.CoreConstants;
 
 public class InternalErrorException extends BusinessException {
-
-    @Builder
-    public InternalErrorException(String key, Object[] args) {
-        super(key, args, "Internal error");
+    public InternalErrorException() {
+        super(CoreConstants.BusinessExceptionMessage.INTERNAL_ERROR, null);
     }
 }

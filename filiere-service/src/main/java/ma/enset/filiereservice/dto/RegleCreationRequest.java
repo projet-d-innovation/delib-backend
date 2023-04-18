@@ -5,7 +5,7 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 
-public record RegleDeCalculRequestDTO(
+public record RegleCreationRequest(
         @NotBlank
         String codeRegle,
 
@@ -23,5 +23,4 @@ public record RegleDeCalculRequestDTO(
         float noteValidationAnnee,
         @Min(0)
         int nbrModulesDerogation
-) {
-}
+) {}
