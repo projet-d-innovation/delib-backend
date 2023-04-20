@@ -17,6 +17,7 @@
         <module>module-service</module>
         <module>element-service</module>
         <module>utilisateur-service</module>
+        <module>note-service</module>
     </modules>
 
     <properties>

@@ -3,7 +3,10 @@ server:
 
 spring:
     application:
-        name: module-service
+        name: note-service
+
+    banner:
+        location: classpath:banner.txt
 
     profiles:
         active: dev

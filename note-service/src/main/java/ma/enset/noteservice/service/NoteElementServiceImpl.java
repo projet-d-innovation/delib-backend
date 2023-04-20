@@ -1,0 +1,103 @@
+package ma.enset.noteservice.service;
+
+import jakarta.transaction.Transactional;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import ma.enset.noteservice.constant.CoreConstants;
+import ma.enset.noteservice.exception.ElementAlreadyExistsException;
+import ma.enset.noteservice.exception.ElementNotFoundException;
+import ma.enset.noteservice.exception.InternalErrorException;
+import ma.enset.noteservice.model.NoteElement;
+import ma.enset.noteservice.repository.NoteElementRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+@AllArgsConstructor
+@Slf4j
+public class NoteElementServiceImpl implements NoteElementService {
+
+    private final NoteElementRepository noteElementRepository;
+
+    @Override
+    public NoteElement save(NoteElement note) throws ElementAlreadyExistsException, InternalErrorException {
+        if (noteElementRepository.findById(note.getNoteElementId()).isPresent()) {
+            throw ElementAlreadyExistsException.builder()
+                    .key(CoreConstants.BusinessExceptionMessage.NOTE_ELEMENT_ALREADY_EXISTS)
+                    .args(new Object[]{note.getNoteElementId()})
+                    .build();
+        }
+
+        NoteElement createNoteElement = null;
+
+        try {
+            createNoteElement = noteElementRepository.save(note);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e.getCause());
+            throw new InternalErrorException();
+        }
+
+        return createNoteElement;
+    }
+
+    @Override
+    @Transactional
+    public List<NoteElement> saveAll(List<NoteElement> noteElementList) throws ElementAlreadyExistsException, InternalErrorException {
+        List<NoteElement> createdNoteElement = new ArrayList<>(noteElementList.size());
+        noteElementList.forEach(noteElement -> createdNoteElement.add(save(noteElement)));
+
+        return createdNoteElement;
+    }
+
+    @Override
+    public NoteElement findById(String codeModule) throws ElementNotFoundException {
+        return noteElementRepository.findById(codeModule)
+                    .orElseThrow(() -> noteElementNotFoundException(codeModule));
+    }
+
+    @Override
+    public Page<NoteElement> findAll(Pageable pageable) {
+        return noteElementRepository.findAll(pageable);
+    }
+
+    @Override
+    public NoteElement update(NoteElement noteElement) throws ElementNotFoundException, InternalErrorException {
+        if (!noteElementRepository.findById(noteElement.getNoteElementId()).isPresent()) {
+            throw noteElementNotFoundException(noteElement.getNoteElementId());
+        }
+
+        NoteElement updatedNoteElement = null;
+
+        try {
+            updatedNoteElement = noteElementRepository.save(noteElement);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e.getCause());
+            throw new InternalErrorException();
+        }
+
+        return updatedNoteElement;
+    }
+
+    @Override
+    public void deleteById(String noteElementId) throws ElementNotFoundException {
+        if (!noteElementRepository.findById(noteElementId).isPresent()) {
+            throw noteElementNotFoundException(noteElementId);
+        }
+
+        noteElementRepository.deleteById(noteElementId);
+    }
+
+
+//
+    private ElementNotFoundException noteElementNotFoundException(String noteElementId) {
+        return ElementNotFoundException.builder()
+                .key(CoreConstants.BusinessExceptionMessage.NOTE_ELEMENT_NOT_FOUND)
+                .args(new Object[]{noteElementId})
+                .build();
+    }
+
+}
