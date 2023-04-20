@@ -9,4 +9,6 @@ public record NoteElementUpdateRequest(
     @Max(20)
     float note,
     boolean redoublant
+//    @NotBlank
+//    String codeElement
 ) {}

@@ -14,7 +14,8 @@ public record NoteElementCreationRequest(
     @NotNull
     float note,
     @NotNull
-    boolean redoublant
-//    @NotBlank
-//    String codeSemestre
+    boolean redoublant,
+    @NotBlank
+    String codeElement
+
 ) {}

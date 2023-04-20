@@ -4,12 +4,8 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
 
-import ma.enset.noteservice.constant.CoreConstants;
-import ma.enset.noteservice.dto.NoteElementCreationRequest;
-import ma.enset.noteservice.dto.NoteElementPagingResponse;
-import ma.enset.noteservice.dto.NoteElementResponse;
-import ma.enset.noteservice.dto.NoteElementUpdateRequest;
-import ma.enset.noteservice.exception.ElementNotFoundException;
+import ma.enset.noteservice.dto.*;
+import ma.enset.noteservice.feign.ElementServiceFeignClient;
 import ma.enset.noteservice.model.NoteElement;
 import ma.enset.noteservice.service.NoteElementService;
 import ma.enset.noteservice.util.NoteElementMapper;
@@ -31,51 +27,49 @@ import java.util.List;
 public class NoteElementController {
     private final NoteElementService noteElementService;
     private final NoteElementMapper noteElementMapper;
+    private final ElementServiceFeignClient elementServiceFeignClient;
 
     @PostMapping
-    public ResponseEntity<NoteElementResponse> save(@Valid @RequestBody NoteElementCreationRequest moduleCreationRequest) {
-        NoteElement note = noteElementMapper.toModule(moduleCreationRequest);
-        NoteElementResponse moduleResponse = noteElementMapper.toModuleResponse(noteElementService.save(note));
-        if (note!= null){
-            throw ElementNotFoundException.builder().key(CoreConstants.BusinessExceptionMessage.NOTE_MODULE_ALREADY_EXISTS)
-                    .args(new Object[]{moduleResponse.NoteElementId()})
-                    .build();
-        }
+    public ResponseEntity<NoteElementResponse> save(@Valid @RequestBody NoteElementCreationRequest noteElementCreationRequest) {
+        NoteElement note = noteElementMapper.toNoteElement(noteElementCreationRequest);
+        NoteElementResponse noteElementResponse = noteElementMapper.toNoteElementResponse(noteElementService.save(note));
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(moduleResponse);
+                .body(noteElementResponse);
     }
 //
     @PostMapping("/bulk")
-    public ResponseEntity<List<NoteElementResponse>> saveAll(@RequestBody List<@Valid NoteElementCreationRequest> moduleCreationRequestList) {
-        List<NoteElement> moduleList = noteElementMapper.toModuleList(moduleCreationRequestList);
-        List<NoteElementResponse> moduleResponseList = noteElementMapper.toModuleResponseList(noteElementService.saveAll(moduleList));
+    public ResponseEntity<List<NoteElementResponse>> saveAll(@RequestBody List<@Valid NoteElementCreationRequest> noteElementCreationRequestList) {
+        List<NoteElement> noteElementList = noteElementMapper.toNoteElementList(noteElementCreationRequestList);
+        List<NoteElementResponse> noteElementResponseList = noteElementMapper.toNoteElementResponseList(noteElementService.saveAll(noteElementList));
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(moduleResponseList);
+                .body(noteElementResponseList);
     }
-//
+
     @GetMapping("/{noteElementId}")
-    public ResponseEntity<NoteElementResponse> get(@PathVariable("noteElementId") String noteElementId) {
+    public ResponseEntity<NoteElementWithElementResponse> get(@PathVariable("noteElementId") String noteElementId) {
 
-        NoteElement foundModule = noteElementService.findById(noteElementId);
-        NoteElementResponse foundModuleResponse = noteElementMapper.toModuleResponse(foundModule);
-
+        NoteElement foundNoteElement = noteElementService.findById(noteElementId);
+        ResponseEntity<ElementResponse> elementResponse =  elementServiceFeignClient.getElementByCode(foundNoteElement.getCodeElement());
+        NoteElementWithElementResponse foundModuleResponse = noteElementMapper.toNoteElementWithElementResponse(foundNoteElement);
+        foundModuleResponse = foundModuleResponse.setElementResponse(elementResponse.getBody());
         return ResponseEntity
                 .ok()
                 .body(foundModuleResponse);
     }
-//
     @GetMapping
-    public ResponseEntity<NoteElementPagingResponse> getAll(@RequestParam(defaultValue = "0") @Min(0) int page,
+    public  ResponseEntity<NoteElementPagingResponse> getAll(@RequestParam(defaultValue = "0") @Min(0) int page,
                                                             @RequestParam(defaultValue = "10") @Range(min = 1, max = 10) int size) {
 
         Pageable pageRequest = PageRequest.of(page, size);
-        Page<NoteElement> modulePage = noteElementService.findAll(pageRequest);
-
-        NoteElementPagingResponse pagedResponse = noteElementMapper.toPagingResponse(modulePage);
+        Page<NoteElement> noteElementPage = noteElementService.findAll(pageRequest);
+        List<String> codesElement = noteElementPage.getContent().stream().distinct().map(NoteElement::getCodeElement).toList();
+        ResponseEntity<List<ElementResponse>> foundElements =  elementServiceFeignClient.findByCodeElements11(codesElement);
+        NoteElementPagingResponse pagedResponse = noteElementMapper.toPagingResponse(noteElementPage);
+         pagedResponse.setElementResponseList(foundElements.getBody());
 
         return ResponseEntity
                 .ok()
@@ -88,11 +82,10 @@ public class NoteElementController {
         @Valid @RequestBody NoteElementUpdateRequest noteElementUpdateRequest
     ) {
 
-        NoteElement module = noteElementService.findById(noteElementId);
-        noteElementMapper.updateModuleFromDTO(noteElementUpdateRequest, module);
-
-        NoteElement updatedModule = noteElementService.update(module);
-        NoteElementResponse updatedModuleResponse = noteElementMapper.toModuleResponse(updatedModule);
+        NoteElement noteElement = noteElementService.findById(noteElementId);
+        noteElementMapper.updateNoteElementFromDTO(noteElementUpdateRequest, noteElement);
+        NoteElement updatedModule = noteElementService.update(noteElement);
+        NoteElementResponse updatedModuleResponse = noteElementMapper.toNoteElementResponse(updatedModule);
 
         return ResponseEntity
                 .ok()

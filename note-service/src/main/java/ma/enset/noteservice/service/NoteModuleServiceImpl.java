@@ -8,10 +8,12 @@ import ma.enset.noteservice.exception.ElementAlreadyExistsException;
 import ma.enset.noteservice.exception.ElementNotFoundException;
 
 import ma.enset.noteservice.exception.InternalErrorException;
+import ma.enset.noteservice.feign.ModuleServiceFeignClient;
 import ma.enset.noteservice.model.NoteModule;
 import ma.enset.noteservice.repository.NoteModuleRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -24,9 +26,13 @@ import java.util.List;
 public class NoteModuleServiceImpl implements NoteModuleService {
 
     private final NoteModuleRepository noteModuleRepository;
+    private final ModuleServiceFeignClient moduleServiceFeignClient;
 
     @Override
     public NoteModule save(NoteModule noteModule) throws ElementAlreadyExistsException, InternalErrorException {
+        if (moduleServiceFeignClient.getModuleByCode(noteModule.getCodeModule()).getStatusCode() != HttpStatus.OK)
+            return null;
+
         if (noteModuleRepository.findById(noteModule.getNoteModuleId()).isPresent()) {
             throw ElementAlreadyExistsException.builder()
                     .key(CoreConstants.BusinessExceptionMessage.NOTE_MODULE_ALREADY_EXISTS)
@@ -49,9 +55,13 @@ public class NoteModuleServiceImpl implements NoteModuleService {
     @Override
     @Transactional
     public List<NoteModule> saveAll(List<NoteModule> noteModuleList) throws ElementAlreadyExistsException, InternalErrorException {
-        List<NoteModule> createdNoteModule = new ArrayList<>(noteModuleList.size());
-        noteModuleList.forEach(notemodule -> createdNoteModule.add(save(notemodule)));
 
+        List<NoteModule> createdNoteModule = new ArrayList<>(noteModuleList.size());
+        noteModuleList.forEach(notemodule -> {
+            if (moduleServiceFeignClient.getModuleByCode(notemodule.getCodeModule()).getStatusCode() != HttpStatus.OK)
+                return;
+            createdNoteModule.add(save(notemodule));
+        });
         return createdNoteModule;
     }
 
@@ -68,6 +78,10 @@ public class NoteModuleServiceImpl implements NoteModuleService {
 
     @Override
     public NoteModule update(NoteModule noteModule) throws ElementNotFoundException, InternalErrorException {
+
+        if (moduleServiceFeignClient.getModuleByCode(noteModule.getCodeModule()).getStatusCode() != HttpStatus.OK)
+            return null;
+
         if (!noteModuleRepository.findById(noteModule.getNoteModuleId()).isPresent()) {
             throw noteModuleNotFoundException(noteModule.getNoteModuleId());
         }

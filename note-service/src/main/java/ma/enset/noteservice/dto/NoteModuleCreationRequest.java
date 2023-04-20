@@ -23,7 +23,10 @@ public record NoteModuleCreationRequest(
     @NotNull
     boolean redoublant,
     @NotNull
-    boolean rattrapage
+    boolean rattrapage,
+
+    @NotBlank
+    String codeModule
 //    @NotBlank
 //    String codeSemestre
 ) {}

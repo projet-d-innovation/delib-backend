@@ -2,8 +2,11 @@ package ma.enset.noteservice.dto;
 
 
 public record NoteElementResponse(
-    String NoteElementId,
+    String noteElementId,
     float note,
-    boolean redoublant
-//    String codeSemestre
-) { }
+    boolean redoublant,
+    String codeElement
+) {
+
+
+}

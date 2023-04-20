@@ -7,9 +7,11 @@ import javax.xml.transform.Result;
 public record NoteModuleResponse(
     String noteModuleId,
     float note,
-
     Resultat resultat,
     boolean redoublant,
-    boolean rattrapage
-//    String codeSemestre
-) { }
+    boolean rattrapage,
+    String codeModule
+
+) {
+
+}

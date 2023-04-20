@@ -23,5 +23,7 @@ public class NoteElement {
     private float note;
     @Column(nullable = false)
     private boolean redoublant;
+    @Column(nullable = false)
+    private String codeElement;
 
 }

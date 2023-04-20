@@ -7,10 +7,12 @@ import ma.enset.noteservice.constant.CoreConstants;
 import ma.enset.noteservice.exception.ElementAlreadyExistsException;
 import ma.enset.noteservice.exception.ElementNotFoundException;
 import ma.enset.noteservice.exception.InternalErrorException;
+import ma.enset.noteservice.feign.ElementServiceFeignClient;
 import ma.enset.noteservice.model.NoteElement;
 import ma.enset.noteservice.repository.NoteElementRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -23,24 +25,29 @@ public class NoteElementServiceImpl implements NoteElementService {
 
     private final NoteElementRepository noteElementRepository;
 
+    private final ElementServiceFeignClient elementServiceFeignClient;
+
     @Override
-    public NoteElement save(NoteElement note) throws ElementAlreadyExistsException, InternalErrorException {
-        if (noteElementRepository.findById(note.getNoteElementId()).isPresent()) {
+    public NoteElement save(NoteElement noteElement) throws ElementAlreadyExistsException, InternalErrorException {
+
+        if (elementServiceFeignClient.getElementByCode(noteElement.getCodeElement()).getStatusCode() != HttpStatus.OK)
+            return null;
+
+        if (noteElementRepository.findById(noteElement.getNoteElementId()).isPresent()) {
             throw ElementAlreadyExistsException.builder()
                     .key(CoreConstants.BusinessExceptionMessage.NOTE_ELEMENT_ALREADY_EXISTS)
-                    .args(new Object[]{note.getNoteElementId()})
+                    .args(new Object[]{noteElement.getNoteElementId()})
                     .build();
         }
 
         NoteElement createNoteElement = null;
 
         try {
-            createNoteElement = noteElementRepository.save(note);
+            createNoteElement = noteElementRepository.save(noteElement);
         } catch (Exception e) {
             log.error(e.getMessage(), e.getCause());
             throw new InternalErrorException();
         }
-
         return createNoteElement;
     }
 
@@ -48,15 +55,19 @@ public class NoteElementServiceImpl implements NoteElementService {
     @Transactional
     public List<NoteElement> saveAll(List<NoteElement> noteElementList) throws ElementAlreadyExistsException, InternalErrorException {
         List<NoteElement> createdNoteElement = new ArrayList<>(noteElementList.size());
-        noteElementList.forEach(noteElement -> createdNoteElement.add(save(noteElement)));
-
+        noteElementList.forEach(noteElement -> {
+            if (elementServiceFeignClient.getElementByCode(noteElement.getCodeElement()).getStatusCode() != HttpStatus.OK)
+                return ;
+            createdNoteElement.add(save(noteElement));
+        });
         return createdNoteElement;
     }
 
     @Override
-    public NoteElement findById(String codeModule) throws ElementNotFoundException {
-        return noteElementRepository.findById(codeModule)
-                    .orElseThrow(() -> noteElementNotFoundException(codeModule));
+    public NoteElement findById(String noteElementId) throws ElementNotFoundException {
+
+        return noteElementRepository.findById(noteElementId)
+                    .orElseThrow(() -> noteElementNotFoundException(noteElementId));
     }
 
     @Override
@@ -66,6 +77,10 @@ public class NoteElementServiceImpl implements NoteElementService {
 
     @Override
     public NoteElement update(NoteElement noteElement) throws ElementNotFoundException, InternalErrorException {
+
+        if (elementServiceFeignClient.getElementByCode(noteElement.getCodeElement()).getStatusCode() != HttpStatus.OK)
+            return null;
+
         if (!noteElementRepository.findById(noteElement.getNoteElementId()).isPresent()) {
             throw noteElementNotFoundException(noteElement.getNoteElementId());
         }
@@ -87,7 +102,6 @@ public class NoteElementServiceImpl implements NoteElementService {
         if (!noteElementRepository.findById(noteElementId).isPresent()) {
             throw noteElementNotFoundException(noteElementId);
         }
-
         noteElementRepository.deleteById(noteElementId);
     }
 
