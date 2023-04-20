@@ -1,0 +1,31 @@
+server:
+    port:
+
+spring:
+    application:
+        name: departement-service
+
+    datasource:
+        url:
+        username:
+        password:
+
+    jpa:
+        hibernate:
+            ddl-auto: update
+        generate-ddl: true
+        database-platform:
+
+    messages:
+        basename: messages.messages
+        encoding: UTF-8
+
+eureka:
+    client:
+        service-url:
+            defaultZone:
+info:
+    app:
+        name: departement-service
+        version: 1.0.2
+        description: Departement Service
