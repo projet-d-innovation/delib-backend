@@ -17,6 +17,9 @@
         <module>module-service</module>
         <module>element-service</module>
         <module>utilisateur-service</module>
+        <module>departement-service</module>
+        <module>filiere-service</module>
+        <module>semestre-service</module>
     </modules>
 
     <properties>
