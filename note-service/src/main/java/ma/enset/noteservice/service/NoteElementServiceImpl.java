@@ -103,8 +103,8 @@ public class NoteElementServiceImpl implements NoteElementService {
     }
 
     @Override
-    public Page<NoteElement> findByCodeSession(String codeSession, Pageable pageRequest) {
-        return noteElementRepository.findByCodeSession(codeSession, pageRequest);
+    public List<NoteElement> findByCodeSession(String codeSession) {
+        return noteElementRepository.findByCodeSession(codeSession);
     }
 
 

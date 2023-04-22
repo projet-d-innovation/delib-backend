@@ -104,8 +104,8 @@ public class NoteModuleServiceImpl implements NoteModuleService {
     }
 
     @Override
-    public Page<NoteModule> findAllByCodeSession(String codeSession, Pageable pageRequest) {
-           return noteModuleRepository.findByCodeSession(codeSession, pageRequest);
+    public List<NoteModule> findAllByCodeSession(String codeSession) {
+           return noteModuleRepository.findByCodeSession(codeSession);
     }
 
 

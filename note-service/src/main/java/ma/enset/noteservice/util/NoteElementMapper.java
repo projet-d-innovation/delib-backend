@@ -26,12 +26,8 @@ public interface NoteElementMapper {
 
 
 
-    @Mapping(target = "page", expression = "java(NoteElementPage.getNumber())")
-    @Mapping(target = "size", expression = "java(NoteElementPage.getSize())")
-    @Mapping(target = "totalPages", expression = "java(NoteElementPage.getTotalPages())")
-    @Mapping(target = "totalElements", expression = "java(NoteElementPage.getNumberOfElements())")
-    @Mapping(source = "content", target = "records")
-    NoteElementPagingResponse toPagingResponse(Page<NoteElement> NoteElementPage);
 
 
+
+    List<NoteElementWithElementResponse> toNoteElementWithElementResponseList(List<NoteElement> noteElementList);
 }

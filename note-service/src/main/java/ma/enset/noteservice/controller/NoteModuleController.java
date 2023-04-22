@@ -62,16 +62,14 @@ public class NoteModuleController {
     }
 //
     @GetMapping
-    public ResponseEntity<NoteModulePagingResponse> getAllBycodeSession(@RequestParam(defaultValue = "0") @Min(0) int page,
-                                                            @RequestParam(defaultValue = "10") @Range(min = 1, max = 10) int size, @RequestParam String codeSession) {
+    public ResponseEntity<List<NoteModuleResponse>> getAllBycodeSession(@RequestParam String codeSession) {
 
-        Pageable pageRequest = PageRequest.of(page, size);
-        Page<NoteModule> modulePage = noteModuleService.findAllByCodeSession(codeSession, pageRequest);
-        NoteModulePagingResponse pagedResponse = noteModuleMapper.toPagingResponse(modulePage);
+        List<NoteModule> noteModuleList = noteModuleService.findAllByCodeSession(codeSession);
+        List<NoteModuleResponse> noteModuleResponses = noteModuleMapper.toNoteModuleResponseList(noteModuleList);
 
         return ResponseEntity
                 .ok()
-                .body(pagedResponse);
+                .body(noteModuleResponses);
     }
 //
     @PatchMapping("/{noteModuleId}")

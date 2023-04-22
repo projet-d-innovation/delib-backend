@@ -24,11 +24,6 @@ public interface NoteModuleMapper {
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateNoteModuleFromDTO(NoteModuleUpdateRequest noteModuleUpdateRequest, @MappingTarget NoteModule noteModule);
 
-    @Mapping(target = "page", expression = "java(NoteModulePage.getNumber())")
-    @Mapping(target = "size", expression = "java(NoteModulePage.getSize())")
-    @Mapping(target = "totalPages", expression = "java(NoteModulePage.getTotalPages())")
-    @Mapping(target = "totalElements", expression = "java(NoteModulePage.getNumberOfElements())")
-    @Mapping(source = "content", target = "records")
-    NoteModulePagingResponse toPagingResponse(Page<NoteModule> NoteModulePage);
+
 
 }

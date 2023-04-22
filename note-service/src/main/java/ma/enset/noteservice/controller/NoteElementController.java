@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/v1/notes/elements")
@@ -63,19 +64,22 @@ public class NoteElementController {
                 .body(foundModuleResponse);
     }
     @GetMapping
-    public  ResponseEntity<NoteElementPagingResponse> getAllByCodeSession(@RequestParam(defaultValue = "0") @Min(0) int page,
-                                                            @RequestParam(defaultValue = "10") @Range(min = 1, max = 10) int size, @RequestParam String codeSession) {
+    public  ResponseEntity< List<NoteElementWithElementResponse>> getAllByCodeSession(@RequestParam String codeSession) {
 
-        Pageable pageRequest = PageRequest.of(page, size);
-        Page<NoteElement> noteElementPage = noteElementService.findByCodeSession(codeSession, pageRequest);
-        List<String> codesElement = noteElementPage.getContent().stream().distinct().map(NoteElement::getCodeElement).toList();
-        ResponseEntity<List<ElementResponse>> foundElements =  elementServiceFeignClient.findByCodeElements11(codesElement);
-        NoteElementPagingResponse pagedResponse = noteElementMapper.toPagingResponse(noteElementPage);
-         pagedResponse.setElementResponseList(foundElements.getBody());
+//        Pageable pageRequest = PageRequest.of(page, size);
+        List<NoteElement> noteElementList= noteElementService.findByCodeSession(codeSession);
+        List<String> codesElements = noteElementList.stream().distinct().map(NoteElement::getCodeElement).toList();
+        ResponseEntity<List<ElementResponse>> foundElements =  elementServiceFeignClient.findByCodeElements11(codesElements);
+//        NoteElementPagingResponse pagedResponse = noteElementMapper.toPagingResponse(noteElementPage);
+        List<NoteElementWithElementResponse> noteElementWithElementResponseList  = noteElementMapper.toNoteElementWithElementResponseList(noteElementList);
+         noteElementWithElementResponseList.forEach(noteElementWithElementResponse -> {
+             ElementResponse elementResponse = Objects.requireNonNull(foundElements.getBody()).stream().filter(elementResponse1 -> elementResponse1.codeElement().equals(noteElementWithElementResponse.codeElement())).findFirst().get();
+             noteElementWithElementResponse.setElementResponse(elementResponse);
+         });
 
         return ResponseEntity
                 .ok()
-                .body(pagedResponse);
+                .body(noteElementWithElementResponseList);
     }
 
     @PatchMapping("/{noteElementId}")

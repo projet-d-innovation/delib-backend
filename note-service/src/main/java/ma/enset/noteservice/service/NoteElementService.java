@@ -17,5 +17,5 @@ public interface NoteElementService {
     NoteElement update(NoteElement noteElement) throws ElementNotFoundException, InternalErrorException;
     void deleteById(String codeModule) throws ElementNotFoundException;
 
-    Page<NoteElement> findByCodeSession(String codeSession, Pageable pageRequest);
+    List<NoteElement> findByCodeSession(String codeSession);
 }
