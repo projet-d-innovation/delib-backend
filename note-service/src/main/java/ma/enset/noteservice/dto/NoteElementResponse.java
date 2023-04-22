@@ -5,7 +5,8 @@ public record NoteElementResponse(
     String noteElementId,
     float note,
     boolean redoublant,
-    String codeElement
+    String codeElement,
+    String codeSession
 ) {
 
 

@@ -28,4 +28,7 @@ public class NoteModule {
 
     @Column( nullable = false)
     private String codeModule;
+
+    @Column( nullable = false)
+    private String codeSession;
 }

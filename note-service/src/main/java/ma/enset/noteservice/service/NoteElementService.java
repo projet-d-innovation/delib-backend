@@ -14,7 +14,8 @@ public interface NoteElementService {
     NoteElement save(NoteElement note) throws ElementAlreadyExistsException, InternalErrorException;
     List<NoteElement> saveAll(List<NoteElement> modules) throws ElementAlreadyExistsException, InternalErrorException;
     NoteElement findById(String noteElementId) throws ElementNotFoundException;
-    Page<NoteElement> findAll(Pageable pageable);
     NoteElement update(NoteElement noteElement) throws ElementNotFoundException, InternalErrorException;
     void deleteById(String codeModule) throws ElementNotFoundException;
+
+    Page<NoteElement> findByCodeSession(String codeSession, Pageable pageRequest);
 }

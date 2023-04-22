@@ -1,6 +1,8 @@
 package ma.enset.noteservice.repository;
 
 import ma.enset.noteservice.model.NoteModule;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -8,4 +10,5 @@ import org.springframework.stereotype.Repository;
 public interface
 NoteModuleRepository extends JpaRepository<NoteModule, String> {
 
+    Page<NoteModule> findByCodeSession(String codeSession, Pageable pageRequest);
 }

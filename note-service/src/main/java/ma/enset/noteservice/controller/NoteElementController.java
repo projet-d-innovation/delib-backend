@@ -2,6 +2,7 @@ package ma.enset.noteservice.controller;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 
 import ma.enset.noteservice.dto.*;
@@ -18,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -61,11 +63,11 @@ public class NoteElementController {
                 .body(foundModuleResponse);
     }
     @GetMapping
-    public  ResponseEntity<NoteElementPagingResponse> getAll(@RequestParam(defaultValue = "0") @Min(0) int page,
-                                                            @RequestParam(defaultValue = "10") @Range(min = 1, max = 10) int size) {
+    public  ResponseEntity<NoteElementPagingResponse> getAllByCodeSession(@RequestParam(defaultValue = "0") @Min(0) int page,
+                                                            @RequestParam(defaultValue = "10") @Range(min = 1, max = 10) int size, @RequestParam String codeSession) {
 
         Pageable pageRequest = PageRequest.of(page, size);
-        Page<NoteElement> noteElementPage = noteElementService.findAll(pageRequest);
+        Page<NoteElement> noteElementPage = noteElementService.findByCodeSession(codeSession, pageRequest);
         List<String> codesElement = noteElementPage.getContent().stream().distinct().map(NoteElement::getCodeElement).toList();
         ResponseEntity<List<ElementResponse>> foundElements =  elementServiceFeignClient.findByCodeElements11(codesElement);
         NoteElementPagingResponse pagedResponse = noteElementMapper.toPagingResponse(noteElementPage);
@@ -91,6 +93,27 @@ public class NoteElementController {
                 .ok()
                 .body(updatedModuleResponse);
     }
+
+    @PatchMapping("/bulk")
+    public ResponseEntity<List<NoteElementResponse>> updateMany(
+            @NotEmpty @RequestParam("noteElementId") List<String> noteElementIds,
+            @Valid @RequestBody NoteElementUpdateRequest noteElementUpdateRequest
+    ) {
+        List<NoteElementResponse> updatedModuleResponseList = new ArrayList<>();
+        noteElementIds.forEach(noteElementId ->{
+            NoteElement noteElement = noteElementService.findById(noteElementId);
+            noteElementMapper.updateNoteElementFromDTO(noteElementUpdateRequest, noteElement);
+            NoteElement updatedModule = noteElementService.update(noteElement);
+        NoteElementResponse updatedModuleResponse = noteElementMapper.toNoteElementResponse(updatedModule);
+            updatedModuleResponseList.add(updatedModuleResponse);
+        });
+
+        return ResponseEntity
+                .ok()
+                .body(updatedModuleResponseList);
+    }
+
+
 
     @DeleteMapping("/{noteElementId}")
     public ResponseEntity<?> delete(@PathVariable("noteElementId") String noteElementId) {

@@ -6,7 +6,10 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.ws.rs.DefaultValue;
+import lombok.Builder;
 import ma.enset.noteservice.enums.Resultat;
+import net.bytebuddy.implementation.bind.annotation.Default;
 
 import javax.xml.transform.Result;
 
@@ -17,16 +20,17 @@ public record NoteModuleCreationRequest(
     @Max(20)
     @NotNull
     float note,
-
     @NotNull
     Resultat resultat,
-    @NotNull
+//    @NotNull
+    @DefaultValue("false")
     boolean redoublant,
-    @NotNull
-    boolean rattrapage,
-
+//    @NotNull
+    @DefaultValue("false")
+    boolean rattrapage ,
     @NotBlank
-    String codeModule
-//    @NotBlank
-//    String codeSemestre
+    String codeModule,
+    @NotBlank
+    String codeSession
+
 ) {}

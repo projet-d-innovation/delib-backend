@@ -2,6 +2,7 @@ package ma.enset.noteservice.controller;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import ma.enset.noteservice.dto.*;
 import ma.enset.noteservice.feign.ModuleServiceFeignClient;
@@ -17,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -60,11 +62,11 @@ public class NoteModuleController {
     }
 //
     @GetMapping
-    public ResponseEntity<NoteModulePagingResponse> getAll(@RequestParam(defaultValue = "0") @Min(0) int page,
-                                                            @RequestParam(defaultValue = "10") @Range(min = 1, max = 10) int size) {
+    public ResponseEntity<NoteModulePagingResponse> getAllBycodeSession(@RequestParam(defaultValue = "0") @Min(0) int page,
+                                                            @RequestParam(defaultValue = "10") @Range(min = 1, max = 10) int size, @RequestParam String codeSession) {
 
         Pageable pageRequest = PageRequest.of(page, size);
-        Page<NoteModule> modulePage = noteModuleService.findAll(pageRequest);
+        Page<NoteModule> modulePage = noteModuleService.findAllByCodeSession(codeSession, pageRequest);
         NoteModulePagingResponse pagedResponse = noteModuleMapper.toPagingResponse(modulePage);
 
         return ResponseEntity
@@ -87,6 +89,27 @@ public class NoteModuleController {
         return ResponseEntity
                 .ok()
                 .body(updatedModuleResponse);
+    }
+
+    @PatchMapping("/bulk")
+    public ResponseEntity<List<NoteModuleResponse>> updateMany(
+            @NotEmpty @RequestParam("noteModuleId") List<String> noteModuleIds,
+            @Valid @RequestBody NoteModuleUpdateRequest noteModuleUpdateRequest
+    ) {
+        List<NoteModuleResponse> updatedModuleResponseList = new ArrayList<>();
+        noteModuleIds.forEach(noteModuleId -> {
+            NoteModule module = noteModuleService.findById(noteModuleId);
+            noteModuleMapper.updateNoteModuleFromDTO(noteModuleUpdateRequest, module);
+
+            NoteModule updatedModule = noteModuleService.update(module);
+            NoteModuleResponse updatedModuleResponse = noteModuleMapper.toNoteModuleResponse(updatedModule);
+            updatedModuleResponseList.add(updatedModuleResponse);
+        });
+
+
+        return ResponseEntity
+                .ok()
+                .body(updatedModuleResponseList);
     }
 
     @DeleteMapping("/{noteModuleId}")

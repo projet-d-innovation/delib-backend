@@ -71,10 +71,6 @@ public class NoteModuleServiceImpl implements NoteModuleService {
                     .orElseThrow(() -> noteModuleNotFoundException(codeModule));
     }
 //
-    @Override
-    public Page<NoteModule> findAll(Pageable pageable) {
-        return noteModuleRepository.findAll(pageable);
-    }
 
     @Override
     public NoteModule update(NoteModule noteModule) throws ElementNotFoundException, InternalErrorException {
@@ -107,8 +103,13 @@ public class NoteModuleServiceImpl implements NoteModuleService {
         noteModuleRepository.deleteById(noteModuleId);
     }
 
+    @Override
+    public Page<NoteModule> findAllByCodeSession(String codeSession, Pageable pageRequest) {
+           return noteModuleRepository.findByCodeSession(codeSession, pageRequest);
+    }
 
-//
+
+    //
     private ElementNotFoundException noteModuleNotFoundException(String noteModuleId) {
         return ElementNotFoundException.builder()
                 .key(CoreConstants.BusinessExceptionMessage.NOTE_MODULE_NOT_FOUND)

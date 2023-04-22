@@ -25,5 +25,7 @@ public class NoteElement {
     private boolean redoublant;
     @Column(nullable = false)
     private String codeElement;
+    @Column(nullable = false)
+    private String codeSession;
 
 }

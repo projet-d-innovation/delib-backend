@@ -10,9 +10,10 @@ public record NoteModuleWithModuleResponse(
     boolean rattrapage,
     String codeModule,
 
-    ModuleResponse module
+    ModuleResponse module,
+    String codeSession
 ) {
     public NoteModuleWithModuleResponse setElementResponse(ModuleResponse module) {
-        return new NoteModuleWithModuleResponse(this.noteModuleId(), this.note(), this.resultat(), this.redoublant(), this.rattrapage(), this.codeModule(), module);
+        return new NoteModuleWithModuleResponse(this.noteModuleId(), this.note(), this.resultat(), this.redoublant(), this.rattrapage(), this.codeModule(), module, this.codeSession());
     }
 }

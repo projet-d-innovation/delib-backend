@@ -13,9 +13,12 @@ public record NoteElementCreationRequest(
     @Max(20)
     @NotNull
     float note,
-    @NotNull
+    @DefaultValue("false")
     boolean redoublant,
     @NotBlank
-    String codeElement
+    String codeElement,
+    @NotBlank
+    String codeSession
+
 
 ) {}

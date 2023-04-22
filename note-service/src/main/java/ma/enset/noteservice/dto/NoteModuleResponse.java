@@ -10,7 +10,8 @@ public record NoteModuleResponse(
     Resultat resultat,
     boolean redoublant,
     boolean rattrapage,
-    String codeModule
+    String codeModule,
+    String codeSession
 
 ) {
 
