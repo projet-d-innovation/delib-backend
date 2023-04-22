@@ -21,9 +21,9 @@ public interface NoteModuleMapper {
     List<NoteModule> toNoteModuleList(List<NoteModuleCreationRequest> noteModuleCreationRequestList);
     List<NoteModuleResponse> toNoteModuleResponseList(List<NoteModule> noteModuleList);
 
+
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateNoteModuleFromDTO(NoteModuleUpdateRequest noteModuleUpdateRequest, @MappingTarget NoteModule noteModule);
-
 
 
 }

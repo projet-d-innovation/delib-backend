@@ -1,18 +1,13 @@
 package ma.enset.noteservice.controller;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotEmpty;
+
 import lombok.AllArgsConstructor;
 import ma.enset.noteservice.dto.*;
 import ma.enset.noteservice.feign.ModuleServiceFeignClient;
 import ma.enset.noteservice.model.NoteModule;
 import ma.enset.noteservice.service.NoteModuleService;
 import ma.enset.noteservice.util.NoteModuleMapper;
-import org.hibernate.validator.constraints.Range;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -77,12 +72,9 @@ public class NoteModuleController {
         @PathVariable("noteModuleId") String noteModuleId,
         @Valid @RequestBody NoteModuleUpdateRequest noteModuleUpdateRequest
     ) {
-
         NoteModule module = noteModuleService.findById(noteModuleId);
         noteModuleMapper.updateNoteModuleFromDTO(noteModuleUpdateRequest, module);
-
-        NoteModule updatedModule = noteModuleService.update(module);
-        NoteModuleResponse updatedModuleResponse = noteModuleMapper.toNoteModuleResponse(updatedModule);
+        NoteModuleResponse updatedModuleResponse = noteModuleMapper.toNoteModuleResponse(noteModuleService.update(module));
 
         return ResponseEntity
                 .ok()
@@ -91,19 +83,15 @@ public class NoteModuleController {
 
     @PatchMapping("/bulk")
     public ResponseEntity<List<NoteModuleResponse>> updateMany(
-            @NotEmpty @RequestParam("noteModuleId") List<String> noteModuleIds,
-            @Valid @RequestBody NoteModuleUpdateRequest noteModuleUpdateRequest
+            @Valid @RequestBody List<NoteModuleUpdateRequest> noteModuleUpdateRequestList
     ) {
         List<NoteModuleResponse> updatedModuleResponseList = new ArrayList<>();
-        noteModuleIds.forEach(noteModuleId -> {
-            NoteModule module = noteModuleService.findById(noteModuleId);
+        noteModuleUpdateRequestList.forEach(noteModuleUpdateRequest -> {
+            NoteModule module = noteModuleService.findById(noteModuleUpdateRequest.noteModuleId());
             noteModuleMapper.updateNoteModuleFromDTO(noteModuleUpdateRequest, module);
-
-            NoteModule updatedModule = noteModuleService.update(module);
-            NoteModuleResponse updatedModuleResponse = noteModuleMapper.toNoteModuleResponse(updatedModule);
+            NoteModuleResponse updatedModuleResponse = noteModuleMapper.toNoteModuleResponse(noteModuleService.update(module));
             updatedModuleResponseList.add(updatedModuleResponse);
         });
-
 
         return ResponseEntity
                 .ok()

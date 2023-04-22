@@ -22,10 +22,8 @@ public record NoteModuleCreationRequest(
     float note,
     @NotNull
     Resultat resultat,
-//    @NotNull
     @DefaultValue("false")
     boolean redoublant,
-//    @NotNull
     @DefaultValue("false")
     boolean rattrapage ,
     @NotBlank

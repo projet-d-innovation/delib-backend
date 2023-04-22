@@ -21,13 +21,10 @@ public interface NoteElementMapper {
     List<NoteElement> toNoteElementList(List<NoteElementCreationRequest> noteElementCreationRequestList);
     List<NoteElementResponse> toNoteElementResponseList(List<NoteElement> noteElementList);
 
+
+    List<NoteElementWithElementResponse> toNoteElementWithElementResponseList(List<NoteElement> noteElementList);
+
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateNoteElementFromDTO(NoteElementUpdateRequest noteElementUpdateRequest, @MappingTarget NoteElement noteElement);
 
-
-
-
-
-
-    List<NoteElementWithElementResponse> toNoteElementWithElementResponseList(List<NoteElement> noteElementList);
 }

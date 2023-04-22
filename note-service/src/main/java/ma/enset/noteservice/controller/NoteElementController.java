@@ -1,8 +1,7 @@
 package ma.enset.noteservice.controller;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotEmpty;
+
 import lombok.AllArgsConstructor;
 
 import ma.enset.noteservice.dto.*;
@@ -10,10 +9,7 @@ import ma.enset.noteservice.feign.ElementServiceFeignClient;
 import ma.enset.noteservice.model.NoteElement;
 import ma.enset.noteservice.service.NoteElementService;
 import ma.enset.noteservice.util.NoteElementMapper;
-import org.hibernate.validator.constraints.Range;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -66,11 +62,9 @@ public class NoteElementController {
     @GetMapping
     public  ResponseEntity< List<NoteElementWithElementResponse>> getAllByCodeSession(@RequestParam String codeSession) {
 
-//        Pageable pageRequest = PageRequest.of(page, size);
         List<NoteElement> noteElementList= noteElementService.findByCodeSession(codeSession);
         List<String> codesElements = noteElementList.stream().distinct().map(NoteElement::getCodeElement).toList();
         ResponseEntity<List<ElementResponse>> foundElements =  elementServiceFeignClient.findByCodeElements11(codesElements);
-//        NoteElementPagingResponse pagedResponse = noteElementMapper.toPagingResponse(noteElementPage);
         List<NoteElementWithElementResponse> noteElementWithElementResponseList  = noteElementMapper.toNoteElementWithElementResponseList(noteElementList);
          noteElementWithElementResponseList.forEach(noteElementWithElementResponse -> {
              ElementResponse elementResponse = Objects.requireNonNull(foundElements.getBody()).stream().filter(elementResponse1 -> elementResponse1.codeElement().equals(noteElementWithElementResponse.codeElement())).findFirst().get();
@@ -87,11 +81,9 @@ public class NoteElementController {
         @PathVariable("noteElementId") String noteElementId,
         @Valid @RequestBody NoteElementUpdateRequest noteElementUpdateRequest
     ) {
-
         NoteElement noteElement = noteElementService.findById(noteElementId);
         noteElementMapper.updateNoteElementFromDTO(noteElementUpdateRequest, noteElement);
-        NoteElement updatedModule = noteElementService.update(noteElement);
-        NoteElementResponse updatedModuleResponse = noteElementMapper.toNoteElementResponse(updatedModule);
+        NoteElementResponse updatedModuleResponse = noteElementMapper.toNoteElementResponse(noteElementService.update(noteElement));
 
         return ResponseEntity
                 .ok()
@@ -100,18 +92,17 @@ public class NoteElementController {
 
     @PatchMapping("/bulk")
     public ResponseEntity<List<NoteElementResponse>> updateMany(
-            @NotEmpty @RequestParam("noteElementId") List<String> noteElementIds,
-            @Valid @RequestBody NoteElementUpdateRequest noteElementUpdateRequest
+            @Valid @RequestBody List<NoteElementUpdateRequest> noteElementUpdateRequestList
     ) {
         List<NoteElementResponse> updatedModuleResponseList = new ArrayList<>();
-        noteElementIds.forEach(noteElementId ->{
-            NoteElement noteElement = noteElementService.findById(noteElementId);
+        noteElementUpdateRequestList.forEach(noteElementUpdateRequest -> {
+            NoteElement noteElement = noteElementService.findById(noteElementUpdateRequest.noteElementId());
             noteElementMapper.updateNoteElementFromDTO(noteElementUpdateRequest, noteElement);
-            NoteElement updatedModule = noteElementService.update(noteElement);
-        NoteElementResponse updatedModuleResponse = noteElementMapper.toNoteElementResponse(updatedModule);
+            NoteElementResponse updatedModuleResponse = noteElementMapper.toNoteElementResponse(noteElementService.update(noteElement));
             updatedModuleResponseList.add(updatedModuleResponse);
         });
 
+//
         return ResponseEntity
                 .ok()
                 .body(updatedModuleResponseList);
