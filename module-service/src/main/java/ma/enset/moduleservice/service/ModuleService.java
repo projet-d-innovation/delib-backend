@@ -1,20 +1,32 @@
 package ma.enset.moduleservice.service;
 
+import ma.enset.moduleservice.dto.ModuleCreationRequest;
+import ma.enset.moduleservice.dto.ModulePagingResponse;
+import ma.enset.moduleservice.dto.ModuleResponse;
+import ma.enset.moduleservice.dto.ModuleUpdateRequest;
+import ma.enset.moduleservice.exception.DuplicateEntryException;
 import ma.enset.moduleservice.exception.ElementAlreadyExistsException;
 import ma.enset.moduleservice.exception.ElementNotFoundException;
-import ma.enset.moduleservice.exception.InternalErrorException;
-import ma.enset.moduleservice.model.Module;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Set;
 
 public interface ModuleService {
-    Module save(Module module) throws ElementAlreadyExistsException, InternalErrorException;
-    List<Module> saveAll(List<Module> modules) throws ElementAlreadyExistsException, InternalErrorException;
-    Module findByCodeModule(String codeModule) throws ElementNotFoundException;
-    Page<Module> findAll(Pageable pageable);
-    Module update(Module module) throws ElementNotFoundException, InternalErrorException;
-    void deleteByCodeModule(String codeModule) throws ElementNotFoundException;
-    void deleteAllByCodeModule(List<String> codesModules) throws ElementNotFoundException;
+    ModuleResponse save(ModuleCreationRequest request) throws ElementAlreadyExistsException;
+
+    List<ModuleResponse> saveAll(List<ModuleCreationRequest> request) throws ElementAlreadyExistsException, DuplicateEntryException;
+
+    ModuleResponse findById(String codeModule, boolean includeElements) throws ElementNotFoundException;
+
+    ModulePagingResponse findAll(int page, int size, boolean includeElements);
+
+    boolean existsAllId(Set<String> codesModule) throws ElementNotFoundException;
+
+    ModuleResponse update(String codeModule, ModuleUpdateRequest request) throws ElementNotFoundException;
+
+    void deleteById(String codeModule) throws ElementNotFoundException;
+
+    void deleteByCodeSemestre(String codeSemestre) throws ElementNotFoundException;
+
+    void deleteAllById(Set<String> codesModule) throws ElementNotFoundException;
 }
