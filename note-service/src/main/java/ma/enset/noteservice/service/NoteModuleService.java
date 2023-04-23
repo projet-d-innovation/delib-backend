@@ -18,4 +18,8 @@ public interface NoteModuleService {
     void deleteById(String codeModule) throws ElementNotFoundException;
 
     List<NoteModule> findAllByCodeSession(String codeSession);
+
+    List<NoteModule> findAllByNoteModuleId(List<String> noteModuleIdList);
+
+    List<NoteModule> updateAll(List<NoteModule> noteElementList);
 }

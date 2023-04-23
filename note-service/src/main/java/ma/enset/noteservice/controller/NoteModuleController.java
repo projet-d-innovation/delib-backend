@@ -5,6 +5,7 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import ma.enset.noteservice.dto.*;
 import ma.enset.noteservice.feign.ModuleServiceFeignClient;
+import ma.enset.noteservice.model.NoteElement;
 import ma.enset.noteservice.model.NoteModule;
 import ma.enset.noteservice.service.NoteModuleService;
 import ma.enset.noteservice.util.NoteModuleMapper;
@@ -81,22 +82,20 @@ public class NoteModuleController {
                 .body(updatedModuleResponse);
     }
 
+
     @PatchMapping("/bulk")
-    public ResponseEntity<List<NoteModuleResponse>> updateMany(
+    public ResponseEntity<List<NoteModuleResponse>> updateAll(
             @Valid @RequestBody List<NoteModuleUpdateRequest> noteModuleUpdateRequestList
     ) {
-        List<NoteModuleResponse> updatedModuleResponseList = new ArrayList<>();
-        noteModuleUpdateRequestList.forEach(noteModuleUpdateRequest -> {
-            NoteModule module = noteModuleService.findById(noteModuleUpdateRequest.noteModuleId());
-            noteModuleMapper.updateNoteModuleFromDTO(noteModuleUpdateRequest, module);
-            NoteModuleResponse updatedModuleResponse = noteModuleMapper.toNoteModuleResponse(noteModuleService.update(module));
-            updatedModuleResponseList.add(updatedModuleResponse);
-        });
-
+        List<NoteModule> noteModuleList = noteModuleService.findAllByNoteModuleId(noteModuleMapper.toNoteModuleIdList(noteModuleUpdateRequestList));
+        noteModuleMapper.updateNoteModulesFromDTO(noteModuleUpdateRequestList, noteModuleList);
+        List<NoteModule> updatedNoteModuleList = noteModuleService.updateAll(noteModuleList);
+        List<NoteModuleResponse> noteModuleResponseList = noteModuleMapper.toNoteModuleResponseList(updatedNoteModuleList);
         return ResponseEntity
                 .ok()
-                .body(updatedModuleResponseList);
+                .body(noteModuleResponseList);
     }
+
 
     @DeleteMapping("/{noteModuleId}")
     public ResponseEntity<?> delete(@PathVariable("noteModuleId") String noteModuleId) {

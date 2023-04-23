@@ -91,21 +91,17 @@ public class NoteElementController {
     }
 
     @PatchMapping("/bulk")
-    public ResponseEntity<List<NoteElementResponse>> updateMany(
+    public ResponseEntity<List<NoteElementResponse>> updateAll(
             @Valid @RequestBody List<NoteElementUpdateRequest> noteElementUpdateRequestList
     ) {
-        List<NoteElementResponse> updatedModuleResponseList = new ArrayList<>();
-        noteElementUpdateRequestList.forEach(noteElementUpdateRequest -> {
-            NoteElement noteElement = noteElementService.findById(noteElementUpdateRequest.noteElementId());
-            noteElementMapper.updateNoteElementFromDTO(noteElementUpdateRequest, noteElement);
-            NoteElementResponse updatedModuleResponse = noteElementMapper.toNoteElementResponse(noteElementService.update(noteElement));
-            updatedModuleResponseList.add(updatedModuleResponse);
-        });
 
-//
+        List<NoteElement> noteElementList = noteElementService.findAllByNoteElementId(noteElementMapper.toNoteElementIdList(noteElementUpdateRequestList));
+        noteElementMapper.updateNoteElementsFromDTO(noteElementUpdateRequestList, noteElementList);
+        List<NoteElement> updatedNoteElementList = noteElementService.updateAll(noteElementList);
+        List<NoteElementResponse> noteElementResponseList = noteElementMapper.toNoteElementResponseList(updatedNoteElementList);
         return ResponseEntity
                 .ok()
-                .body(updatedModuleResponseList);
+                .body(noteElementResponseList);
     }
 
 

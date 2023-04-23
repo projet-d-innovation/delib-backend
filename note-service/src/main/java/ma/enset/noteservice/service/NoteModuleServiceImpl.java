@@ -9,6 +9,7 @@ import ma.enset.noteservice.exception.ElementNotFoundException;
 
 import ma.enset.noteservice.exception.InternalErrorException;
 import ma.enset.noteservice.feign.ModuleServiceFeignClient;
+import ma.enset.noteservice.model.NoteElement;
 import ma.enset.noteservice.model.NoteModule;
 import ma.enset.noteservice.repository.NoteModuleRepository;
 import org.springframework.data.domain.Page;
@@ -106,6 +107,22 @@ public class NoteModuleServiceImpl implements NoteModuleService {
     @Override
     public List<NoteModule> findAllByCodeSession(String codeSession) {
            return noteModuleRepository.findByCodeSession(codeSession);
+    }
+
+    @Transactional
+    @Override
+    public List<NoteModule> updateAll(List<NoteModule> noteModuleList) throws ElementNotFoundException, InternalErrorException {
+        List<NoteModule> updatedNoteModules = new ArrayList<>();
+        noteModuleList.forEach(noteModule -> updatedNoteModules.add(update(noteModule)));
+        return updatedNoteModules;
+    }
+
+
+    @Override
+    public List<NoteModule> findAllByNoteModuleId(List<String> notModuleIdList) throws ElementNotFoundException {
+        List<NoteModule> noteModuleList = new ArrayList<>();
+        notModuleIdList.forEach(noteModuleId -> noteModuleList.add(this.findById(noteModuleId)));
+        return noteModuleList;
     }
 
 

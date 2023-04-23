@@ -107,6 +107,20 @@ public class NoteElementServiceImpl implements NoteElementService {
         return noteElementRepository.findByCodeSession(codeSession);
     }
 
+    @Override
+    public List<NoteElement> findAllByNoteElementId(List<String> notElementIdList) throws ElementNotFoundException {
+        List<NoteElement> noteElementList = new ArrayList<>();
+        notElementIdList.forEach(noteElementId -> noteElementList.add(this.findById(noteElementId)));
+        return noteElementList;
+    }
+
+    @Transactional
+    @Override
+    public List<NoteElement> updateAll(List<NoteElement> noteElementList) throws ElementNotFoundException, InternalErrorException {
+        List<NoteElement> updatedNoteElements = new ArrayList<>();
+        noteElementList.forEach(noteElement -> updatedNoteElements.add(update(noteElement)));
+        return updatedNoteElements;
+    }
 
     //
     private ElementNotFoundException noteElementNotFoundException(String noteElementId) {

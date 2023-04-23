@@ -3,7 +3,6 @@ package ma.enset.noteservice.util;
 import ma.enset.noteservice.dto.*;
 import ma.enset.noteservice.model.NoteModule;
 import org.mapstruct.*;
-import org.springframework.data.domain.Page;
 
 import java.util.List;
 
@@ -26,4 +25,14 @@ public interface NoteModuleMapper {
     void updateNoteModuleFromDTO(NoteModuleUpdateRequest noteModuleUpdateRequest, @MappingTarget NoteModule noteModule);
 
 
+    default void updateNoteModulesFromDTO(List<NoteModuleUpdateRequest> noteModuleUpdateRequestList, List<NoteModule> noteModuleList){
+        for (int i = 0; i < noteModuleList.size(); i++) {
+            updateNoteModuleFromDTO(noteModuleUpdateRequestList.get(i), noteModuleList.get(i));
+        }
+    }
+
+
+    default List<String> toNoteModuleIdList(List<NoteModuleUpdateRequest> noteModuleUpdateRequestList){
+        return noteModuleUpdateRequestList.stream().map(NoteModuleUpdateRequest::noteModuleId).toList();
+    }
 }

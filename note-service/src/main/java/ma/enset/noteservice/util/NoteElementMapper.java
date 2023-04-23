@@ -3,7 +3,6 @@ package ma.enset.noteservice.util;
 import ma.enset.noteservice.dto.*;
 import ma.enset.noteservice.model.NoteElement;
 import org.mapstruct.*;
-import org.springframework.data.domain.Page;
 
 import java.util.List;
 
@@ -27,4 +26,13 @@ public interface NoteElementMapper {
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateNoteElementFromDTO(NoteElementUpdateRequest noteElementUpdateRequest, @MappingTarget NoteElement noteElement);
 
+    default List<String> toNoteElementIdList(List<NoteElementUpdateRequest> noteElementUpdateRequestList){
+       return noteElementUpdateRequestList.stream().map(NoteElementUpdateRequest::noteElementId).toList();
+    }
+
+    default void updateNoteElementsFromDTO(List<NoteElementUpdateRequest> noteElementUpdateRequestList, List<NoteElement> noteElementList){
+        for (int i = 0; i < noteElementList.size(); i++) {
+            updateNoteElementFromDTO(noteElementUpdateRequestList.get(i), noteElementList.get(i));
+        }
+    }
 }
