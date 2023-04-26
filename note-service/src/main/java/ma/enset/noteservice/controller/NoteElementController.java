@@ -7,7 +7,9 @@ import lombok.AllArgsConstructor;
 import ma.enset.noteservice.dto.*;
 import ma.enset.noteservice.feign.ElementServiceFeignClient;
 import ma.enset.noteservice.model.NoteElement;
+import ma.enset.noteservice.model.NoteModule;
 import ma.enset.noteservice.service.NoteElementService;
+import ma.enset.noteservice.service.NoteModuleService;
 import ma.enset.noteservice.util.NoteElementMapper;
 
 import org.springframework.http.HttpStatus;
@@ -27,21 +29,63 @@ public class NoteElementController {
     private final NoteElementService noteElementService;
     private final NoteElementMapper noteElementMapper;
     private final ElementServiceFeignClient elementServiceFeignClient;
+    private final NoteModuleService noteModuleService;
 
     @PostMapping
     public ResponseEntity<NoteElementResponse> save(@Valid @RequestBody NoteElementCreationRequest noteElementCreationRequest) {
-        NoteElement note = noteElementMapper.toNoteElement(noteElementCreationRequest);
-        NoteElementResponse noteElementResponse = noteElementMapper.toNoteElementResponse(noteElementService.save(note));
+        NoteElement noteElement = noteElementMapper.toNoteElement(noteElementCreationRequest);
+        NoteElementResponse noteElementResponse = noteElementMapper.toNoteElementResponse(noteElementService.save(noteElement));
+
+        ResponseEntity<ElementResponse> elementResponse =  elementServiceFeignClient.getElementByCode(noteElement.getCodeElement());
+        String codeModule = Objects.requireNonNull(elementResponse.getBody()).codeModule();
+        ResponseEntity<ElementByCodeModuleResponse> elementResponseList =  elementServiceFeignClient.findByModule(codeModule);
+        List<ElementResponse> elementResponses = Objects.requireNonNull(elementResponseList.getBody()).elements();
+        List<String> codeElements = noteElementMapper.toCodeElementList(elementResponses);
+        NoteElement noteElement1 =  noteElementService.findByCodeSessionAndCodeElement(noteElement.getCodeSession(), codeElements.get(0));
+        NoteElement noteElement2 =  noteElementService.findByCodeSessionAndCodeElement(noteElement.getCodeSession(), codeElements.get(1));
+
+        System.out.println(noteElement1);
+        System.out.println(noteElement2);
+       if (noteElement1 != null && noteElement2 != null) {
+           NoteModule noteModule = noteModuleService.save(noteModuleService.calculateNoteModule(noteElement, codeModule, elementResponses, noteElement1, noteElement2));
+           System.out.println(noteModule);
+         }
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(noteElementResponse);
     }
-//
+
+  
     @PostMapping("/bulk")
     public ResponseEntity<List<NoteElementResponse>> saveAll(@RequestBody List<@Valid NoteElementCreationRequest> noteElementCreationRequestList) {
+//
+
         List<NoteElement> noteElementList = noteElementMapper.toNoteElementList(noteElementCreationRequestList);
         List<NoteElementResponse> noteElementResponseList = noteElementMapper.toNoteElementResponseList(noteElementService.saveAll(noteElementList));
+
+        List<NoteModule> noteModuleList = new ArrayList<>();
+        noteElementList.forEach( noteElement -> {
+            ResponseEntity<ElementResponse> elementResponse =  elementServiceFeignClient.getElementByCode(noteElement.getCodeElement());
+            String codeModule = Objects.requireNonNull(elementResponse.getBody()).codeModule();
+            ResponseEntity<ElementByCodeModuleResponse> elementResponseList =  elementServiceFeignClient.findByModule(codeModule);
+            List<ElementResponse> elementResponses = Objects.requireNonNull(elementResponseList.getBody()).elements();
+            List<String> codeElements = noteElementMapper.toCodeElementList(elementResponses);
+            NoteElement noteElement1 =  noteElementService.findByCodeSessionAndCodeElement(noteElement.getCodeSession(), codeElements.get(0));
+            NoteElement noteElement2 =  noteElementService.findByCodeSessionAndCodeElement(noteElement.getCodeSession(), codeElements.get(1));
+
+            System.out.println(noteElement1);
+            System.out.println(noteElement2);
+            if (noteElement1 != null && noteElement2 != null) {
+                noteModuleList.add(noteModuleService.calculateNoteModule(noteElement, codeModule, elementResponses, noteElement1, noteElement2));
+
+            }
+        });
+
+        if (!noteModuleList.isEmpty()) {
+            noteModuleService.saveAll(noteModuleList);
+            System.out.println(noteModuleList);
+        }
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -59,6 +103,7 @@ public class NoteElementController {
                 .ok()
                 .body(foundModuleResponse);
     }
+
     @GetMapping
     public  ResponseEntity< List<NoteElementWithElementResponse>> getAllByCodeSession(@RequestParam String codeSession) {
 
@@ -85,6 +130,21 @@ public class NoteElementController {
         noteElementMapper.updateNoteElementFromDTO(noteElementUpdateRequest, noteElement);
         NoteElementResponse updatedModuleResponse = noteElementMapper.toNoteElementResponse(noteElementService.update(noteElement));
 
+        ResponseEntity<ElementResponse> elementResponse =  elementServiceFeignClient.getElementByCode(noteElement.getCodeElement());
+        String codeModule = Objects.requireNonNull(elementResponse.getBody()).codeModule();
+        ResponseEntity<ElementByCodeModuleResponse> elementResponseList =  elementServiceFeignClient.findByModule(codeModule);
+        List<ElementResponse> elementResponses = Objects.requireNonNull(elementResponseList.getBody()).elements();
+        List<String> codeElements = noteElementMapper.toCodeElementList(elementResponses);
+        NoteElement noteElement1 =  noteElementService.findByCodeSessionAndCodeElement(noteElement.getCodeSession(), codeElements.get(0));
+        NoteElement noteElement2 =  noteElementService.findByCodeSessionAndCodeElement(noteElement.getCodeSession(), codeElements.get(1));
+
+        System.out.println(noteElement1);
+        System.out.println(noteElement2);
+        if (noteElement1 != null && noteElement2 != null) {
+            NoteModule noteModule = noteModuleService.update(noteModuleService.calculateNoteModule(noteElement, codeModule, elementResponses, noteElement1, noteElement2));
+            System.out.println(noteModule);
+        }
+
         return ResponseEntity
                 .ok()
                 .body(updatedModuleResponse);
@@ -98,6 +158,30 @@ public class NoteElementController {
         List<NoteElement> noteElementList = noteElementService.findAllByNoteElementId(noteElementMapper.toNoteElementIdList(noteElementUpdateRequestList));
         noteElementMapper.updateNoteElementsFromDTO(noteElementUpdateRequestList, noteElementList);
         List<NoteElement> updatedNoteElementList = noteElementService.updateAll(noteElementList);
+
+        List<NoteModule> noteModuleList = new ArrayList<>();
+        noteElementList.forEach(noteElement -> {
+            ResponseEntity<ElementResponse> elementResponse =  elementServiceFeignClient.getElementByCode(noteElement.getCodeElement());
+            String codeModule = Objects.requireNonNull(elementResponse.getBody()).codeModule();
+            ResponseEntity<ElementByCodeModuleResponse> elementResponseList =  elementServiceFeignClient.findByModule(codeModule);
+            List<ElementResponse> elementResponses = Objects.requireNonNull(elementResponseList.getBody()).elements();
+            List<String> codeElements = noteElementMapper.toCodeElementList(elementResponses);
+            NoteElement noteElement1 =  noteElementService.findByCodeSessionAndCodeElement(noteElement.getCodeSession(), codeElements.get(0));
+            NoteElement noteElement2 =  noteElementService.findByCodeSessionAndCodeElement(noteElement.getCodeSession(), codeElements.get(1));
+
+            System.out.println(noteElement1);
+            System.out.println(noteElement2);
+            if (noteElement1 != null && noteElement2 != null) {
+                noteModuleList.add(noteModuleService.calculateNoteModule(noteElement, codeModule, elementResponses, noteElement1, noteElement2));
+            }
+
+        });
+
+        if (!noteModuleList.isEmpty()) {
+            noteModuleService.updateAll(noteModuleList);
+            System.out.println(noteModuleList);
+        }
+
         List<NoteElementResponse> noteElementResponseList = noteElementMapper.toNoteElementResponseList(updatedNoteElementList);
         return ResponseEntity
                 .ok()
@@ -108,7 +192,15 @@ public class NoteElementController {
 
     @DeleteMapping("/{noteElementId}")
     public ResponseEntity<?> delete(@PathVariable("noteElementId") String noteElementId) {
+        NoteElement noteElement =  noteElementService.findById(noteElementId);
         noteElementService.deleteById(noteElementId);
+
+        ResponseEntity<ElementResponse> elementResponse =  elementServiceFeignClient.getElementByCode(noteElement.getCodeElement());
+
+        NoteModule noteModule = noteModuleService.findByCodeModuleAndCodeSession(Objects.requireNonNull(elementResponse.getBody()).codeModule(), noteElement.getCodeSession());
+        if (noteModule != null){
+            noteModuleService.deleteById(noteModule.getNoteModuleId());
+        }
 
         return ResponseEntity
                 .noContent()

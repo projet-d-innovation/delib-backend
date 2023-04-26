@@ -26,26 +26,6 @@ public class NoteModuleController {
     private final NoteModuleMapper noteModuleMapper;
     private final ModuleServiceFeignClient moduleServiceFeignClient;
 
-    @PostMapping
-    public ResponseEntity<NoteModuleResponse> save(@Valid @RequestBody NoteModuleCreationRequest noteModuleCreationRequest) {
-
-        NoteModule noteModule = noteModuleMapper.toModule(noteModuleCreationRequest);
-        NoteModuleResponse noteModuleResponse = noteModuleMapper.toNoteModuleResponse(noteModuleService.save(noteModule));
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(noteModuleResponse);
-    }
-
-    @PostMapping("/bulk")
-    public ResponseEntity<List<NoteModuleResponse>> saveAll(@RequestBody List<@Valid NoteModuleCreationRequest> noteModuleCreationRequestList) {
-        List<NoteModule> moduleList = noteModuleMapper.toNoteModuleList(noteModuleCreationRequestList);
-        List<NoteModuleResponse> moduleResponseList = noteModuleMapper.toNoteModuleResponseList(noteModuleService.saveAll(moduleList));
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(moduleResponseList);
-    }
-
     @GetMapping("/{noteModuleId}")
     public ResponseEntity<NoteModuleWithModuleResponse> get(@PathVariable("noteModuleId") String noteModuleId) {
         NoteModule foundModule = noteModuleService.findById(noteModuleId);
@@ -56,7 +36,7 @@ public class NoteModuleController {
                 .ok()
                 .body(foundModuleResponse);
     }
-//
+
     @GetMapping
     public ResponseEntity<List<NoteModuleResponse>> getAllBycodeSession(@RequestParam String codeSession) {
 
@@ -66,43 +46,6 @@ public class NoteModuleController {
         return ResponseEntity
                 .ok()
                 .body(noteModuleResponses);
-    }
-//
-    @PatchMapping("/{noteModuleId}")
-    public ResponseEntity<NoteModuleResponse> update(
-        @PathVariable("noteModuleId") String noteModuleId,
-        @Valid @RequestBody NoteModuleUpdateRequest noteModuleUpdateRequest
-    ) {
-        NoteModule module = noteModuleService.findById(noteModuleId);
-        noteModuleMapper.updateNoteModuleFromDTO(noteModuleUpdateRequest, module);
-        NoteModuleResponse updatedModuleResponse = noteModuleMapper.toNoteModuleResponse(noteModuleService.update(module));
-
-        return ResponseEntity
-                .ok()
-                .body(updatedModuleResponse);
-    }
-
-
-    @PatchMapping("/bulk")
-    public ResponseEntity<List<NoteModuleResponse>> updateAll(
-            @Valid @RequestBody List<NoteModuleUpdateRequest> noteModuleUpdateRequestList
-    ) {
-        List<NoteModule> noteModuleList = noteModuleService.findAllByNoteModuleId(noteModuleMapper.toNoteModuleIdList(noteModuleUpdateRequestList));
-        noteModuleMapper.updateNoteModulesFromDTO(noteModuleUpdateRequestList, noteModuleList);
-        List<NoteModule> updatedNoteModuleList = noteModuleService.updateAll(noteModuleList);
-        List<NoteModuleResponse> noteModuleResponseList = noteModuleMapper.toNoteModuleResponseList(updatedNoteModuleList);
-        return ResponseEntity
-                .ok()
-                .body(noteModuleResponseList);
-    }
-
-
-    @DeleteMapping("/{noteModuleId}")
-    public ResponseEntity<?> delete(@PathVariable("noteModuleId") String noteModuleId) {
-        noteModuleService.deleteById(noteModuleId);
-        return ResponseEntity
-                .noContent()
-                .build();
     }
 
 }

@@ -25,10 +25,8 @@ public class NoteModule {
     private boolean redoublant;
     @Column(nullable = false)
     private boolean rattrapage;
-
     @Column( nullable = false)
     private String codeModule;
-
     @Column( nullable = false)
     private String codeSession;
 }

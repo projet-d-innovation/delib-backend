@@ -13,4 +13,6 @@ public interface
 NoteModuleRepository extends JpaRepository<NoteModule, String> {
 
     List<NoteModule> findByCodeSession(String codeSession);
+
+    NoteModule findByCodeModuleAndCodeSession(String codeModule, String codeSession);
 }

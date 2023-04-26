@@ -14,4 +14,7 @@ public interface
 NoteElementRepository extends JpaRepository<NoteElement, String> {
     List<NoteElement> findByCodeSession(String codeSession);
 
+    List<NoteElement> findAllByCodeElement(String codeElement);
+
+    NoteElement findByCodeSessionAndCodeElement(String codeSession, String codeElement);
 }

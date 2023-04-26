@@ -1,6 +1,7 @@
 package ma.enset.noteservice.feign;
 
 import jakarta.validation.constraints.NotEmpty;
+import ma.enset.noteservice.dto.ElementByCodeModuleResponse;
 import ma.enset.noteservice.dto.ElementResponse;
 import ma.enset.noteservice.dto.ModuleResponse;
 import org.springframework.cloud.loadbalancer.annotation.LoadBalancerClients;
@@ -19,5 +20,7 @@ public interface ElementServiceFeignClient {
 
     @GetMapping("/bulk")
     ResponseEntity<List<ElementResponse>> findByCodeElements11(@NotEmpty @RequestParam("codesElement") List<String> codesElement);
+    @GetMapping("/module/{codeModule}")
+    ResponseEntity<ElementByCodeModuleResponse> findByModule(@PathVariable("codeModule") String codeModule);
 }
 

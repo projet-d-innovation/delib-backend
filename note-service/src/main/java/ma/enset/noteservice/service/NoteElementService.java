@@ -8,6 +8,7 @@ import ma.enset.noteservice.model.NoteModule;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import javax.swing.text.Element;
 import java.util.List;
 
 public interface NoteElementService {
@@ -22,4 +23,8 @@ public interface NoteElementService {
     List<NoteElement> findAllByNoteElementId(List<String> noteElementList);
 
     List<NoteElement> updateAll(List<NoteElement> noteElementList);
+//    List<NoteElement> findAllByCodeElement(String codeElement);
+
+    NoteElement findByCodeSessionAndCodeElement(String codeSession, String codeElement);
+
 }

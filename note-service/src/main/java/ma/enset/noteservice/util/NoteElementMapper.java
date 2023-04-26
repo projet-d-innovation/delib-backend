@@ -35,4 +35,9 @@ public interface NoteElementMapper {
             updateNoteElementFromDTO(noteElementUpdateRequestList.get(i), noteElementList.get(i));
         }
     }
+
+    default List<String> toCodeElementList(List<ElementResponse> elementResponses){
+        return elementResponses.stream().map(ElementResponse::codeElement).toList();
+    }
+
 }

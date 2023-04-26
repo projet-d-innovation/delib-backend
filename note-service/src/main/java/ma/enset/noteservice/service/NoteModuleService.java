@@ -1,9 +1,11 @@
 package ma.enset.noteservice.service;
 
+import ma.enset.noteservice.dto.ElementResponse;
 import ma.enset.noteservice.exception.ElementAlreadyExistsException;
 import ma.enset.noteservice.exception.ElementNotFoundException;
 
 import ma.enset.noteservice.exception.InternalErrorException;
+import ma.enset.noteservice.model.NoteElement;
 import ma.enset.noteservice.model.NoteModule;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,5 +23,10 @@ public interface NoteModuleService {
 
     List<NoteModule> findAllByNoteModuleId(List<String> noteModuleIdList);
 
+
     List<NoteModule> updateAll(List<NoteModule> noteElementList);
-}
+
+    NoteModule findByCodeModuleAndCodeSession(String codeModule, String codeSession);
+
+    NoteModule calculateNoteModule(NoteElement noteElement, String codeModule, List<ElementResponse> elementResponses, NoteElement noteElement1, NoteElement noteElement2);
+    }

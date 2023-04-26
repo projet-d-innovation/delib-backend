@@ -122,6 +122,13 @@ public class NoteElementServiceImpl implements NoteElementService {
         return updatedNoteElements;
     }
 
+    @Override
+    public NoteElement findByCodeSessionAndCodeElement(String codeSession, String codeElement) {
+        return noteElementRepository.findByCodeSessionAndCodeElement(codeSession, codeElement);
+    }
+
+
+
     //
     private ElementNotFoundException noteElementNotFoundException(String noteElementId) {
         return ElementNotFoundException.builder()
