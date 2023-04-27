@@ -12,5 +12,6 @@ public class CoreConstants {
         public static final String ELEMENT_NOT_FOUND = "businessException.element.NotFound.message";
 
 
+
     }
 }
