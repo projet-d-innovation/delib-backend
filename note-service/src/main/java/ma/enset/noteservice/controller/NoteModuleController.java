@@ -1,20 +1,17 @@
 package ma.enset.noteservice.controller;
 
-import jakarta.validation.Valid;
 
 import lombok.AllArgsConstructor;
 import ma.enset.noteservice.dto.*;
 import ma.enset.noteservice.feign.ModuleServiceFeignClient;
-import ma.enset.noteservice.model.NoteElement;
+
 import ma.enset.noteservice.model.NoteModule;
 import ma.enset.noteservice.service.NoteModuleService;
 import ma.enset.noteservice.util.NoteModuleMapper;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController

@@ -12,12 +12,12 @@ import java.util.List;
 )
 public interface NoteModuleMapper {
 
+
+
     NoteModuleResponse toNoteModuleResponse(NoteModule noteModule);
     NoteModuleWithModuleResponse toNoteModuleWithModuleResponse(NoteModule noteModule);
 
     List<NoteModuleResponse> toNoteModuleResponseList(List<NoteModule> noteModuleList);
-
-
 
 
 }

@@ -8,6 +8,7 @@ import ma.enset.moduleservice.dto.ModulePagingResponse;
 import ma.enset.moduleservice.dto.ModuleResponse;
 import ma.enset.moduleservice.dto.ModuleUpdateRequest;
 import ma.enset.moduleservice.model.Module;
+import ma.enset.moduleservice.repository.ModuleRepository;
 import ma.enset.moduleservice.service.ModuleService;
 import ma.enset.moduleservice.util.ModuleMapper;
 import org.hibernate.validator.constraints.Range;
@@ -28,7 +29,6 @@ import java.util.List;
 public class ModuleController {
     private final ModuleService moduleService;
     private final ModuleMapper moduleMapper;
-
     @PostMapping
     public ResponseEntity<ModuleResponse> save(@Valid @RequestBody ModuleCreationRequest moduleCreationRequest) {
         Module module = moduleMapper.toModule(moduleCreationRequest);

@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -13,4 +14,6 @@ public interface ModuleRepository extends JpaRepository<Module, String> {
     boolean existsByCodeModule(String codeModule);
     @Transactional
     void deleteByCodeModule(String codeModule);
+
+    List<Module> findByCodeSemestre(String codeSemestre);
 }

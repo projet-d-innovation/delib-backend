@@ -219,28 +219,45 @@ public class NoteModuleServiceImpl implements NoteModuleService {
 
 
     public NoteModule calculateNoteModule(NoteElement noteElement, String codeModule, List<ElementResponse> elementResponses, NoteElement noteElement1, NoteElement noteElement2) {
-        NoteModule noteModule = this.findByCodeModuleAndCodeSession(codeModule, noteElement.getCodeSession());
+        NoteModule currentNoteModule = this.findByCodeModuleAndCodeSession(codeModule, noteElement.getCodeSession());
 
-      if(noteModule ==null){
-          noteModule = new NoteModule();
-          noteModule.setNoteModuleId(noteElement1.getNoteElementId()+ noteElement2.getCodeSession());
-          noteModule.setCodeModule(codeModule);
-          noteModule.setCodeSession(noteElement.getCodeSession());
-          noteModule.setRedoublant(false);
-          noteModule.setRattrapage(false);
-          noteModule.setResultat(Resultat.VALIDE);
-      }
+        if (currentNoteModule == null) {
+            currentNoteModule = new NoteModule();
+            currentNoteModule.setNoteModuleId(noteElement1.getNoteElementId() + noteElement2.getCodeSession());
+            currentNoteModule.setCodeModule(codeModule);
+            currentNoteModule.setCodeSession(noteElement.getCodeSession());
+            currentNoteModule.setRedoublant(false);
+            currentNoteModule.setRattrapage(true);
+            currentNoteModule.setResultat(Resultat.NON_VALIDE);
+        }
+        float CurrentNoteModuleValue = (Objects.requireNonNull(elementResponses.get(0)).coefficientElement().floatValue() * noteElement1.getNote() + Objects.requireNonNull(elementResponses.get(1)).coefficientElement().floatValue() * noteElement2.getNote()) / (elementResponses.get(0).coefficientElement().floatValue() + elementResponses.get(1).coefficientElement().floatValue());
+        currentNoteModule.setNote(CurrentNoteModuleValue);
 
-        float noteModuleValue = (Objects.requireNonNull(elementResponses.get(0)).coefficientElement().floatValue() * noteElement1.getNote()+ Objects.requireNonNull(elementResponses.get(1)).coefficientElement().floatValue() * noteElement2.getNote()) / (elementResponses.get(0).coefficientElement().floatValue()+ elementResponses.get(1).coefficientElement().floatValue());
-        noteModule.setNote(noteModuleValue);
-        if (noteModuleValue < 12) {
-            noteModule.setRattrapage(true);
-            noteModule.setResultat(Resultat.NON_VALIDE);
+
+//        TODO: for the rattrapage session
+//        SessionResponse session = sessionServiceFeignClient.findSessionByCodeSession(noteElement.getCodeSession())   TODO: should get the current session first
+//        if (session.type == TypeSession.RATRAPAGE) {                                                                     TODO: check the session if it's rattrapage
+//            NoteModule previusNoteModule = this.findByCodeModuleAndCodeSession(codeModule, session.getNormalCodeSession());   TODO: get the note module of the normal session
+//            CurrentNoteModuleValue = Math.min(12, Math.max(CurrentNoteModuleValue, previusNoteModule.getNote()))            TODO: calculate the note module
+//            currentNoteModule.setNote(CurrentNoteModuleValue);
+//         if (CurrentNoteModuleValue >= 12 && (noteElement1.getNote() >= 6 && noteElement2.getNote() >= 6)) {  TODO: check if the note module is valid
+//            currentNoteModule.setResultat(Resultat.VALIDE);
+//        }
+//        if (noteElement1.isRedoublant() || noteElement2.isRedoublant()) {                                     TODO: check if the module is redoublant
+//            currentNoteModule.setRedoublant(true);
+//        }
+//        }else{
+
+//        TODO: for the normal session
+        if (CurrentNoteModuleValue >= 12 && (noteElement1.getNote() >= 6 && noteElement2.getNote() >= 6)) {
+            currentNoteModule.setRattrapage(false);
+            currentNoteModule.setResultat(Resultat.VALIDE);
         }
         if (noteElement1.isRedoublant() || noteElement2.isRedoublant()) {
-            noteModule.setRedoublant(true);
+            currentNoteModule.setRedoublant(true);
         }
-        return noteModule;
+//       }
+        return currentNoteModule;
     }
 
     private ElementNotFoundException noteModuleNotFoundException(String noteModuleId) {
