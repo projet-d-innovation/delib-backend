@@ -10,8 +10,7 @@ import ma.enset.noteservice.exception.InternalErrorException;
 import ma.enset.noteservice.feign.ElementServiceFeignClient;
 import ma.enset.noteservice.model.NoteElement;
 import ma.enset.noteservice.repository.NoteElementRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
