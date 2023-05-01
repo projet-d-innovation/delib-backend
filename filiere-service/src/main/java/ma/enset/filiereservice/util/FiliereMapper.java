@@ -4,13 +4,11 @@ package ma.enset.filiereservice.util;
 import ma.enset.filiereservice.dto.FiliereCreationRequest;
 import ma.enset.filiereservice.dto.FilierePagingResponse;
 import ma.enset.filiereservice.dto.FiliereResponse;
+import ma.enset.filiereservice.dto.FiliereUpdateRequest;
 import ma.enset.filiereservice.model.Filiere;
 import ma.enset.filiereservice.model.RegleDeCalcul;
 import ma.enset.filiereservice.service.RegleDeCalculService;
-import org.mapstruct.InjectionStrategy;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingConstants;
+import org.mapstruct.*;
 import org.springframework.data.domain.Page;
 
 import java.util.ArrayList;
@@ -24,7 +22,14 @@ public interface FiliereMapper {
 
     @Mapping(target = "codeChefFiliere", expression = "java(filiereCreationRequest.codeChefFiliere())")
     @Mapping(target = "regleDeCalcul", expression = "java(mapToRegleDeCalcul(filiereCreationRequest.codeRegleDeCalcul() , regleDeCalculService))")
+    @Mapping(target = "semestreIds" , expression = "java(new ArrayList<String>())")
+    @Mapping(target = "anneeUniversitaireIds" , expression = "java(new ArrayList<String>())")
     Filiere toFiliere(FiliereCreationRequest filiereCreationRequest, RegleDeCalculService regleDeCalculService);
+
+    @Mapping(target = "codeFiliere",source = "codeFiliere")
+    Filiere toFiliere(FiliereUpdateRequest filiereUpdateRequest ,  String codeFiliere);
+
+
 
     @Mapping(target = "codeRegle", expression = "java(filiere.getRegleDeCalcul().getCodeRegle())")
     FiliereResponse toFiliereResponse(Filiere filiere);

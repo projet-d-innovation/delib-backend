@@ -16,6 +16,8 @@ import java.util.List;
     injectionStrategy = InjectionStrategy.CONSTRUCTOR
 )
 public interface SemestreMapper {
+    @Mapping(target = "modulesIds" , expression = "java(new ArrayList<String>())")
+    @Mapping(target = "sessionsIds" , expression = "java(new ArrayList<String>())")
     Semestre toSemestre(SemestreCreationRequest semestreCreationRequest);
 
     SemestreResponse toSemestreResponse(Semestre semestre);

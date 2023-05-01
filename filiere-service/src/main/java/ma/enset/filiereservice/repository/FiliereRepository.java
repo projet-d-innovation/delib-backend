@@ -23,10 +23,14 @@ public interface FiliereRepository extends JpaRepository<Filiere, String> {
     @Query("SELECT f FROM Filiere f JOIN f.regleDeCalcul r WHERE r.codeRegle = :codeRegle")
     List<Filiere> findAllByCodeRegle(@Param("codeRegle")String codeRegle);
 
-    Filiere findByCodeChefFiliere(String codeChefFiliere);
+    Optional<Filiere> findByCodeChefFiliere(String codeChefFiliere);
 
 
 
-    @Transactional
     void deleteByCodeFiliere(String codeFiliere);
+
+    List<Filiere> findByCodeFiliereContaining(String codeFiliere);
+
+    Optional<List<Filiere>> findAllByCodeChefFiliere(String codeChefFiliere);
+
 }

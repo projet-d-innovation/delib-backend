@@ -1,5 +1,7 @@
 package ma.enset.departementservice.model;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.validation.constraints.Min;
@@ -9,6 +11,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,7 +20,6 @@ import lombok.NoArgsConstructor;
 @Data
 public class Departement {
     @Id
-
     private String codeDepartement;
 
     @NotBlank
@@ -24,7 +27,17 @@ public class Departement {
     @NotBlank
     private String intituleDepartement;
 
-    @Min(0)
+    @Min(1)
     private int nombreEmployes;
+
+    @Min(0)
+    private int nombreFilieres;
+
+
+    @ElementCollection
+    private List<String> filieresIds;
+    @ElementCollection
+    private List<String> usersIds;
+
 
 }

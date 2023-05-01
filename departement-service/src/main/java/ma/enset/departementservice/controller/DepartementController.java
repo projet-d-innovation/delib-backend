@@ -1,4 +1,4 @@
-package ma.enset.departementservice.contoller;
+package ma.enset.departementservice.controller;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -8,6 +8,7 @@ import ma.enset.departementservice.dto.DepartementPagingResponse;
 import ma.enset.departementservice.dto.DepartementResponse;
 import ma.enset.departementservice.dto.DepartementUpdateRequest;
 import ma.enset.departementservice.model.Departement;
+import ma.enset.departementservice.proxy.UserFeignClient;
 import ma.enset.departementservice.service.DepartementService;
 import ma.enset.departementservice.util.DepartementMapper;
 import org.hibernate.validator.constraints.Range;
@@ -28,12 +29,12 @@ import java.util.List;
 public class DepartementController {
     private final DepartementService departementService;
     private final DepartementMapper departementMapper;
+    private final UserFeignClient userFeignClient;
 
     @PostMapping
     public ResponseEntity<DepartementResponse> save(@Valid @RequestBody DepartementCreationRequest departementCreationRequest) {
-        Departement departement = departementMapper.toDepartement(departementCreationRequest);
+        Departement departement = departementMapper.toDepartement(departementCreationRequest, departementService, userFeignClient);
         DepartementResponse departementResponse = departementMapper.toDepartementResponse(departementService.save(departement));
-
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(departementResponse);
@@ -41,7 +42,9 @@ public class DepartementController {
 
     @PostMapping("/bulk")
     public ResponseEntity<List<DepartementResponse>> saveAll(@RequestBody List<@Valid DepartementCreationRequest> departementCreationRequestList) {
-        List<Departement> departementList = departementMapper.toDepartementList(departementCreationRequestList);
+        List<Departement> departementList = departementCreationRequestList.stream()
+                .map(departementCreationRequest ->
+                        departementMapper.toDepartement(departementCreationRequest, departementService, userFeignClient)).toList();
         List<DepartementResponse> departementResponseList = departementMapper.toDepartementResponseList(departementService.saveAll(departementList));
 
         return ResponseEntity
@@ -58,6 +61,22 @@ public class DepartementController {
         return ResponseEntity
                 .ok()
                 .body(foundDepartementResponse);
+    }
+
+    @GetMapping("/exist/{codeDepartement}")
+    public ResponseEntity<?> doesDepartmentExist(@PathVariable("codeDepartement") String codeDepartement) {
+        departementService.existByCodeDepartement(codeDepartement);
+        return ResponseEntity
+                .noContent()
+                .build();
+    }
+
+    @GetMapping("/contains/{codeDepartement}")
+    public ResponseEntity<List<DepartementResponse>> getDepartmentContainig(@PathVariable("codeDepartement") String codeDepartement) {
+        List<DepartementResponse> departementResponseList = departementMapper.toDepartementResponseList(departementService.findByCodeDepartementContaining(codeDepartement));
+        return ResponseEntity
+                .ok()
+                .body(departementResponseList);
     }
 
     @GetMapping
@@ -109,8 +128,51 @@ public class DepartementController {
     }
 
 
+    @PutMapping("/{codeDepartement}/filiere/{codeFiliere}")
+    public ResponseEntity<DepartementResponse> addFiliereToDepartment(@PathVariable("codeDepartement") String codeDepartement,
+                                                                      @PathVariable("codeFiliere") String codeFiliere) {
+        DepartementResponse departementResponse = departementMapper.toDepartementResponse(departementService.pushFiliereToDepartment(codeDepartement, codeFiliere));
+        return ResponseEntity
+                .ok(departementResponse);
+    }
+
+    @PutMapping("/{codeDepartement}/utilisateur/{codeUser}")
+    public ResponseEntity<DepartementResponse> addUserToDepartment(@PathVariable("codeDepartement") String codeDepartement, @PathVariable("codeUser") String codeUser) {
+        DepartementResponse departementResponse = departementMapper.toDepartementResponse(departementService.pushUserToDepartment(codeDepartement, codeUser));
+        return ResponseEntity
+                .ok(departementResponse);
+    }
+
+    @PutMapping("/{codeDepartement}/utilisateur/bulk")
+    public ResponseEntity<?> addUsersToDepartment(@PathVariable("codeDepartement") String codeDepartement, @RequestBody List<String> usersCode) {
+        departementService.pushUsersToDepartment(codeDepartement, usersCode);
+        return ResponseEntity
+                .noContent()
+                .build();
+    }
 
 
+    @DeleteMapping("/{codeDepartement}/utilisateur/{codeUser}")
+    public ResponseEntity<?> deleteUserInDepartment(@PathVariable("codeDepartement") String codeDepartement, @PathVariable("codeUser") String codeUser) {
+        departementService.deleteUserFromDepartment(codeUser, codeDepartement);
+        return ResponseEntity
+                .noContent()
+                .build();
+    }
 
+    @DeleteMapping("/{codeDepartement}/filiere/{codeFiliere}")
+    public ResponseEntity<?> deleteFiliereInDepartment(@PathVariable("codeDepartement") String codeDepartement, @PathVariable("codeFiliere") String codeFiliere) {
+        departementService.deleteFiliereFromDepartment(codeFiliere, codeDepartement);
+        return ResponseEntity
+                .noContent()
+                .build();
+    }
 
+    @GetMapping("/exist/{codeDepartement}/utilisateurs/{codeUser}")
+    public ResponseEntity<?> isUserInDepartment(@PathVariable("codeDepartement") String codeDepartement, @PathVariable("codeUser") String codeUser) {
+        departementService.isUserInDepartment(codeUser, codeDepartement);
+        return ResponseEntity
+                .noContent()
+                .build();
+    }
 }

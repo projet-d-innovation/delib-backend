@@ -74,6 +74,15 @@ public class SemestreController {
                 .ok()
                 .body(pagedResponse);
     }
+    @GetMapping("/exist/{codeSemestre}")
+    public ResponseEntity<Boolean> doesSemesterExist(@PathVariable("codeSemestre") String codeSemestre){
+        boolean doesSemesterExist = semestreService.doesSemesterExist(codeSemestre);
+        return ResponseEntity
+                .ok()
+                .body(doesSemesterExist);
+
+    }
+
 
     @PatchMapping("/{codeSemestre}")
     public ResponseEntity<SemestreResponse> update(
@@ -110,6 +119,48 @@ public class SemestreController {
                 .build();
     }
 
+    @PutMapping("/{codeSemestre}/module/{codeModule}")
+    public ResponseEntity<SemestreResponse> addModuleToSemestre(@PathVariable("codeSemestre") String codeSemestre,
+                                                                          @PathVariable("codeModule") String codeModule) {
+
+        Semestre semestre = semestreService.addModuleToSemestre(codeSemestre, codeModule);
+        SemestreResponse  semestreResponse = semestreMapper.toSemestreResponse(semestre);
+
+        return ResponseEntity
+                .ok()
+                .body(semestreResponse);
+    }
+    @PutMapping("/{codeSemestre}/session/{codeSession}")
+    public ResponseEntity<SemestreResponse> addSessionToSemestre(@PathVariable("codeSemestre") String codeSemestre,
+                                                                @PathVariable("codeSession") String codeSession) {
+
+        Semestre semestre = semestreService.addSessionToSemestre(codeSemestre, codeSession);
+        SemestreResponse  semestreResponse = semestreMapper.toSemestreResponse(semestre);
+        return ResponseEntity
+                .ok()
+                .body(semestreResponse);
+    }
+
+    @DeleteMapping("/{codeSemestre}/module/{codeModule}")
+    public ResponseEntity<?> removeModuleFromSemestre(@PathVariable("codeSemestre") String codeSemestre,
+                                                                 @PathVariable("codeModule") String codeModule) {
+
+        semestreService.removeModuleFromSemestre(codeSemestre, codeModule);
+
+        return ResponseEntity
+                .noContent()
+                .build();
+    }
+
+    @DeleteMapping("/{codeSemestre}/session/{codeSession}")
+    public ResponseEntity<?> removeSessionFromSemestre(@PathVariable("codeSemestre") String codeSemestre,
+                                                      @PathVariable("codeSession") String codeSession) {
+
+        semestreService.removeSessionFromSemestre(codeSemestre, codeSession);
+        return ResponseEntity
+                .noContent()
+                .build();
+    }
 
 
 

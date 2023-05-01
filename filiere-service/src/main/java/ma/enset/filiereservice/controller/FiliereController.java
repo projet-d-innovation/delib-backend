@@ -1,4 +1,4 @@
-package ma.enset.filiereservice.contoller;
+package ma.enset.filiereservice.controller;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import ma.enset.filiereservice.dto.FiliereCreationRequest;
 import ma.enset.filiereservice.dto.FilierePagingResponse;
 import ma.enset.filiereservice.dto.FiliereResponse;
+import ma.enset.filiereservice.dto.FiliereUpdateRequest;
 import ma.enset.filiereservice.model.Filiere;
 import ma.enset.filiereservice.service.FiliereService;
 import ma.enset.filiereservice.service.RegleDeCalculService;
@@ -20,6 +21,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @Validated
@@ -74,6 +76,18 @@ public class FiliereController {
                 .ok()
                 .body(foundFiliereResponseList);
     }
+
+
+    @GetMapping("/isChef/{codeUser}")
+    public ResponseEntity<Boolean> isThisUserAChef(@PathVariable("codeUser") String codeUser) {
+
+        boolean isThisUserAChef = filiereService.isThisUserAChef(codeUser);
+
+        return ResponseEntity
+                .ok()
+                .body(isThisUserAChef);
+    }
+
     @GetMapping("/byCodeDeRegle/{codeRegle}")
     public ResponseEntity<List<FiliereResponse>> getByCodeRegle(@PathVariable("codeRegle") String codeRegle) {
 
@@ -86,16 +100,6 @@ public class FiliereController {
     }
 
 
-    @GetMapping("/byCodeChef/{codeChef}")
-    public ResponseEntity<FiliereResponse> getByCodeChefFiliere(@PathVariable("codeChef") String codeChef) {
-        Filiere foundFiliere = filiereService.findByCodeChefFiliere(codeChef);
-
-        FiliereResponse foundFiliereDeResponse = filiereMapper.toFiliereResponse(foundFiliere);
-
-        return ResponseEntity
-                .ok()
-                .body(foundFiliereDeResponse);
-    }
     @GetMapping
     public ResponseEntity<FilierePagingResponse> getAll(@RequestParam(defaultValue = "0") @Min(0) int page,
                                                         @RequestParam(defaultValue = "10") @Range(min = 1, max = 10) int size) {
@@ -129,4 +133,85 @@ public class FiliereController {
     }
 
 
+    @PutMapping("/{codeFiliere}/semestres/{codeSemestre}")
+    public ResponseEntity<FiliereResponse> addSemestreToFiliere(@PathVariable("codeFiliere") String codeFiliere,
+                                                                @PathVariable("codeSemestre") String codeSemestre) {
+
+        Filiere filiere = filiereService.addSemestreToFiliere(codeFiliere, codeSemestre);
+        FiliereResponse filiereResponse = filiereMapper.toFiliereResponse(filiere);
+
+        return ResponseEntity
+                .ok()
+                .body(filiereResponse);
+    }
+
+    @DeleteMapping("/{codeFiliere}/semestres/{codeSemestre}")
+    public ResponseEntity<?> removeSemestreFromFiliere(@PathVariable("codeFiliere") String codeFiliere,
+                                                       @PathVariable("codeSemestre") String codeSemestre) {
+
+        filiereService.deleteSemestreFromFiliere(codeFiliere, codeSemestre);
+
+        return ResponseEntity
+                .noContent()
+                .build();
+    }
+
+    @PutMapping("/{codeFiliere}/anneeUniversitaire/{codeAnnee}")
+    public ResponseEntity<FiliereResponse> addAnneeUniversitaireToFiliere(@PathVariable("codeFiliere") String codeFiliere,
+                                                                          @PathVariable("codeAnnee") String codeAnnee) {
+
+        Filiere filiere = filiereService.addAnneUnivToFiliere(codeFiliere, codeAnnee);
+        FiliereResponse filiereResponse = filiereMapper.toFiliereResponse(filiere);
+
+        return ResponseEntity
+                .ok()
+                .body(filiereResponse);
+    }
+
+    @DeleteMapping("/{codeFiliere}/anneeUniversitaire/{codeAnnee}")
+    public ResponseEntity<?> removeAnneeUniversitaireFromFiliere(@PathVariable("codeFiliere") String codeFiliere,
+                                                                 @PathVariable("codeAnnee") String codeAnnee) {
+
+        filiereService.deleteAnneUnivFromFiliere(codeFiliere, codeAnnee);
+
+        return ResponseEntity
+                .noContent()
+                .build();
+    }
+
+
+    @GetMapping("/exist/{codeFiliere}")
+    public ResponseEntity<?> existByCodeFiliere(@PathVariable("codeFiliere") String codeFiliere) {
+        filiereService.existByCodeFiliere(codeFiliere);
+
+        return ResponseEntity
+                .noContent()
+                .build();
+    }
+
+    @GetMapping("/contains/{codeFiliere}")
+    public ResponseEntity<List<FiliereResponse>> getFiliereContainig(@PathVariable("codeFiliere") String codeFiliere) {
+        List<FiliereResponse> filiereResponseList = filiereMapper.toFiliereResponseList(filiereService.findByCodeFiliereContaining(codeFiliere));
+        return ResponseEntity
+                .ok()
+                .body(filiereResponseList);
+    }
+
+
+    @PatchMapping("/{codeFiliere}")
+    public ResponseEntity<FiliereResponse> update(
+            @PathVariable("codeFiliere") String codeFiliere,
+            @Valid @RequestBody FiliereUpdateRequest filiereUpdateRequest
+    ) {
+
+        Filiere filiere = filiereMapper.toFiliere(filiereUpdateRequest , codeFiliere);
+
+
+        Filiere updatedFiliere = filiereService.update(filiere);
+        FiliereResponse updatedDepartementResponse = filiereMapper.toFiliereResponse(updatedFiliere);
+
+        return ResponseEntity
+                .ok()
+                .body(updatedDepartementResponse);
+    }
 }

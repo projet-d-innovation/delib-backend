@@ -19,5 +19,11 @@ public interface SemestreService {
     Semestre update(Semestre module) throws ElementNotFoundException, InternalErrorException;
     void deleteByCodeSemestre(String codeSemestre) throws ElementNotFoundException;
     void deleteAllByCodeSemestre(List<String> codesSemestres) throws ElementNotFoundException;
+    boolean doesSemesterExist(String codeSemestre) ;
 
+    Semestre addModuleToSemestre(String codeSemestre, String codeModule) throws ElementNotFoundException, InternalErrorException;
+    void removeModuleFromSemestre(String codeSemestre, String codeModule) throws ElementNotFoundException, InternalErrorException;
+
+    Semestre addSessionToSemestre(String codeSemestre, String codeSession) throws ElementNotFoundException, InternalErrorException;
+    void removeSessionFromSemestre(String codeSemestre, String codeSession) throws ElementNotFoundException, InternalErrorException;
 }

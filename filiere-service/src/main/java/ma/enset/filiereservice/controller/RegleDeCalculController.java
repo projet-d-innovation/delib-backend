@@ -1,4 +1,4 @@
-package ma.enset.filiereservice.contoller;
+package ma.enset.filiereservice.controller;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
