@@ -49,7 +49,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                         .build());
     }
 
-
+    @ExceptionHandler(ExchangerException.class)
+    public ResponseEntity<BusinessExceptionResponse> handleExchangerException(ExchangerException e) {
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(e.getBusinessExceptionResponse());
+    }
 
     @ExceptionHandler(value = RoleConflictException.class)
     public ResponseEntity<BusinessExceptionResponse> RoleConflictException(RoleConflictException e) {

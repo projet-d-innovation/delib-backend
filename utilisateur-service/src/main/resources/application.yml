@@ -3,10 +3,7 @@ server:
 
 spring:
   application:
-    name: utilisateur
-
-  profiles:
-    active: dev
+    name: utilisateur-service
 
   datasource:
     url:
@@ -24,6 +21,8 @@ spring:
     encoding: UTF-8
 
 eureka:
+  instance:
+    prefer-ip-address: true
   client:
     service-url:
       defaultZone:

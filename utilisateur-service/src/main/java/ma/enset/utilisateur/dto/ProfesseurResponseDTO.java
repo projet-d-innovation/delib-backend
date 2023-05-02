@@ -12,8 +12,7 @@ public record ProfesseurResponseDTO(
         String telephone,
         String photo,
         String codeDepartement,
-        DepartementResponseDTO departement,
-        List<String> elementIds,
-        List<Object> elements
+        DepartementResponse departement,
+        List<ElementResponse> elements
 ) {
 }

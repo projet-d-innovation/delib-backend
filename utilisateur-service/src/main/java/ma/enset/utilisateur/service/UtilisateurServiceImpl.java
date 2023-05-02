@@ -1,19 +1,22 @@
 package ma.enset.utilisateur.service;
 
 import jakarta.transaction.Transactional;
+import jdk.jshell.execution.Util;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import ma.enset.utilisateur.client.ElementClient;
 import ma.enset.utilisateur.constant.CoreConstants;
-import ma.enset.utilisateur.exception.ElementAlreadyExistsException;
-import ma.enset.utilisateur.exception.ElementNotFoundException;
-import ma.enset.utilisateur.exception.InternalErrorException;
-import ma.enset.utilisateur.exception.RoleConflictException;
+import ma.enset.utilisateur.dto.ElementByCodeProfesseurResponse;
+import ma.enset.utilisateur.dto.ElementResponse;
+import ma.enset.utilisateur.exception.*;
 import ma.enset.utilisateur.model.Role;
 import ma.enset.utilisateur.model.Utilisateur;
 import ma.enset.utilisateur.repository.UtilisateurRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +27,8 @@ import java.util.List;
 public class UtilisateurServiceImpl implements UtilisateurService {
     private final UtilisateurRepository utilisateurRepository;
     private final RoleService roleService;
+
+    private final ElementClient elementClient;
 
 
     @Override
@@ -91,7 +96,14 @@ public class UtilisateurServiceImpl implements UtilisateurService {
     @Override
     public Page<Utilisateur> findAll(Pageable pageable, String roleId) throws ElementNotFoundException {
         Role role = roleService.findByRoleId(roleId);
-        return utilisateurRepository.findAllByRolesContains(role, pageable);
+        Page<Utilisateur> utilisateurs = utilisateurRepository.findAllByRolesContains(role, pageable);
+        List<String> utilisateursCodes = utilisateurs.getContent().stream().map(Utilisateur::getCode).toList();
+        log.info("Utilisateurs codes: {}", utilisateursCodes);
+        List<ElementByCodeProfesseurResponse> elements = this.getElements(utilisateursCodes);
+        for(int i = 0; i < utilisateursCodes.size(); i++) {
+            utilisateurs.getContent().get(i).setElements(elements.get(i).elements());
+        }
+        return utilisateurs;
     }
 
 
@@ -116,6 +128,12 @@ public class UtilisateurServiceImpl implements UtilisateurService {
     public Utilisateur update(Utilisateur utilisateur) throws ElementNotFoundException, RoleConflictException, InternalErrorException {
 
         Utilisateur toBeUpdated = this.getUtilisateur(utilisateur.getCode());
+
+        List<String> rolesIds = utilisateur.getRoles().stream().map(Role::getRoleId).toList();
+
+        List<Role> roles = roleService.findAllByRoleId(rolesIds);
+
+        toBeUpdated.setRoles(roles);
 
         Utilisateur updatedUtilisateur = null;
 
@@ -176,18 +194,12 @@ public class UtilisateurServiceImpl implements UtilisateurService {
 
     @Override
     public Utilisateur findByCodeUtilisateur(String codeUtilisateur, String roleId) throws ElementNotFoundException {
-
-        Role role = Role.builder()
-                .roleId(roleId)
-                .build();
-
-        return utilisateurRepository.findByCodeAndRolesContains(codeUtilisateur, role)
-                .orElseThrow(() ->
-                        ElementNotFoundException.builder()
-                                .key(CoreConstants.BusinessExceptionMessage.UTILISATEUR_NOT_FOUND)
-                                .args(new Object[]{roleId, codeUtilisateur})
-                                .build()
-                );
+//
+//        Role role = Role.builder()
+//                .roleId(roleId)
+//                .build();
+//
+        return this.getUtilisateurAndCheckRole(codeUtilisateur, roleId);
     }
 
     @Override
@@ -221,13 +233,13 @@ public class UtilisateurServiceImpl implements UtilisateurService {
         return elements;
     }
 
-
     private Utilisateur getUtilisateur(String codeUtilisateur) throws ElementNotFoundException {
 
         Utilisateur utilisateur = utilisateurRepository.findByCode(codeUtilisateur).orElse(null);
 
         if (utilisateur == null)
             throw utilisateurNotFoundException(codeUtilisateur);
+
 
         return utilisateur;
     }
@@ -241,6 +253,11 @@ public class UtilisateurServiceImpl implements UtilisateurService {
                     .key(CoreConstants.BusinessExceptionMessage.ROLE_CONFLICT)
                     .args(new Object[]{codeUtlisateur, roleId})
                     .build();
+
+        if(utilisateur.getRoles().stream().map(Role::getRoleId).anyMatch(roleName -> roleName.equals(CoreConstants.RoleID.ROLE_PROFESSEUR))){
+            ElementByCodeProfesseurResponse elementResponse = getElement(codeUtlisateur);
+            utilisateur.setElements(elementResponse.elements());
+        }
 
         return utilisateur;
     }
@@ -259,5 +276,28 @@ public class UtilisateurServiceImpl implements UtilisateurService {
                 .build();
     }
 
+    private ElementByCodeProfesseurResponse getElement(String codeElement) throws ExchangerException{
+        ElementByCodeProfesseurResponse elementResponse;
+        try{
+            elementResponse = elementClient.getElementsByCodeProfesseur(codeElement).getBody();
+        }catch (HttpClientErrorException | HttpServerErrorException e) {
+            throw ExchangerException.builder()
+                    .exceptionBody(e.getResponseBodyAsString())
+                    .build();
+        }
+        return elementResponse;
+    }
+
+    private List<ElementByCodeProfesseurResponse> getElements(List<String> codesElement) throws ExchangerException{
+        List<ElementByCodeProfesseurResponse> elementResponses;
+        try {
+            elementResponses = elementClient.getElementsByCodeProfesseurs(codesElement).getBody();
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            throw ExchangerException.builder()
+                    .exceptionBody(e.getResponseBodyAsString())
+                    .build();
+        }
+        return elementResponses;
+    }
 
 }

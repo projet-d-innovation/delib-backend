@@ -15,11 +15,8 @@ public record ProfesseurCreateRequestDTO(
         String prenom,
         @NotBlank()
         String telephone,
-
         @NotBlank()
         String codeDepartement,
-        String photo,
-
-        List<String> elementIds
+        String photo
 ) {
 }

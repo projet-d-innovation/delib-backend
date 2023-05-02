@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
+import ma.enset.utilisateur.constant.CoreConstants;
 import ma.enset.utilisateur.dto.PagingResponse;
 import ma.enset.utilisateur.dto.ProfesseurCreateRequestDTO;
 import ma.enset.utilisateur.dto.ProfesseurResponseDTO;
@@ -31,7 +32,7 @@ public class ProfesseurController {
     private final ProfesseurMapper professeurMapper;
     private final UtilisateurService professeurService;
 
-    private final String ROLE_ID = "PROFESSEUR";
+    private final String ROLE_ID = CoreConstants.RoleID.ROLE_PROFESSEUR;
 
 
     @GetMapping("{code}")
