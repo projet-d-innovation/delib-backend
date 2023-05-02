@@ -27,11 +27,11 @@ public interface ElementService {
 
     void deleteAllByCodeElement(List<String> codesElement) throws ElementNotFoundException;
 
-    List<Element> findByCodeModule(String codeModule);// TODO: should throw ModuleNotFoundException
+    List<Element> findByCodeModule(String codeModule);
 
-    List<List<Element>> findAllByCodeModule(List<String> codesModule);// TODO: should throw ModuleNotFoundException
+    List<List<Element>> findAllByCodeModule(List<String> codesModule);
 
-    List<Element> findByCodeProfesseur(String codeProfesseur);// TODO: should throw ProfesseurNotFoundException
+    List<Element> findByCodeProfesseur(String codeProfesseur);
 
-    List<List<Element>> findAllByCodeProfesseur(List<String> codesProfesseur);// TODO: should throw ProfesseurNotFoundException
+    List<List<Element>> findAllByCodeProfesseur(List<String> codesProfesseur);
 }

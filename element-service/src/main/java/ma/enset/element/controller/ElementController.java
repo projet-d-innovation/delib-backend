@@ -56,7 +56,8 @@ public class ElementController {
 
         Element element = elementService.findByCodeElement(codeElement);
         elementMapper.updateElementFromDTO(elementUpdateRequest, element);
-
+        System.out.println(elementUpdateRequest);
+        System.out.println(element);
         Element updatedElement = elementService.update(element);
         ElementResponse elementResponse = elementMapper.toElementResponse(updatedElement);
 
@@ -138,7 +139,7 @@ public class ElementController {
     public ResponseEntity<List<ElementByCodeModuleResponse>> findByModules(@NotEmpty @RequestParam List<String> codesModule) {
         List<List<Element>> elements = elementService.findAllByCodeModule(codesModule);
 
-        List<ElementByCodeModuleResponse> elementByCodeModuleResponses = elementMapper.toElementByCodeModuleResponseList(elements);
+        List<ElementByCodeModuleResponse> elementByCodeModuleResponses = elementMapper.toElementByCodeModuleResponseList(codesModule,elements);
 
         return ResponseEntity
                 .ok()
@@ -148,7 +149,7 @@ public class ElementController {
     @GetMapping("/module/{codeModule}")
     public ResponseEntity<ElementByCodeModuleResponse> findByModule(@PathVariable("codeModule") String codeModule) {
         List<Element> elements = elementService.findByCodeModule(codeModule);
-        ElementByCodeModuleResponse elementByCodeModuleResponse = elementMapper.toElementByCodeModuleResponse(elements);
+        ElementByCodeModuleResponse elementByCodeModuleResponse = elementMapper.toElementByCodeModuleResponse(codeModule,elements);
 
         return ResponseEntity
                 .ok()
@@ -158,7 +159,7 @@ public class ElementController {
     @GetMapping("/professeur/bulk")
     public ResponseEntity<List<ElementByCodeProfesseurResponse>> findByProfesseurs(@NotEmpty @RequestParam List<String> codesProfesseur) {
         List<List<Element>> elements = elementService.findAllByCodeProfesseur(codesProfesseur);
-        List<ElementByCodeProfesseurResponse> elementByCodeProfesseurResponses = elementMapper.toElementByCodeProfesseurResponseList(elements);
+        List<ElementByCodeProfesseurResponse> elementByCodeProfesseurResponses = elementMapper.toElementByCodeProfesseurResponseList(codesProfesseur,elements);
 
         return ResponseEntity
                 .ok()
@@ -170,7 +171,7 @@ public class ElementController {
             @PathVariable("codeProfesseur") String codeProfesseur
     ) {
         List<Element> elements = elementService.findByCodeProfesseur(codeProfesseur);
-        ElementByCodeProfesseurResponse elementByCodeProfesseurResponse = elementMapper.toElementByCodeProfesseurResponse(elements);
+        ElementByCodeProfesseurResponse elementByCodeProfesseurResponse = elementMapper.toElementByCodeProfesseurResponse(codeProfesseur,elements);
 
         return ResponseEntity
                 .ok()

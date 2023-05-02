@@ -5,6 +5,7 @@ import ma.enset.element.model.Element;
 import org.mapstruct.*;
 import org.springframework.data.domain.Page;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -30,10 +31,22 @@ public interface ElementMapper {
     List<ElementResponse> toElementResponseList(List<Element> elementList);
 
 
-    List<ElementByCodeModuleResponse> toElementByCodeModuleResponseList(List<List<Element>> elements);
+    default List<ElementByCodeModuleResponse> toElementByCodeModuleResponseList(List<String>codesModule,List<List<Element>> elements){
+        List<ElementByCodeModuleResponse> elementByCodeModuleResponses = new ArrayList<>();
+        for (int i = 0; i < codesModule.size(); i++) {
+            elementByCodeModuleResponses.add(toElementByCodeModuleResponse(codesModule.get(i),elements.get(i)));
+        }
+        return elementByCodeModuleResponses;
+    }
 
 
-    List<ElementByCodeProfesseurResponse> toElementByCodeProfesseurResponseList(List<List<Element>> elements);
+    default List<ElementByCodeProfesseurResponse> toElementByCodeProfesseurResponseList(List<String>codesProfesseur,List<List<Element>> elements){
+        List<ElementByCodeProfesseurResponse> elementByCodeProfesseurResponses = new ArrayList<>();
+        for (int i = 0; i < codesProfesseur.size(); i++) {
+            elementByCodeProfesseurResponses.add(toElementByCodeProfesseurResponse(codesProfesseur.get(i),elements.get(i)));
+        }
+        return elementByCodeProfesseurResponses;
+    }
 
 
     List<String> toCodeElementList(List<ElementUpdateRequest> elementUpdateRequestList);
@@ -60,18 +73,27 @@ public interface ElementMapper {
         return elementUpdateRequest.codeElement();
     }
 
-    default ElementByCodeModuleResponse toElementByCodeModuleResponse(List<Element> elements) {
-        if (elements.isEmpty()) return null; // TODO : DELETE THIS AFTER IMPLEMENTING MODULE NOT FOUND EXCEPTION
+    default ElementByCodeModuleResponse toElementByCodeModuleResponse(String codeModule,List<Element> elements) {
+        if (elements.isEmpty())
+            return ElementByCodeModuleResponse.builder()
+                    .codeModule(codeModule)
+                    .elements(new ArrayList<>())
+                    .build();
+
         return ElementByCodeModuleResponse.builder()
-                .codeModule(elements.get(0).getCodeModule())
+                .codeModule(codeModule)
                 .elements(toElementResponseList(elements))
                 .build();
     }
 
-    default ElementByCodeProfesseurResponse toElementByCodeProfesseurResponse(List<Element> elements) {
-        if (elements.isEmpty()) return null; // TODO : DELETE THIS AFTER IMPLEMENTING PROFESSEUR NOT FOUND EXCEPTION
+    default ElementByCodeProfesseurResponse toElementByCodeProfesseurResponse(String codeProfesseur,List<Element> elements) {
+        if (elements.isEmpty())
+            return ElementByCodeProfesseurResponse.builder()
+                    .codeProfesseur(codeProfesseur)
+                    .elements(toElementResponseList(new ArrayList<>()))
+                    .build();
         return ElementByCodeProfesseurResponse.builder()
-                .codeProfesseur(elements.get(0).getCodeProfesseur())
+                .codeProfesseur(codeProfesseur)
                 .elements(toElementResponseList(elements))
                 .build();
     }

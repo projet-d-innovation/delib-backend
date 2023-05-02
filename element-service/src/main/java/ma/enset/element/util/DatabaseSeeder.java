@@ -17,24 +17,38 @@ import java.util.stream.IntStream;
 @Component
 public class DatabaseSeeder implements CommandLineRunner {
     private final ElementRepository elementRepository;
-    private final Faker faker = new Faker();
 
     @Override
     public void run(String... args) throws Exception {
-        List<Element> productList = IntStream.rangeClosed(1, 100)
-                .mapToObj(i ->
-                        Element.builder()
-                                .codeElement(faker.aws().accountId())
-                                .codeModule(faker.aws().accountId())
-                                .intituleElement(faker.commerce().productName() + Instant.now().getNano())
-                                .coefficientElement(Math.round((float) (Math.random() * 0.8 + 0.1) * 10.0f) / 10.0f)
-                                .codeProfesseur(faker.aws().accountId())
-                                .build()
-                ).toList();
-
+        List<Element> elements = List.of(
+                Element.builder()
+                        .codeElement("E1")
+                        .intituleElement("Element 1")
+                        .coefficientElement(0.6f)
+                        .codeModule("M1")
+                        .build(),
+                Element.builder()
+                        .codeElement("E2")
+                        .intituleElement("Element 2")
+                        .coefficientElement(0.4f)
+                        .codeModule("M1")
+                        .build(),
+                Element.builder()
+                        .codeElement("E3")
+                        .intituleElement("Element 3")
+                        .coefficientElement(0.6f)
+                        .codeModule("M2")
+                        .build(),
+                Element.builder()
+                        .codeElement("E4")
+                        .intituleElement("Element 4")
+                        .coefficientElement(0.4f)
+                        .codeModule("M2")
+                        .build()
+        );
         log.info("Database seeding: started");
 
-        elementRepository.saveAll(productList);
+        elementRepository.saveAll(elements);
 
         log.info("Database seeding: completed with success");
 
