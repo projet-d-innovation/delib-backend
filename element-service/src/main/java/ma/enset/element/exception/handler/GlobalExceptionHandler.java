@@ -52,7 +52,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(ExchangerException.class)
     public ResponseEntity<BusinessExceptionResponse> handleExchangerException(ExchangerException e) {
         return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .status(e.getBusinessExceptionResponse().status())
                 .body(e.getBusinessExceptionResponse());
     }
 
