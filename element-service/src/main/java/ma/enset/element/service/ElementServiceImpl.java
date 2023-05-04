@@ -64,7 +64,7 @@ public class ElementServiceImpl implements ElementService {
 
 
         elements.forEach(element -> {
-            if (_findByCodeElement(element.getCodeElement()).isPresent()) {
+            if (elementRepository.existsByCodeElement(element.getCodeElement())) {
                 throw ElementAlreadyExistsException.builder()
                         .key(CoreConstants.BusinessExceptionMessage.ELEMENT_ALREADY_EXISTS)
                         .args(new Object[]{element.getCodeElement()})
@@ -92,7 +92,6 @@ public class ElementServiceImpl implements ElementService {
     public Page<Element> findAll(Pageable pageable) {
         return elementRepository.findAll(pageable);
     }
-
     @Override
     public Element update(Element element) throws ElementNotFoundException, InternalErrorException {
 
@@ -117,7 +116,7 @@ public class ElementServiceImpl implements ElementService {
     public List<Element> updateAll(List<Element> elements) throws ElementNotFoundException, InternalErrorException {
 
         elements.forEach(element -> {
-            if (_findByCodeElement(element.getCodeElement()).isEmpty()) {
+            if (!elementRepository.existsByCodeElement(element.getCodeElement())) {
                 throw elementNotFoundException(element.getCodeElement());
             }
         });
@@ -159,12 +158,8 @@ public class ElementServiceImpl implements ElementService {
     @Override
     public List<Element> findAllByCodeElement(List<String> codeElements) throws ElementNotFoundException {
         List<Element> elements = new ArrayList<>();
-        codeElements.forEach(codeElement -> elements.add(this._findByCodeElement(codeElement).orElseThrow(() -> elementNotFoundException(codeElement))));
+        codeElements.forEach(codeElement -> elements.add(elementRepository.findById(codeElement).orElseThrow(() -> elementNotFoundException(codeElement))));
         return elements;
-    }
-
-    private Optional<Element> _findByCodeElement(String codeElement) throws ElementNotFoundException {
-        return elementRepository.findById(codeElement);
     }
 
     @Override

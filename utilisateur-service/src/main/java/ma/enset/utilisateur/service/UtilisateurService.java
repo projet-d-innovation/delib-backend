@@ -28,13 +28,13 @@ public interface UtilisateurService {
 
     Page<Utilisateur> findAll(Pageable pageable, String roleId) throws ElementNotFoundException;
 
-    Utilisateur update(Utilisateur utilisateur, String roleId) throws ElementNotFoundException, RoleConflictException, InternalErrorException;
+    Utilisateur update(Utilisateur utilisateur, String roleId) throws ElementNotFoundException, InternalErrorException;
 
-    Utilisateur update(Utilisateur utilisateur) throws ElementNotFoundException, RoleConflictException, InternalErrorException;
+    Utilisateur update(Utilisateur utilisateur) throws ElementNotFoundException, InternalErrorException;
 
-    List<Utilisateur> updateAll(List<Utilisateur> utilisateurs, String roleId) throws ElementNotFoundException, RoleConflictException, InternalErrorException;
+    List<Utilisateur> updateAll(List<Utilisateur> utilisateurs, String roleId) throws ElementNotFoundException, InternalErrorException;
 
-    List<Utilisateur> updateAll(List<Utilisateur> utilisateurs) throws ElementNotFoundException, RoleConflictException, InternalErrorException;
+    List<Utilisateur> updateAll(List<Utilisateur> utilisateurs) throws ElementNotFoundException, InternalErrorException;
 
     void deleteByCodeUtilisateur(String codeUtilisateur, String roleId) throws ElementNotFoundException;
 

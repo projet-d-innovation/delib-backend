@@ -17,7 +17,6 @@ public class ExchangerException extends BusinessException {
         ObjectMapper objectMapper = new ObjectMapper();
         try{
             businessExceptionResponse = objectMapper.readValue(exceptionBody, BusinessExceptionResponse.class);
-
         }catch (Exception e){
             businessExceptionResponse = BusinessExceptionResponse.builder()
                     .code(HttpStatus.INTERNAL_SERVER_ERROR.value())

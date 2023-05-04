@@ -56,17 +56,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .body(e.getBusinessExceptionResponse());
     }
 
-    @ExceptionHandler(value = RoleConflictException.class)
-    public ResponseEntity<BusinessExceptionResponse> RoleConflictException(RoleConflictException e) {
-        return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(BusinessExceptionResponse.builder()
-                        .code(HttpStatus.CONFLICT.value())
-                        .status(HttpStatus.CONFLICT)
-                        .error(getMessage(e))
-                        .build());
-    }
-
     @Override
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException e, HttpHeaders headers,

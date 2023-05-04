@@ -1,13 +1,11 @@
 package ma.enset.utilisateur.service;
 
 import jakarta.transaction.Transactional;
-import jdk.jshell.execution.Util;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import ma.enset.utilisateur.client.ElementClient;
 import ma.enset.utilisateur.constant.CoreConstants;
 import ma.enset.utilisateur.dto.ElementByCodeProfesseurResponse;
-import ma.enset.utilisateur.dto.ElementResponse;
 import ma.enset.utilisateur.exception.*;
 import ma.enset.utilisateur.model.Role;
 import ma.enset.utilisateur.model.Utilisateur;
@@ -27,14 +25,13 @@ import java.util.List;
 public class UtilisateurServiceImpl implements UtilisateurService {
     private final UtilisateurRepository utilisateurRepository;
     private final RoleService roleService;
-
     private final ElementClient elementClient;
 
 
     @Override
     public Utilisateur save(Utilisateur utilisateur, String roleId) throws ElementAlreadyExistsException, InternalErrorException {
         if (utilisateurRepository.existsByCode(utilisateur.getCode()))
-            throw utilisateurAlreadyExistsException(utilisateur.getCode());
+            throw utilisateurAlreadyExistsException(utilisateur.getCode(), roleId);
 
         Role role = roleService.findByRoleId(roleId);
         utilisateur.setRoles(List.of(role));
@@ -75,16 +72,38 @@ public class UtilisateurServiceImpl implements UtilisateurService {
     @Transactional
     @Override
     public List<Utilisateur> saveAll(List<Utilisateur> utilisateurs, String roleId) throws ElementAlreadyExistsException, InternalErrorException {
-        List<Utilisateur> savedUtilisateurs = new ArrayList<>();
-        utilisateurs.forEach(utilisateur -> savedUtilisateurs.add(save(utilisateur, roleId)));
+
+        utilisateurs.forEach(utilisateur -> {
+            if(utilisateurRepository.existsByCode(utilisateur.getCode()))
+                throw utilisateurAlreadyExistsException(utilisateur.getCode(), roleId);
+            Role role = roleService.findByRoleId(roleId);
+            utilisateur.setRoles(List.of(role));
+        });
+
+        List<Utilisateur> savedUtilisateurs;
+        try{
+            savedUtilisateurs = utilisateurRepository.saveAll(utilisateurs);
+        }catch (Exception e) {
+            log.error(e.getMessage(), e.getCause());
+            throw new InternalErrorException();
+        }
         return savedUtilisateurs;
     }
 
     @Transactional
     @Override
     public List<Utilisateur> saveAll(List<Utilisateur> utilisateurs) throws ElementAlreadyExistsException, InternalErrorException {
-        List<Utilisateur> savedUtilisateurs = new ArrayList<>();
-        utilisateurs.forEach(utilisateur -> savedUtilisateurs.add(save(utilisateur)));
+        utilisateurs.forEach(utilisateur -> {
+            if(utilisateurRepository.existsByCode(utilisateur.getCode()))
+                throw utilisateurAlreadyExistsException(utilisateur.getCode());
+        });
+        List<Utilisateur> savedUtilisateurs;
+        try{
+            savedUtilisateurs = utilisateurRepository.saveAll(utilisateurs);
+        }catch (Exception e) {
+            log.error(e.getMessage(), e.getCause());
+            throw new InternalErrorException();
+        }
         return savedUtilisateurs;
     }
 
@@ -98,7 +117,7 @@ public class UtilisateurServiceImpl implements UtilisateurService {
         Role role = roleService.findByRoleId(roleId);
         Page<Utilisateur> utilisateurs = utilisateurRepository.findAllByRolesContains(role, pageable);
         List<String> utilisateursCodes = utilisateurs.getContent().stream().map(Utilisateur::getCode).toList();
-        log.info("Utilisateurs codes: {}", utilisateursCodes);
+
         List<ElementByCodeProfesseurResponse> elements = this.getElements(utilisateursCodes);
         for(int i = 0; i < utilisateursCodes.size(); i++) {
             utilisateurs.getContent().get(i).setElements(elements.get(i).elements());
@@ -108,7 +127,7 @@ public class UtilisateurServiceImpl implements UtilisateurService {
 
 
     @Override
-    public Utilisateur update(Utilisateur utilisateur, String roleId) throws ElementNotFoundException, RoleConflictException, InternalErrorException {
+    public Utilisateur update(Utilisateur utilisateur, String roleId) throws ElementNotFoundException, InternalErrorException {
 
         Utilisateur toBeUpdated = this.getUtilisateurAndCheckRole(utilisateur.getCode(), roleId);
 
@@ -125,15 +144,9 @@ public class UtilisateurServiceImpl implements UtilisateurService {
     }
 
     @Override
-    public Utilisateur update(Utilisateur utilisateur) throws ElementNotFoundException, RoleConflictException, InternalErrorException {
+    public Utilisateur update(Utilisateur utilisateur) throws ElementNotFoundException, InternalErrorException {
 
-        Utilisateur toBeUpdated = this.getUtilisateur(utilisateur.getCode());
-
-        List<String> rolesIds = utilisateur.getRoles().stream().map(Role::getRoleId).toList();
-
-        List<Role> roles = roleService.findAllByRoleId(rolesIds);
-
-        toBeUpdated.setRoles(roles);
+        Utilisateur toBeUpdated = checkUtilisateurAndSetRoles(utilisateur);
 
         Utilisateur updatedUtilisateur = null;
 
@@ -149,17 +162,32 @@ public class UtilisateurServiceImpl implements UtilisateurService {
 
     @Transactional
     @Override
-    public List<Utilisateur> updateAll(List<Utilisateur> utilisateurs, String roleId) throws ElementNotFoundException, RoleConflictException, InternalErrorException {
-        List<Utilisateur> updatedUtilisateurs = new ArrayList<>();
-        utilisateurs.forEach(utilisateur -> updatedUtilisateurs.add(update(utilisateur, roleId)));
+    public List<Utilisateur> updateAll(List<Utilisateur> utilisateurs, String roleId) throws ElementNotFoundException, InternalErrorException {
+
+        utilisateurs.forEach(utilisateur -> this.getUtilisateurAndCheckRole(utilisateur.getCode(), roleId));
+
+        List<Utilisateur> updatedUtilisateurs;
+        try{
+            updatedUtilisateurs = utilisateurRepository.saveAll(utilisateurs);
+        }catch (Exception e) {
+            log.error(e.getMessage(), e.getCause());
+            throw new InternalErrorException();
+        }
         return updatedUtilisateurs;
     }
 
     @Transactional
     @Override
-    public List<Utilisateur> updateAll(List<Utilisateur> utilisateurs) throws ElementNotFoundException, RoleConflictException, InternalErrorException {
-        List<Utilisateur> updatedUtilisateurs = new ArrayList<>();
-        utilisateurs.forEach(utilisateur -> updatedUtilisateurs.add(update(utilisateur)));
+    public List<Utilisateur> updateAll(List<Utilisateur> utilisateurs) throws ElementNotFoundException, InternalErrorException {
+        List<Utilisateur> toBeUpdated = utilisateurs.stream().map(this::checkUtilisateurAndSetRoles).toList();
+
+        List<Utilisateur> updatedUtilisateurs;
+        try{
+            updatedUtilisateurs = utilisateurRepository.saveAll(toBeUpdated);
+        }catch (Exception e) {
+            log.error(e.getMessage(), e.getCause());
+            throw new InternalErrorException();
+        }
         return updatedUtilisateurs;
     }
 
@@ -172,7 +200,7 @@ public class UtilisateurServiceImpl implements UtilisateurService {
 
     @Override
     public void deleteByCodeUtilisateur(String codeUtilisateur) throws ElementNotFoundException {
-        this.getUtilisateur(codeUtilisateur);
+        utilisateurRepository.findById(codeUtilisateur).orElseThrow(() -> utilisateurNotFoundException(codeUtilisateur));
         utilisateurRepository.deleteByCode(codeUtilisateur);
     }
 
@@ -233,29 +261,25 @@ public class UtilisateurServiceImpl implements UtilisateurService {
         return elements;
     }
 
-    private Utilisateur getUtilisateur(String codeUtilisateur) throws ElementNotFoundException {
-
-        Utilisateur utilisateur = utilisateurRepository.findByCode(codeUtilisateur).orElse(null);
-
-        if (utilisateur == null)
-            throw utilisateurNotFoundException(codeUtilisateur);
-
-
+    private Utilisateur checkUtilisateurAndSetRoles(Utilisateur utilisateur) throws ElementNotFoundException {
+        utilisateurRepository.findByCode(utilisateur.getCode())
+                .orElseThrow(() -> utilisateurNotFoundException(utilisateur.getCode()));
+        List<String> rolesIds = utilisateur.getRoles().stream().map(Role::getRoleId).toList();
+        List<Role> roles = roleService.findAllByRoleId(rolesIds);
+        utilisateur.setRoles(roles);
         return utilisateur;
     }
 
-    private Utilisateur getUtilisateurAndCheckRole(String codeUtlisateur, String roleId) throws ElementNotFoundException, RoleConflictException {
 
-        Utilisateur utilisateur = getUtilisateur(codeUtlisateur);
+    private Utilisateur getUtilisateurAndCheckRole(String codeUtilisateur, String roleId) throws ElementNotFoundException {
+
+        Utilisateur utilisateur = utilisateurRepository.findByCode(codeUtilisateur).orElseThrow(() -> utilisateurNotFoundException(codeUtilisateur,roleId));
 
         if (utilisateur.getRoles().stream().map(Role::getRoleId).noneMatch(roleName -> roleName.equals(roleId)))
-            throw RoleConflictException.builder()
-                    .key(CoreConstants.BusinessExceptionMessage.ROLE_CONFLICT)
-                    .args(new Object[]{codeUtlisateur, roleId})
-                    .build();
+            throw utilisateurNotFoundException(codeUtilisateur,roleId);
 
         if(utilisateur.getRoles().stream().map(Role::getRoleId).anyMatch(roleName -> roleName.equals(CoreConstants.RoleID.ROLE_PROFESSEUR))){
-            ElementByCodeProfesseurResponse elementResponse = getElement(codeUtlisateur);
+            ElementByCodeProfesseurResponse elementResponse = getElement(codeUtilisateur);
             utilisateur.setElements(elementResponse.elements());
         }
 
@@ -273,6 +297,20 @@ public class UtilisateurServiceImpl implements UtilisateurService {
         return ElementNotFoundException.builder()
                 .key(CoreConstants.BusinessExceptionMessage.UTILISATEUR_NOT_FOUND)
                 .args(new Object[]{"Utilisateur", codeUtilisateur})
+                .build();
+    }
+
+    private ElementAlreadyExistsException utilisateurAlreadyExistsException(String codeUtilisateur,String roleID) {
+        return ElementAlreadyExistsException.builder()
+                .key(CoreConstants.BusinessExceptionMessage.UTILISATEUR_ALREADY_EXISTS)
+                .args(new Object[]{roleID, codeUtilisateur})
+                .build();
+    }
+
+    private ElementNotFoundException utilisateurNotFoundException(String codeUtilisateur,String roleID) {
+        return ElementNotFoundException.builder()
+                .key(CoreConstants.BusinessExceptionMessage.UTILISATEUR_NOT_FOUND)
+                .args(new Object[]{roleID, codeUtilisateur})
                 .build();
     }
 
