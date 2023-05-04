@@ -49,17 +49,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                         .build());
     }
 
-
-
-    @ExceptionHandler(value = RoleConflictException.class)
-    public ResponseEntity<BusinessExceptionResponse> RoleConflictException(RoleConflictException e) {
+    @ExceptionHandler(ExchangerException.class)
+    public ResponseEntity<BusinessExceptionResponse> handleExchangerException(ExchangerException e) {
         return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(BusinessExceptionResponse.builder()
-                        .code(HttpStatus.CONFLICT.value())
-                        .status(HttpStatus.CONFLICT)
-                        .error(getMessage(e))
-                        .build());
+                .status(e.getBusinessExceptionResponse().status())
+                .body(e.getBusinessExceptionResponse());
     }
 
     @Override

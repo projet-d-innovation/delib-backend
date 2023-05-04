@@ -1,18 +1,16 @@
-package ma.enset.utilisateur.dto;
+package ma.enset.element.dto;
 
 import lombok.Builder;
 
 import java.util.List;
 
 @Builder
-public record ProfesseurResponseDTO(
+public record ProfesseurResponse(
         String code,
         String nom,
         String prenom,
         String telephone,
         String photo,
-        String codeDepartement,
-        DepartementResponse departement,
-        List<ElementResponse> elements
+        List<String> elementIds
 ) {
 }

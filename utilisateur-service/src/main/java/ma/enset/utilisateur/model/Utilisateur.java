@@ -5,7 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ma.enset.utilisateur.dto.DepartementResponseDTO;
+import ma.enset.utilisateur.dto.DepartementResponse;
+import ma.enset.utilisateur.dto.ElementResponse;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -38,15 +39,10 @@ public class Utilisateur {
 
     private String codeDepartement;
 
-    @ElementCollection
-    @CollectionTable(name = "professeur_elements", joinColumns = @JoinColumn(name = "id"))
-    @Column(name = "element")
-    private List<String> elementIds;
-
     @Transient
-    private DepartementResponseDTO Departement; // TODO : change to Departement
+    private DepartementResponse Departement;
     @Transient
-    private List<Object> elements; // TODO : change to List<Element>
+    private List<ElementResponse> elements;
 
 
 }

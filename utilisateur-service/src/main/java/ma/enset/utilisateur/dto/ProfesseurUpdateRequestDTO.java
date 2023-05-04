@@ -11,7 +11,6 @@ public record ProfesseurUpdateRequestDTO(
         String prenom,
         String telephone,
         String photo,
-        String codeDepartement,
-        List<String> elementIds
+        String codeDepartement
 ) {
 }

@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
+import ma.enset.utilisateur.constant.CoreConstants;
 import ma.enset.utilisateur.dto.EtudiantCreateRequestDTO;
 import ma.enset.utilisateur.dto.EtudiantResponseDTO;
 import ma.enset.utilisateur.dto.EtudiantUpdateRequestDTO;
@@ -31,7 +32,7 @@ public class EtudiantController {
     private final EtudiantMapper etudiantMapper;
     private final UtilisateurService etudiantService;
 
-    private final String ROLE_ID = "ETUDIANT";
+    private final String ROLE_ID = CoreConstants.RoleID.ROLE_ETUDIANT;
 
 
     @GetMapping("{code}")

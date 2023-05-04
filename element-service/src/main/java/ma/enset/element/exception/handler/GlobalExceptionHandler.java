@@ -3,10 +3,7 @@ package ma.enset.element.exception.handler;
 import com.mysql.cj.util.StringUtils;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Path;
-import ma.enset.element.exception.BusinessException;
-import ma.enset.element.exception.ElementAlreadyExistsException;
-import ma.enset.element.exception.ElementNotFoundException;
-import ma.enset.element.exception.InternalErrorException;
+import ma.enset.element.exception.*;
 import ma.enset.element.exception.handler.dto.BusinessExceptionResponse;
 import ma.enset.element.exception.handler.dto.ValidationExceptionResponse;
 import org.springframework.http.HttpHeaders;
@@ -50,6 +47,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                         .status(HttpStatus.NOT_FOUND)
                         .error(getMessage(e))
                         .build());
+    }
+
+    @ExceptionHandler(ExchangerException.class)
+    public ResponseEntity<BusinessExceptionResponse> handleExchangerException(ExchangerException e) {
+        return ResponseEntity
+                .status(e.getBusinessExceptionResponse().status())
+                .body(e.getBusinessExceptionResponse());
     }
 
     @Override

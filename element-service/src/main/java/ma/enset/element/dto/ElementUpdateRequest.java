@@ -13,6 +13,7 @@ public record ElementUpdateRequest(
         String intituleElement,
         @DecimalMin("0.1")
         @DecimalMax("1")
-        BigDecimal coefficientElement
+        BigDecimal coefficientElement,
+        String codeProfesseur
 ) {
 }
