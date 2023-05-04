@@ -11,6 +11,8 @@ public class CoreConstants {
         public static final String MODULE_NOT_FOUND = "businessException.module.NotFound.message";
         public static final String ELEMENT_NOT_FOUND = "businessException.element.NotFound.message";
 
+        public static final String CLIENT_EXEPTION = "businessException.client.NotFound.message";
+
 
 
     }

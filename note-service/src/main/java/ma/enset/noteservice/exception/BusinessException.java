@@ -1,5 +1,6 @@
 package ma.enset.noteservice.exception;
 
+
 public class BusinessException extends RuntimeException {
 
     private final String key;
@@ -12,6 +13,8 @@ public class BusinessException extends RuntimeException {
         this.args = args;
     }
 
+
+
     public String getKey() {
         return key;
     }
@@ -19,4 +22,7 @@ public class BusinessException extends RuntimeException {
     public Object[] getArgs() {
         return args;
     }
+    
+    
+
 }
