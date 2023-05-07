@@ -97,6 +97,13 @@ public class SemestreServiceImpl implements SemestreService{
         codesSemestres.forEach(this::deleteByCodeSemestre);
     }
 
+    @Override
+    public List<Semestre> findAllByCodesOfSemestres(List<String> codesSemestres) throws ElementNotFoundException {
+        List<Semestre> semestres = new ArrayList<>();
+        codesSemestres.forEach(code -> semestres.add(findByCodeSemestre(code)));
+        return semestres;
+    }
+
     private ElementNotFoundException semestreNotFoundException(String codeSemestre) {
         return ElementNotFoundException.builder()
                 .key(CoreConstants.BusinessExceptionMessage.SEMESTRE_NOT_FOUND)

@@ -61,6 +61,14 @@ public class SemestreController {
                 .ok()
                 .body(foundSemestreResponse);
     }
+    @PostMapping("/GetBulkByCode")
+    public ResponseEntity<List<SemestreResponse>> getListOfSemestersByListOfCode(@RequestBody List<String> codeSemestreList) {
+        List<SemestreResponse> semestreResponseList = semestreMapper.toSemestreResponseList(semestreService.findAllByCodesOfSemestres(codeSemestreList));
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(semestreResponseList);
+    }
+
 
     @GetMapping
     public ResponseEntity<SemestrePagingResponse> getAll(@RequestParam(defaultValue = "0") @Min(0) int page,

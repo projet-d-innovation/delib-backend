@@ -19,5 +19,6 @@ public interface SemestreService {
     Semestre update(Semestre module) throws ElementNotFoundException, InternalErrorException;
     void deleteByCodeSemestre(String codeSemestre) throws ElementNotFoundException;
     void deleteAllByCodeSemestre(List<String> codesSemestres) throws ElementNotFoundException;
+    List<Semestre> findAllByCodesOfSemestres(List<String> codesSemestres) throws ElementNotFoundException;
 
 }
