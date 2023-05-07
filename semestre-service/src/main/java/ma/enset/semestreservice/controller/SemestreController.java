@@ -2,6 +2,7 @@ package ma.enset.semestreservice.controller;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import ma.enset.semestreservice.dto.SemestreCreationRequest;
 import ma.enset.semestreservice.dto.SemestrePagingResponse;
@@ -61,8 +62,8 @@ public class SemestreController {
                 .ok()
                 .body(foundSemestreResponse);
     }
-    @PostMapping("/GetBulkByCode")
-    public ResponseEntity<List<SemestreResponse>> getListOfSemestersByListOfCode(@RequestBody List<String> codeSemestreList) {
+    @GetMapping("/bulk")
+    public ResponseEntity<List<SemestreResponse>> getListOfSemestersByListOfCode(@NotEmpty @RequestParam List<String> codeSemestreList) {
         List<SemestreResponse> semestreResponseList = semestreMapper.toSemestreResponseList(semestreService.findAllByCodesOfSemestres(codeSemestreList));
         return ResponseEntity
                 .status(HttpStatus.OK)
