@@ -3,7 +3,6 @@ package ma.enset.noteservice.controller;
 import lombok.AllArgsConstructor;
 import ma.enset.noteservice.dto.ModuleResponse;
 import ma.enset.noteservice.dto.NoteSemestreResponse;
-import ma.enset.noteservice.feign.ModuleServiceFeignClient;
 import ma.enset.noteservice.service.NoteSemesterService;
 import ma.enset.noteservice.util.NoteSemestreMapper;
 import org.springframework.http.ResponseEntity;
@@ -18,19 +17,16 @@ import java.util.List;
 @Validated
 public class NoteSemestreController {
 private final NoteSemesterService noteSemesterService;
-private final ModuleServiceFeignClient moduleServiceFeignClient;
 
-    @GetMapping("/{codeSemestre}/sessions/{codeSession}")
-    public ResponseEntity<NoteSemestreResponse> getNoteSemesterByCodeSession(@PathVariable("codeSemestre") String codeSemestre,@PathVariable("codeSession") String codesession) {
-        List<ModuleResponse> moduleResponseList =  moduleServiceFeignClient.getModuleByCodeSemestre(codeSemestre).getBody();          //  TODO: The endpoint of getModuleByCodeSemestre should be created in module-service
-        NoteSemestreResponse noteSemestreResponse = NoteSemestreMapper.toNoteSemestreResponse(codeSemestre, noteSemesterService.calculateNoteBySession(moduleResponseList, codesession));
-
-        return ResponseEntity
-                .ok()
-                .body(noteSemestreResponse);
-    }
-
-
+//    @GetMapping("/{codeSemestre}/sessions/{codeSession}")
+//    public ResponseEntity<NoteSemestreResponse> getNoteSemesterByCodeSession(@PathVariable("codeSemestre") String codeSemestre,@PathVariable("codeSession") String codesession) {
+////        List<ModuleResponse> moduleResponseList =  moduleServiceFeignClient.getModuleByCodeSemestre(codeSemestre).getBody();          //  TODO: The endpoint of getModuleByCodeSemestre should be created in module-service
+////        NoteSemestreResponse noteSemestreResponse = NoteSemestreMapper.toNoteSemestreResponse(codeSemestre, noteSemesterService.calculateNoteBySession(moduleResponseList, codesession));
+//
+//        return ResponseEntity
+//                .ok()
+//                .body(noteSemestreResponse);
+//    }
 
 
 }

@@ -2,7 +2,6 @@ package ma.enset.noteservice.service;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import ma.enset.noteservice.feign.ModuleServiceFeignClient;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -10,7 +9,6 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class NoteYearServiceImpl implements NoteYearService{
     private final NoteSemesterService noteSemesterService;
-    private final ModuleServiceFeignClient moduleServiceFeignClient;
 
 
     @Override

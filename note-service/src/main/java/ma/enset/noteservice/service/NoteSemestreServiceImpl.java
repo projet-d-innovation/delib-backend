@@ -4,12 +4,9 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import ma.enset.noteservice.dto.ModuleResponse;
 import ma.enset.noteservice.model.NoteModule;
-import ma.enset.noteservice.util.NoteModuleMapper;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 @Service
 @AllArgsConstructor

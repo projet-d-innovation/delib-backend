@@ -3,7 +3,6 @@ package ma.enset.noteservice.controller;
 
 import lombok.AllArgsConstructor;
 import ma.enset.noteservice.dto.*;
-import ma.enset.noteservice.feign.ModuleServiceFeignClient;
 
 import ma.enset.noteservice.model.NoteModule;
 import ma.enset.noteservice.service.NoteModuleService;
@@ -21,14 +20,13 @@ import java.util.List;
 public class NoteModuleController {
     private final NoteModuleService noteModuleService;
     private final NoteModuleMapper noteModuleMapper;
-    private final ModuleServiceFeignClient moduleServiceFeignClient;
 
     @GetMapping("/{noteModuleId}")
     public ResponseEntity<NoteModuleWithModuleResponse> get(@PathVariable("noteModuleId") String noteModuleId) {
         NoteModule foundModule = noteModuleService.findById(noteModuleId);
-        ResponseEntity<ModuleResponse> moduleresponse =  moduleServiceFeignClient.getModuleByCode(foundModule.getCodeModule());
+        ModuleResponse moduleresponse =  noteModuleService.getModule(foundModule.getCodeModule());
         NoteModuleWithModuleResponse foundModuleResponse = noteModuleMapper.toNoteModuleWithModuleResponse(foundModule);
-        foundModuleResponse = foundModuleResponse.setElementResponse(moduleresponse.getBody());
+        foundModuleResponse = foundModuleResponse.setElementResponse(moduleresponse);
         return ResponseEntity
                 .ok()
                 .body(foundModuleResponse);

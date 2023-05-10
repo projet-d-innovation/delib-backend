@@ -1,26 +1,23 @@
 package ma.enset.noteservice.controller;
 
-import com.mysql.cj.log.Log;
 import jakarta.validation.Valid;
 
 import lombok.AllArgsConstructor;
 
 import lombok.extern.slf4j.Slf4j;
 import ma.enset.noteservice.dto.*;
-import ma.enset.noteservice.feign.ElementServiceFeignClient;
+import ma.enset.noteservice.clients.ElementClient;
 import ma.enset.noteservice.model.NoteElement;
 import ma.enset.noteservice.model.NoteModule;
 import ma.enset.noteservice.service.NoteElementService;
 import ma.enset.noteservice.service.NoteModuleService;
 import ma.enset.noteservice.util.NoteElementMapper;
 
-import org.slf4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -32,8 +29,8 @@ import java.util.Objects;
 public class NoteElementController {
     private final NoteElementService noteElementService;
     private final NoteElementMapper noteElementMapper;
-    private final ElementServiceFeignClient elementServiceFeignClient;
     private final NoteModuleService noteModuleService;
+    private final ElementClient elementClient;
 
     @PostMapping
     public ResponseEntity<NoteElementResponse> save(@Valid @RequestBody NoteElementCreationRequest noteElementCreationRequest) {
@@ -61,14 +58,13 @@ public class NoteElementController {
                 .body(noteElementResponseList);
     }
 
-
     @GetMapping("/{noteElementId}")
     public ResponseEntity<NoteElementWithElementResponse> get(@PathVariable("noteElementId") String noteElementId) {
 
         NoteElement foundNoteElement = noteElementService.findById(noteElementId);
-        ResponseEntity<ElementResponse> elementResponse =  elementServiceFeignClient.getElementByCode(foundNoteElement.getCodeElement());
+        ElementResponse elementResponse =  noteElementService.getElement(foundNoteElement.getCodeElement());
         NoteElementWithElementResponse foundModuleResponse = noteElementMapper.toNoteElementWithElementResponse(foundNoteElement);
-        foundModuleResponse = foundModuleResponse.setElementResponse(elementResponse.getBody());
+        foundModuleResponse = foundModuleResponse.setElementResponse(elementResponse);
         return ResponseEntity
                 .ok()
                 .body(foundModuleResponse);
@@ -78,13 +74,14 @@ public class NoteElementController {
     public  ResponseEntity< List<NoteElementWithElementResponse>> getAllByCodeSession(@RequestParam String codeSession) {
 
         List<NoteElement> noteElementList= noteElementService.findByCodeSession(codeSession);
+        log.info("noteElementList: {}", noteElementList);
         List<String> codesElements = noteElementList.stream().distinct().map(NoteElement::getCodeElement).toList();
-        ResponseEntity<List<ElementResponse>> foundElements =  elementServiceFeignClient.findByCodeElements11(codesElements);
+        List<ElementResponse> foundElements =  noteElementService.getElements(codesElements);
         List<NoteElementWithElementResponse> noteElementWithElementResponseList  = noteElementMapper.toNoteElementWithElementResponseList(noteElementList);
-         noteElementWithElementResponseList.forEach(noteElementWithElementResponse -> {
-             ElementResponse elementResponse = Objects.requireNonNull(foundElements.getBody()).stream().filter(elementResponse1 -> elementResponse1.codeElement().equals(noteElementWithElementResponse.codeElement())).findFirst().get();
-             noteElementWithElementResponse.setElementResponse(elementResponse);
-         });
+        noteElementWithElementResponseList.forEach(noteElementWithElementResponse -> {
+            ElementResponse elementResponse = Objects.requireNonNull(foundElements).stream().filter(elementResponse1 -> elementResponse1.codeElement().equals(noteElementWithElementResponse.codeElement())).findFirst().get();
+            noteElementWithElementResponse.setElementResponse(elementResponse);
+        });
 
         return ResponseEntity
                 .ok()
@@ -107,8 +104,6 @@ public class NoteElementController {
                 .ok()
                 .body(updatedModuleResponse);
     }
-
-
 
     @PatchMapping("/bulk")
     public ResponseEntity<List<NoteElementResponse>> updateAll(
@@ -133,8 +128,8 @@ public class NoteElementController {
         NoteElement noteElement =  noteElementService.findById(noteElementId);
         noteElementService.deleteById(noteElementId);
 
-        ResponseEntity<ElementResponse> elementResponse =  elementServiceFeignClient.getElementByCode(noteElement.getCodeElement());
-        NoteModule noteModule = noteModuleService.findByCodeModuleAndCodeSession(Objects.requireNonNull(elementResponse.getBody()).codeModule(), noteElement.getCodeSession());
+        ElementResponse elementResponse =  noteElementService.getElement(noteElement.getCodeElement());
+        NoteModule noteModule = noteModuleService.findByCodeModuleAndCodeSession(Objects.requireNonNull(elementResponse.codeModule()), noteElement.getCodeSession());
         noteModuleService.delete(noteModule);
 
         return ResponseEntity

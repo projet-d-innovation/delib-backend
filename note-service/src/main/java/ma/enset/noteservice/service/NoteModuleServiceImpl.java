@@ -6,19 +6,21 @@ import lombok.extern.slf4j.Slf4j;
 import ma.enset.noteservice.constant.CoreConstants;
 import ma.enset.noteservice.dto.ElementByCodeModuleResponse;
 import ma.enset.noteservice.dto.ElementResponse;
+import ma.enset.noteservice.dto.ModuleResponse;
 import ma.enset.noteservice.enums.Resultat;
 import ma.enset.noteservice.exception.ElementAlreadyExistsException;
 import ma.enset.noteservice.exception.ElementNotFoundException;
 
+import ma.enset.noteservice.exception.ExchangerException;
 import ma.enset.noteservice.exception.InternalErrorException;
-import ma.enset.noteservice.feign.ElementServiceFeignClient;
-import ma.enset.noteservice.feign.ModuleServiceFeignClient;
+import ma.enset.noteservice.clients.ModuleClient;
 import ma.enset.noteservice.model.NoteElement;
 import ma.enset.noteservice.model.NoteModule;
 import ma.enset.noteservice.repository.NoteModuleRepository;
 import ma.enset.noteservice.util.NoteElementMapper;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,16 +33,11 @@ import java.util.Objects;
 public class NoteModuleServiceImpl implements NoteModuleService {
 
     private final NoteModuleRepository noteModuleRepository;
-    private final ModuleServiceFeignClient moduleServiceFeignClient;
     private final NoteElementService noteElementService;
     private final NoteElementMapper noteElementMapper;
-
-    private final ElementServiceFeignClient elementServiceFeignClient;
-
+    private final ModuleClient moduleClient;
 
     public NoteModule save(NoteModule noteModule) throws ElementAlreadyExistsException, InternalErrorException {
-//        if (moduleServiceFeignClient.getModuleByCode(noteModule.getCodeModule()).getStatusCode() != HttpStatus.OK)
-//            return null;
 
         if (noteModuleRepository.findById(noteModule.getNoteModuleId()).isPresent()) {
             throw ElementAlreadyExistsException.builder()
@@ -48,6 +45,8 @@ public class NoteModuleServiceImpl implements NoteModuleService {
                     .args(new Object[]{noteModule.getNoteModuleId()})
                     .build();
         }
+
+        getModule(noteModule.getCodeModule());
 
         NoteModule createNoteModule = null;
 
@@ -63,10 +62,10 @@ public class NoteModuleServiceImpl implements NoteModuleService {
 
     @Override
     public NoteModule checkElementsAndSave(NoteElement noteElement) {
-        ResponseEntity<ElementResponse> elementResponse =  elementServiceFeignClient.getElementByCode(noteElement.getCodeElement());
-        String codeModule = Objects.requireNonNull(elementResponse.getBody()).codeModule();
-        ResponseEntity<ElementByCodeModuleResponse> elementResponseList =  elementServiceFeignClient.findByModule(codeModule);
-        List<ElementResponse> elementResponses = Objects.requireNonNull(elementResponseList.getBody()).elements();
+        ElementResponse elementResponse =  noteElementService.getElement(noteElement.getCodeElement());
+        String codeModule = Objects.requireNonNull(elementResponse).codeModule();
+        ElementByCodeModuleResponse elementResponseList =  noteElementService.getElementByModule(codeModule);
+        List<ElementResponse> elementResponses = Objects.requireNonNull(elementResponseList).elements();
         List<String> codeElements = noteElementMapper.toCodeElementList(elementResponses);
         NoteElement noteElement1 =  noteElementService.findByCodeSessionAndCodeElement(noteElement.getCodeSession(), codeElements.get(0));
         NoteElement noteElement2 =  noteElementService.findByCodeSessionAndCodeElement(noteElement.getCodeSession(), codeElements.get(1));
@@ -81,28 +80,41 @@ public class NoteModuleServiceImpl implements NoteModuleService {
     }
 
 
-    //
 
     @Transactional
     public List<NoteModule> saveAll(List<NoteModule> noteModuleList) throws ElementAlreadyExistsException, InternalErrorException {
 
-        List<NoteModule> createdNoteModule = new ArrayList<>(noteModuleList.size());
         noteModuleList.forEach(notemodule -> {
-//            if (moduleServiceFeignClient.getModuleByCode(notemodule.getCodeModule()).getStatusCode() != HttpStatus.OK)
-//                return;
-            createdNoteModule.add(save(notemodule));
+            if (noteModuleRepository.findById(notemodule.getNoteModuleId()).isPresent()) {
+                throw ElementAlreadyExistsException.builder()
+                        .key(CoreConstants.BusinessExceptionMessage.NOTE_ELEMENT_ALREADY_EXISTS)
+                        .args(new Object[]{notemodule.getNoteModuleId()})
+                        .build();
+            }
         });
-        return createdNoteModule;
+
+//      getElements(noteElementList.stream().map(NoteElement::getCodeElement).toList());   TODO: implement this in module service
+//      getSession(codeSession);  TODO: implement this in deliberation service
+
+
+        List<NoteModule> savedNoteModules = new ArrayList<>(noteModuleList.size());
+        try {
+            savedNoteModules = noteModuleRepository.saveAll(noteModuleList);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e.getCause());
+            throw new InternalErrorException();
+        }
+        return noteModuleList;
     }
 
     @Override
     public List<NoteModule> checkElementsAndSaveAll(List<NoteElement> noteElementList) {
         List<NoteModule> noteModuleList = new ArrayList<>();
         noteElementList.forEach(noteElement -> {
-            ResponseEntity<ElementResponse> elementResponse =  elementServiceFeignClient.getElementByCode(noteElement.getCodeElement());
-            String codeModule = Objects.requireNonNull(elementResponse.getBody()).codeModule();
-            ResponseEntity<ElementByCodeModuleResponse> elementResponseList =  elementServiceFeignClient.findByModule(codeModule);
-            List<ElementResponse> elementResponses = Objects.requireNonNull(elementResponseList.getBody()).elements();
+            ElementResponse elementResponse =  noteElementService.getElement(noteElement.getCodeElement());
+            String codeModule = Objects.requireNonNull(elementResponse).codeModule();
+            ElementByCodeModuleResponse elementResponseList =  noteElementService.getElementByModule(codeModule);
+            List<ElementResponse> elementResponses = Objects.requireNonNull(elementResponseList).elements();
             List<String> codeElements = noteElementMapper.toCodeElementList(elementResponses);
             NoteElement noteElement1 =  noteElementService.findByCodeSessionAndCodeElement(noteElement.getCodeSession(), codeElements.get(0));
             NoteElement noteElement2 =  noteElementService.findByCodeSessionAndCodeElement(noteElement.getCodeSession(), codeElements.get(1));
@@ -124,10 +136,10 @@ public class NoteModuleServiceImpl implements NoteModuleService {
 
     @Override
     public NoteModule checkElementsAndUpdate(NoteElement noteElement) {
-        ResponseEntity<ElementResponse> elementResponse =  elementServiceFeignClient.getElementByCode(noteElement.getCodeElement());
-        String codeModule = Objects.requireNonNull(elementResponse.getBody()).codeModule();
-        ResponseEntity<ElementByCodeModuleResponse> elementResponseList =  elementServiceFeignClient.findByModule(codeModule);
-        List<ElementResponse> elementResponses = Objects.requireNonNull(elementResponseList.getBody()).elements();
+        ElementResponse elementResponse =  noteElementService.getElement(noteElement.getCodeElement());
+        String codeModule = Objects.requireNonNull(elementResponse).codeModule();
+        ElementByCodeModuleResponse elementResponseList =  noteElementService.getElementByModule(codeModule);
+        List<ElementResponse> elementResponses = Objects.requireNonNull(elementResponseList).elements();
         List<String> codeElements = noteElementMapper.toCodeElementList(elementResponses);
         NoteElement noteElement1 =  noteElementService.findByCodeSessionAndCodeElement(noteElement.getCodeSession(), codeElements.get(0));
         NoteElement noteElement2 =  noteElementService.findByCodeSessionAndCodeElement(noteElement.getCodeSession(), codeElements.get(1));
@@ -150,10 +162,10 @@ public class NoteModuleServiceImpl implements NoteModuleService {
     public List<NoteModule> checkElementsAndUpdateAll(List<NoteElement> updatedNoteElementList) {
     List<NoteModule> noteModuleList = new ArrayList<>();
         updatedNoteElementList.forEach(noteElement -> {
-        ResponseEntity<ElementResponse> elementResponse =  elementServiceFeignClient.getElementByCode(noteElement.getCodeElement());
-        String codeModule = Objects.requireNonNull(elementResponse.getBody()).codeModule();
-        ResponseEntity<ElementByCodeModuleResponse> elementResponseList =  elementServiceFeignClient.findByModule(codeModule);
-        List<ElementResponse> elementResponses = Objects.requireNonNull(elementResponseList.getBody()).elements();
+        ElementResponse elementResponse =  noteElementService.getElement(noteElement.getCodeElement());
+        String codeModule = Objects.requireNonNull(elementResponse).codeModule();
+        ElementByCodeModuleResponse elementResponseList =  noteElementService.getElementByModule(codeModule);
+        List<ElementResponse> elementResponses = Objects.requireNonNull(elementResponseList).elements();
         List<String> codeElements = noteElementMapper.toCodeElementList(elementResponses);
         NoteElement noteElement1 =  noteElementService.findByCodeSessionAndCodeElement(noteElement.getCodeSession(), codeElements.get(0));
         NoteElement noteElement2 =  noteElementService.findByCodeSessionAndCodeElement(noteElement.getCodeSession(), codeElements.get(1));
@@ -173,8 +185,6 @@ public class NoteModuleServiceImpl implements NoteModuleService {
 
     public NoteModule update(NoteModule noteModule) throws ElementNotFoundException, InternalErrorException {
 
-//        if (moduleServiceFeignClient.getModuleByCode(noteModule.getCodeModule()).getStatusCode() != HttpStatus.OK)
-//            return null;
 
         if (!noteModuleRepository.findById(noteModule.getNoteModuleId()).isPresent()) {
             throw noteModuleNotFoundException(noteModule.getNoteModuleId());
@@ -201,19 +211,33 @@ public class NoteModuleServiceImpl implements NoteModuleService {
 
     @Override
     public List<NoteModule> findAllByCodeSession(String codeSession) {
-           return noteModuleRepository.findByCodeSession(codeSession);
+//        getSession(codeSession);  TODO: implement this in deliberation service
+        return noteModuleRepository.findByCodeSession(codeSession);
     }
 
     @Override
     public NoteModule findByCodeModuleAndCodeSession(String codeModule, String codeSession) {
+//        getSession(codeSession);  TODO: implement this in deliberation service
         return noteModuleRepository.findByCodeModuleAndCodeSession(codeModule, codeSession);
     }
 
     @Transactional
     public List<NoteModule> updateAll(List<NoteModule> noteModuleList) throws ElementNotFoundException, InternalErrorException {
-        List<NoteModule> updatedNoteModules = new ArrayList<>();
-        noteModuleList.forEach(noteModule -> updatedNoteModules.add(update(noteModule)));
-        return updatedNoteModules;
+
+        noteModuleList.forEach(noteModule -> {
+            if (!noteModuleRepository.findById(noteModule.getNoteModuleId()).isPresent()) {
+                throw noteModuleNotFoundException(noteModule.getNoteModuleId());
+            }
+        });
+        List<NoteModule> updatedNotemodule = new ArrayList<>();
+
+        try {
+            updatedNotemodule = noteModuleRepository.saveAll(noteModuleList);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e.getCause());
+            throw new InternalErrorException();
+        }
+        return updatedNotemodule;
     }
 
 
@@ -259,6 +283,34 @@ public class NoteModuleServiceImpl implements NoteModuleService {
 //       }
         return currentNoteModule;
     }
+    @Override
+    public ModuleResponse getModule(String codeModule) {
+        ModuleResponse moduleResponse = null;
+        try {
+            moduleResponse = moduleClient.getModule(codeModule).getBody();
+            log.info("elementResponse: {}", moduleResponse);
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            throw ExchangerException.builder()
+                    .exceptionBody(e.getResponseBodyAsString())
+                    .build();
+        }
+        return moduleResponse;
+    }
+
+
+//    @Override
+//    public List<ElementResponse> getModules(List<String> codeElements) throws ExchangerException{
+//        List<ElementResponse> moduleresponses = new ArrayList<>();
+//        try {
+//            moduleresponses = moduleClient.getModules(codeElements).getBody(); TODO: implement this in module service
+//        } catch (HttpClientErrorException | HttpServerErrorException e) {
+//            throw ExchangerException.builder()
+//                    .exceptionBody(e.getResponseBodyAsString())
+//                    .build();
+//        }
+//        return moduleresponse;
+//    }
+
 
     private ElementNotFoundException noteModuleNotFoundException(String noteModuleId) {
         return ElementNotFoundException.builder()

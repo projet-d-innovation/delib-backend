@@ -1,6 +1,7 @@
 package ma.enset.noteservice.service;
 
 import ma.enset.noteservice.dto.ElementResponse;
+import ma.enset.noteservice.dto.ModuleResponse;
 import ma.enset.noteservice.dto.NoteElementUpdateRequest;
 import ma.enset.noteservice.exception.ElementAlreadyExistsException;
 import ma.enset.noteservice.exception.ElementNotFoundException;
@@ -32,4 +33,6 @@ public interface NoteModuleService {
 
 
     NoteModule findByCodeModuleAndCodeSession(String s, String codeSession);
+
+    ModuleResponse getModule(String codeModule);
 }
