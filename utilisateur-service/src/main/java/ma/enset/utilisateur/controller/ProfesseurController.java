@@ -92,7 +92,7 @@ public class ProfesseurController {
     @GetMapping
     public ResponseEntity<PagingResponse<ProfesseurResponseDTO>> findAll(
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Range(min = 1, max = 10) int size
+            @RequestParam(defaultValue = "10") @Range(min = 1, max = 100) int size
     ) {
 
         Pageable pageRequest = PageRequest.of(page, size);
