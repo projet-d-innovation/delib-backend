@@ -1,5 +1,6 @@
 package ma.enset.departementservice.model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.validation.constraints.Min;
@@ -16,15 +17,12 @@ import lombok.NoArgsConstructor;
 @Data
 public class Departement {
     @Id
-
+    @Column(updatable = false)
     private String codeDepartement;
 
-    @NotBlank
     private String codeChefDepartement;
     @NotBlank
+    @Column(nullable = false)
     private String intituleDepartement;
-
-    @Min(0)
-    private int nombreEmployes;
 
 }

@@ -1,4 +1,4 @@
-package ma.enset.departementservice.util;
+package ma.enset.departementservice.mapper;
 
 
 import ma.enset.departementservice.dto.DepartementCreationRequest;
