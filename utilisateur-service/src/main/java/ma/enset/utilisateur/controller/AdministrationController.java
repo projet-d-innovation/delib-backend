@@ -118,13 +118,14 @@ public class AdministrationController {
 
     @GetMapping
     public ResponseEntity<PagingResponse<UtilisateurResponseDTO>> findAll(
+            @RequestParam(defaultValue ="") String search,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Range(min = 1, max = 10) int size,
             @Nullable @RequestParam(defaultValue = "false")
             boolean includeRole
     ) {
         Pageable pageRequest = PageRequest.of(page, size);
-        Page<Utilisateur> utilisateursPage = utilisateurService.findAll(pageRequest);
+        Page<Utilisateur> utilisateursPage = utilisateurService.findAll(search,pageRequest);
 
         Page<UtilisateurResponseDTO> pagedResult = null;
 
@@ -144,13 +145,14 @@ public class AdministrationController {
 
     @GetMapping("role/{role}")
     public ResponseEntity<PagingResponse<UtilisateurResponseDTO>> findAllByRole(
+            @RequestParam(defaultValue ="") String search,
             @NotBlank @PathVariable String role,
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Range(min = 1, max = 10) int size
+            @RequestParam(defaultValue = "10") @Range(min = 1, max = 100) int size
     ) {
 
         Pageable pageRequest = PageRequest.of(page, size);
-        Page<Utilisateur> utilisateursPage = utilisateurService.findAll(pageRequest, role);
+        Page<Utilisateur> utilisateursPage = utilisateurService.findAll(search ,pageRequest, role);
 
         Page<UtilisateurResponseDTO> pagedResult = utilisateursPage.map(utilisateurMapper::toUtilisateurWithRoleResponse);
 

@@ -24,9 +24,9 @@ public interface UtilisateurService {
 
     List<Utilisateur> findAllByCodeUtilisateur(List<String> codeUtilisateurs) throws ElementNotFoundException;
 
-    Page<Utilisateur> findAll(Pageable pageable);
+    Page<Utilisateur> findAll(String search,Pageable pageable);
 
-    Page<Utilisateur> findAll(Pageable pageable, String roleId) throws ElementNotFoundException;
+    Page<Utilisateur> findAll(String search,Pageable pageable, String roleId) throws ElementNotFoundException;
 
     Utilisateur update(Utilisateur utilisateur, String roleId) throws ElementNotFoundException, InternalErrorException;
 

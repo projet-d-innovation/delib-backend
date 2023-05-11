@@ -92,12 +92,13 @@ public class EtudiantController {
 
     @GetMapping
     public ResponseEntity<PagingResponse<EtudiantResponseDTO>> findAll(
+            @RequestParam(defaultValue ="") String search,
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Range(min = 1, max = 10) int size
+            @RequestParam(defaultValue = "10") @Range(min = 1, max = 100) int size
     ) {
 
         Pageable pageRequest = PageRequest.of(page, size);
-        Page<Utilisateur> elementsPage = etudiantService.findAll(pageRequest, ROLE_ID);
+        Page<Utilisateur> elementsPage = etudiantService.findAll(search,pageRequest, ROLE_ID);
 
         PagingResponse<EtudiantResponseDTO> pagedResult = etudiantMapper.toPagingResponse(elementsPage);
 

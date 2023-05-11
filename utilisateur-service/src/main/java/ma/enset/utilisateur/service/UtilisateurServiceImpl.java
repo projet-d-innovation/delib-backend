@@ -108,20 +108,25 @@ public class UtilisateurServiceImpl implements UtilisateurService {
     }
 
     @Override
-    public Page<Utilisateur> findAll(Pageable pageable) {
-        return utilisateurRepository.findAll(pageable);
+    public Page<Utilisateur> findAll(String search,Pageable pageable) {
+        return utilisateurRepository.findAllWithSearch(search,pageable);
     }
 
     @Override
-    public Page<Utilisateur> findAll(Pageable pageable, String roleId) throws ElementNotFoundException {
+    public Page<Utilisateur> findAll(String search,Pageable pageable, String roleId) throws ElementNotFoundException {
         Role role = roleService.findByRoleId(roleId);
-        Page<Utilisateur> utilisateurs = utilisateurRepository.findAllByRolesContains(role, pageable);
-        List<String> utilisateursCodes = utilisateurs.getContent().stream().map(Utilisateur::getCode).toList();
+        Page<Utilisateur> utilisateurs = utilisateurRepository.findAllWithSearchAndRole(search,role, pageable);
 
-        List<ElementByCodeProfesseurResponse> elements = this.getElements(utilisateursCodes);
-        for(int i = 0; i < utilisateursCodes.size(); i++) {
-            utilisateurs.getContent().get(i).setElements(elements.get(i).elements());
+        if(utilisateurs.hasContent() && roleId.equals(CoreConstants.RoleID.ROLE_PROFESSEUR)){
+            System.out.println("professeur");
+            List<String> utilisateursCodes = utilisateurs.getContent().stream().map(Utilisateur::getCode).toList();
+
+            List<ElementByCodeProfesseurResponse> elements = this.getElements(utilisateursCodes);
+            for(int i = 0; i < utilisateursCodes.size(); i++) {
+                utilisateurs.getContent().get(i).setElements(elements.get(i).elements());
+            }
         }
+
         return utilisateurs;
     }
 
@@ -222,11 +227,6 @@ public class UtilisateurServiceImpl implements UtilisateurService {
 
     @Override
     public Utilisateur findByCodeUtilisateur(String codeUtilisateur, String roleId) throws ElementNotFoundException {
-//
-//        Role role = Role.builder()
-//                .roleId(roleId)
-//                .build();
-//
         return this.getUtilisateurAndCheckRole(codeUtilisateur, roleId);
     }
 
@@ -274,7 +274,8 @@ public class UtilisateurServiceImpl implements UtilisateurService {
     private Utilisateur getUtilisateurAndCheckRole(String codeUtilisateur, String roleId) throws ElementNotFoundException {
 
         Utilisateur utilisateur = utilisateurRepository.findByCode(codeUtilisateur).orElseThrow(() -> utilisateurNotFoundException(codeUtilisateur,roleId));
-
+        System.out.println("here");
+        log.warn(utilisateur.getRoles().stream().map(Role::getRoleId).toList().toString());
         if (utilisateur.getRoles().stream().map(Role::getRoleId).noneMatch(roleName -> roleName.equals(roleId)))
             throw utilisateurNotFoundException(codeUtilisateur,roleId);
 
@@ -314,10 +315,10 @@ public class UtilisateurServiceImpl implements UtilisateurService {
                 .build();
     }
 
-    private ElementByCodeProfesseurResponse getElement(String codeElement) throws ExchangerException{
+    private ElementByCodeProfesseurResponse getElement(String codeProfesseur) throws ExchangerException{
         ElementByCodeProfesseurResponse elementResponse;
         try{
-            elementResponse = elementClient.getElementsByCodeProfesseur(codeElement).getBody();
+            elementResponse = elementClient.getElementsByCodeProfesseur(codeProfesseur).getBody();
         }catch (HttpClientErrorException | HttpServerErrorException e) {
             throw ExchangerException.builder()
                     .exceptionBody(e.getResponseBodyAsString())
@@ -326,10 +327,10 @@ public class UtilisateurServiceImpl implements UtilisateurService {
         return elementResponse;
     }
 
-    private List<ElementByCodeProfesseurResponse> getElements(List<String> codesElement) throws ExchangerException{
+    private List<ElementByCodeProfesseurResponse> getElements(List<String> codesProfesseur) throws ExchangerException{
         List<ElementByCodeProfesseurResponse> elementResponses;
         try {
-            elementResponses = elementClient.getElementsByCodeProfesseurs(codesElement).getBody();
+            elementResponses = elementClient.getElementsByCodeProfesseurs(codesProfesseur).getBody();
         } catch (HttpClientErrorException | HttpServerErrorException e) {
             throw ExchangerException.builder()
                     .exceptionBody(e.getResponseBodyAsString())
