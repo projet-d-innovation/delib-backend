@@ -2,6 +2,7 @@ package ma.enset.departementservice.contoller;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -17,6 +18,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @Validated
@@ -24,12 +26,14 @@ import java.util.List;
 @RequestMapping("/api/v1/departements")
 public class DepartementController {
     private final DepartementService departementService;
+
     @PostMapping
     public ResponseEntity<DepartementResponse> save(@Valid @RequestBody DepartementCreationRequest departementCreationRequest) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(departementService.save(departementCreationRequest));
     }
+
     @PostMapping("/bulk")
     public ResponseEntity<List<DepartementResponse>> saveAll(@RequestBody @NotEmpty List<@NotNull @Valid DepartementCreationRequest> departementCreationRequestList) {
         return ResponseEntity
@@ -40,22 +44,29 @@ public class DepartementController {
     @GetMapping
     public ResponseEntity<DepartementPagingResponse> getAll(@RequestParam(defaultValue = "") String search,
                                                             @RequestParam(defaultValue = "0") @Min(0) int page,
-                                                            @RequestParam(defaultValue = "10") @Range(min = 1, max = 100) int size) {
+                                                            @RequestParam(defaultValue = "10") @Range(min = 1, max = 100) int size,
+                                                            @RequestParam(defaultValue = "false") boolean includeFilieres
+    ) {
         return ResponseEntity.ok(
-                departementService.findAll(page,size,search)
+                departementService.findAll(page, size, search, includeFilieres)
         );
     }
+
     @GetMapping("/{codeDepartement}")
-    public ResponseEntity<DepartementResponse> get(@PathVariable("codeDepartement") String codeDepartement) {
+    public ResponseEntity<DepartementResponse> get(@PathVariable("codeDepartement") String codeDepartement,
+                                                   @RequestParam(defaultValue = "false") boolean includeFilieres
+    ) {
         return ResponseEntity.ok(
-                        departementService.findById(codeDepartement)
+                departementService.findById(codeDepartement, includeFilieres)
         );
     }
 
     @GetMapping("/bulk")
-    public ResponseEntity<List<DepartementResponse>> getAllById(@NotEmpty @RequestParam List<String> codeDepartementList){
+    public ResponseEntity<List<DepartementResponse>> getAllById(@NotEmpty @RequestParam Set<@NotBlank String> codeDepartementList,
+                                                                @RequestParam(defaultValue = "false") boolean includeFilieres
+    ) {
         return ResponseEntity.ok(
-                departementService.findAllById(codeDepartementList)
+                departementService.findAllById(codeDepartementList, includeFilieres)
         );
     }
 
@@ -66,9 +77,10 @@ public class DepartementController {
             @Valid @RequestBody DepartementUpdateRequest departementUpdateRequest
     ) {
         return ResponseEntity.ok(
-                departementService.update(codeDepartement,departementUpdateRequest)
+                departementService.update(codeDepartement, departementUpdateRequest)
         );
     }
+
     @DeleteMapping("/{codeDepartement}")
     public ResponseEntity<?> delete(@PathVariable("codeDepartement") String codeDepartement) {
         departementService.deleteById(codeDepartement);
@@ -76,8 +88,9 @@ public class DepartementController {
                 .noContent()
                 .build();
     }
+
     @DeleteMapping("/bulk")
-    public ResponseEntity<?> deleteAll(@RequestParam @NotEmpty List<String> codeDepartementList) {
+    public ResponseEntity<?> deleteAll(@RequestParam @NotEmpty Set<@NotBlank String> codeDepartementList) {
         departementService.deleteById(codeDepartementList);
         return ResponseEntity
                 .noContent()

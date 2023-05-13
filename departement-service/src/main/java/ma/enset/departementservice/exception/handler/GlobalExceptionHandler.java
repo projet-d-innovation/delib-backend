@@ -4,11 +4,10 @@ import com.mysql.cj.util.StringUtils;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Path;
 import lombok.extern.slf4j.Slf4j;
-import ma.enset.departementservice.exception.BusinessException;
-import ma.enset.departementservice.exception.ElementAlreadyExistsException;
-import ma.enset.departementservice.exception.ElementNotFoundException;
-import ma.enset.departementservice.exception.InternalErrorException;
+import ma.enset.departementservice.constant.CoreConstants;
+import ma.enset.departementservice.exception.*;
 import ma.enset.departementservice.exception.handler.dto.ExceptionResponse;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -43,6 +42,20 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 );
     }
 
+    @ExceptionHandler(DuplicateEntryException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ResponseEntity<ExceptionResponse> handleDuplicateEntryException(DuplicateEntryException e) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(
+                        ExceptionResponse.builder()
+                                .code(HttpStatus.CONFLICT.value())
+                                .status(HttpStatus.CONFLICT)
+                                .message(getMessage(e))
+                                .build()
+                );
+    }
+
     @ExceptionHandler(ElementNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ResponseEntity<ExceptionResponse> handleElementNotFoundException(ElementNotFoundException e) {
@@ -60,10 +73,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @Override
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    protected ResponseEntity<Object> handleMethodArgumentNotValid(
-            MethodArgumentNotValidException e, HttpHeaders headers,
-            HttpStatusCode status, WebRequest request) {
-
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException e,
+                                                                  HttpHeaders headers, HttpStatusCode status,
+                                                                  WebRequest request) {
         return ResponseEntity
                 .badRequest()
                 .body(
@@ -85,7 +97,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(ConstraintViolationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<ExceptionResponse> handleValidationConstraintViolationException(ConstraintViolationException e) {
-
         return ResponseEntity
                 .badRequest()
                 .body(
@@ -103,24 +114,28 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 );
     }
 
-    @ExceptionHandler(InternalErrorException.class)
+    @ExceptionHandler({
+            InternalErrorException.class,
+            NullPointerException.class,
+            DataAccessException.class
+    })
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ResponseEntity<ExceptionResponse> handleInternalErrorException(InternalErrorException e) {
+    public ResponseEntity<ExceptionResponse> handleInternalExceptions(RuntimeException e) {
+        log.error(e.getMessage(), e.getCause());
+
         return ResponseEntity
                 .internalServerError()
                 .body(
                         ExceptionResponse.builder()
                                 .code(HttpStatus.INTERNAL_SERVER_ERROR.value())
                                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                .message(getMessage(e))
+                                .message(
+                                        getMessage(
+                                                CoreConstants.BusinessExceptionMessage.INTERNAL_ERROR,
+                                                null)
+                                )
                                 .build()
                 );
-    }
-
-    @ExceptionHandler(NullPointerException.class)
-    public void handleNullPointerException(NullPointerException e) throws InternalErrorException{
-        log.error(e.getMessage(), e.getCause());
-        throw new InternalErrorException();
     }
 
     private String removeFirstNodeFromPropertyPath(Path propertyPath) {
@@ -133,21 +148,20 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return finalPropertyPath.toString();
     }
 
-    private String getMessage(BusinessException exception) {
-        return Objects.requireNonNull(getMessageSource()).getMessage(
-                Objects.requireNonNull(exception.getKey()),
-                exception.getArgs(),
-                Locale.getDefault()
-        );
+    private String getMessage(String key, Object[] args) {
+        return Objects.requireNonNull(getMessageSource())
+                .getMessage(key, args, Locale.getDefault());
+    }
+
+    private String getMessage(BusinessException e) {
+        return getMessage(e.getKey(), e.getArgs());
     }
 
     private String getMessage(FieldError fieldError) {
-        return !StringUtils.isNullOrEmpty(fieldError.getDefaultMessage()) ?
-                fieldError.getDefaultMessage() :
-                Objects.requireNonNull(getMessageSource()).getMessage(
-                        Objects.requireNonNull(fieldError.getCode()),
-                        fieldError.getArguments(),
-                        Locale.getDefault()
-                );
+        if (!StringUtils.isNullOrEmpty(fieldError.getDefaultMessage())) {
+            return fieldError.getDefaultMessage();
+        }
+
+        return getMessage(fieldError.getCode(), fieldError.getArguments());
     }
 }

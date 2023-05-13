@@ -7,5 +7,6 @@ public class CoreConstants {
         public static final String ALREADY_EXISTS = "businessException.AlreadyExists.message";
         public static final String MANY_NOT_FOUND = "businessException.many.NotFound.message";
         public static final String MANY_ALREADY_EXISTS = "businessException.many.AlreadyExists.message";
+        public static final String DUPLICATE_ENTRY = "businessException.DuplicateEntry.message";
     }
 }
