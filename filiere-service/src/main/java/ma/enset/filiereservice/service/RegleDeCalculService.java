@@ -1,22 +1,31 @@
 package ma.enset.filiereservice.service;
 
+import ma.enset.filiereservice.dto.RegleDeCalculCreationRequest;
+import ma.enset.filiereservice.dto.RegleDeCalculPagingResponse;
+import ma.enset.filiereservice.dto.RegleDeCalculResponse;
+import ma.enset.filiereservice.dto.RegleDeCalculUpdateRequest;
 import ma.enset.filiereservice.exception.ElementAlreadyExistsException;
 import ma.enset.filiereservice.exception.ElementNotFoundException;
-import ma.enset.filiereservice.exception.InternalErrorException;
-import ma.enset.filiereservice.model.RegleDeCalcul;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Set;
 
 public interface RegleDeCalculService {
-    RegleDeCalcul save(RegleDeCalcul module) throws ElementAlreadyExistsException, InternalErrorException;
-    List<RegleDeCalcul> saveAll(List<RegleDeCalcul> modules) throws ElementAlreadyExistsException, InternalErrorException;
-    RegleDeCalcul findByCodeRegleDeCalcul(String codeRegleDeCalcul) throws ElementNotFoundException;
-    Page<RegleDeCalcul> findAll(Pageable pageable);
-    RegleDeCalcul update(RegleDeCalcul module) throws ElementNotFoundException, InternalErrorException;
-    void deleteByCodeRegleDeCalcul(String codeRegleDeCalcul) throws ElementNotFoundException;
-    void deleteAllByCodeRegleDeCalcul(List<String> codesRegleDeCalculs) throws ElementNotFoundException;
+    RegleDeCalculResponse save(RegleDeCalculCreationRequest regleDeCalculCreationRequest) throws ElementAlreadyExistsException;
+
+    List<RegleDeCalculResponse> saveAll(List<RegleDeCalculCreationRequest> regleDeCalculCreationRequests) throws ElementAlreadyExistsException;
+
+    RegleDeCalculResponse findById(String id) throws ElementNotFoundException;
+
+    List<RegleDeCalculResponse> findAllById(Set<String> ids) throws ElementNotFoundException;
+
+    RegleDeCalculPagingResponse findAll(int page, int size);
+
+    RegleDeCalculResponse update(String id, RegleDeCalculUpdateRequest regleDeCalculUpdateRequest) throws ElementNotFoundException;
+
+    void deleteById(String codeRegleDeCalcul) throws ElementNotFoundException;
+
+    void deleteById(Set<String> codesRegleDeCalculs) throws ElementNotFoundException;
 
 
 }

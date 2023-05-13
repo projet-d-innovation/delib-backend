@@ -1,13 +1,47 @@
 package ma.enset.filiereservice.dto;
 
-public record FiliereResponse(
-        String codeFiliere,
+import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.*;
 
-        String intituleFiliere,
+import java.util.List;
 
-        String codeRegle,
 
-        String codeDepartement ,
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@Setter
+@Getter
+@Data
+public class FiliereResponse {
+    private String codeFiliere;
+    private String intituleFiliere;
+    private String codeDepartement;
+    private String codeChefFiliere;
+    private String codeRegleDeCalcul;
 
-         String codeChefFiliere
-) { }
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private List<Semestre> semestres;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private ChefFiliere chefFiliere;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private RegleDeCalculResponse regleDeCalcul;
+
+    @Builder
+    public record ChefFiliere(
+            String code,
+            String nom,
+            String prenom,
+            String telephone,
+            String photo
+    ) {
+    }
+
+    @Builder
+    public record Semestre(
+            String codeSemestre,
+            String intituleSemestre
+    ) {
+    }
+}

@@ -5,22 +5,22 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 
-public record RegleCreationRequest(
-        @NotBlank
-        String codeRegle,
+import java.math.BigDecimal;
 
+public record RegleDeCalculUpdateRequest(
         @DecimalMin("0.0")
         @DecimalMax("20.0")
-        float noteValidationModule,
+        BigDecimal noteValidationModule,
         @DecimalMin("0.0")
         @DecimalMax("20.0")
-        float noteEliminatoireModule,
+        BigDecimal noteEliminatoireModule,
         @DecimalMin("0.0")
         @DecimalMax("20.0")
-        float noteCompensationModule,
+        BigDecimal noteCompensationModule,
         @DecimalMin("0.0")
         @DecimalMax("20.0")
-        float noteValidationAnnee,
+        BigDecimal noteValidationAnnee,
         @Min(0)
         int nbrModulesDerogation
-) {}
+) {
+}

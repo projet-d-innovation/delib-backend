@@ -3,32 +3,45 @@ package ma.enset.filiereservice.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.springframework.data.domain.Persistable;
 
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @Data
-public class Filiere {
+public class Filiere implements Persistable<String> {
     @Id
-
+    @Column(unique = true, nullable = false, updatable = false)
     private String codeFiliere;
 
-    @NotBlank
+    @Column(nullable = false)
     private String intituleFiliere;
-    @NotBlank
+    @Column(nullable = false)
     private String codeDepartement;
-
-    @NotBlank
     private String codeChefFiliere;
-    @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "codeRegle", referencedColumnName = "codeRegle", nullable = false)
-    private RegleDeCalcul regleDeCalcul;
+    private String codeRegleDeCalcul;
 
+
+    @Transient
+    @Setter(AccessLevel.NONE)
+    private boolean isNew = true;
+
+    @Override
+    public String getId() {
+        return codeFiliere;
+    }
+
+    @Override
+    public boolean isNew() {
+        return isNew;
+    }
+
+    @PrePersist
+    @PostLoad
+    void markNotNew() {
+        this.isNew = false;
+    }
 
 }
