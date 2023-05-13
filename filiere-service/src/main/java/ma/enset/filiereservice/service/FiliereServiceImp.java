@@ -94,21 +94,29 @@ public class FiliereServiceImp implements FiliereService {
 
         Set<String> codeRegleDeCalculs = filiereResponseList.stream()
                 .map(FiliereCreationRequest::codeRegleDeCalcul)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
-        regleDeCalculService.findAllById(codeRegleDeCalculs);
+        if (!codeRegleDeCalculs.isEmpty()) {
+            regleDeCalculService.findAllById(codeRegleDeCalculs);
+        }
 
         Set<String> codeDepartements = filiereResponseList.stream()
                 .map(FiliereCreationRequest::codeDepartement)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
-        // TODO (ahmed) check if departement exists
+        if (!codeDepartements.isEmpty()) {
+            // TODO (ahmed) check if departement exists
+        }
 
         Set<String> codeChefFilieres = filiereResponseList.stream()
                 .map(FiliereCreationRequest::codeChefFiliere)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
-
-        // TODO (ahmed) check if chef filiere exists
+        if (!codeChefFilieres.isEmpty()) {
+            // TODO (ahmed) check if chef filiere exists
+        }
 
 
         List<Filiere> filieres = filiereMapper.toFiliereList(filiereResponseList);
@@ -304,22 +312,9 @@ public class FiliereServiceImp implements FiliereService {
         }
         filiereRepository.deleteById(id);
 
+        // TODO (ahmed) : delete semestres
     }
 
-    @Override
-    public void deleteByCodeDepartement(String codeDepartement) throws ElementNotFoundException {
-        List<Filiere> foundFilieres = filiereRepository.findAllByCodeDepartement(codeDepartement);
-
-        if (foundFilieres.isEmpty()) {
-            throw new ElementNotFoundException(
-                    CoreConstants.BusinessExceptionMessage.NOT_FOUND,
-                    new Object[]{ELEMENT_TYPE, "codeDepartement", codeDepartement},
-                    null
-            );
-        }
-
-        filiereRepository.deleteAll(foundFilieres);
-    }
 
     @Override
     @Transactional
@@ -330,5 +325,17 @@ public class FiliereServiceImp implements FiliereService {
         // TODO (ahmed) : delete semestres
     }
 
+    @Override
+    public void deleteByCodeDepartement(String codeDepartement) throws ElementNotFoundException {
+        List<Filiere> foundFilieres = filiereRepository.findAllByCodeDepartement(codeDepartement);
+        if (foundFilieres.isEmpty()) return;
+        filiereRepository.deleteAll(foundFilieres);
+    }
 
+    @Override
+    public void deleteByCodeDepartement(Set<String> codes) throws ElementNotFoundException {
+        List<Filiere> foundFilieres = filiereRepository.findAllByCodeDepartementIn(codes);
+        if (foundFilieres.isEmpty()) return;
+        filiereRepository.deleteAll(foundFilieres);
+    }
 }

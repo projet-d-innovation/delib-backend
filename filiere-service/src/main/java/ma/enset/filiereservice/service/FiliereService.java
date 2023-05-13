@@ -29,7 +29,10 @@ public interface FiliereService {
 
     void deleteById(String id) throws ElementNotFoundException;
 
-    void deleteByCodeDepartement(String codeDepartement) throws ElementNotFoundException;
-
     void deleteById(Set<String> ids) throws ElementNotFoundException;
+
+    void deleteByCodeDepartement(String code) throws ElementNotFoundException;
+
+    void deleteByCodeDepartement(Set<String> codes) throws ElementNotFoundException;
+
 }

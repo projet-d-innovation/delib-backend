@@ -93,13 +93,6 @@ public class FiliereController {
                 .build();
     }
 
-    @DeleteMapping
-    public ResponseEntity<?> deleteByCodeDepartement(@RequestParam String codeDepartement) {
-        filiereService.deleteByCodeDepartement(codeDepartement);
-        return ResponseEntity
-                .noContent()
-                .build();
-    }
 
     @DeleteMapping("/bulk")
     public ResponseEntity<?> deleteAll(@RequestParam @NotEmpty Set<@NotBlank String> codeFiliere) {
@@ -109,5 +102,21 @@ public class FiliereController {
                 .build();
     }
 
+
+    @DeleteMapping("/departement/{codeDepartement}")
+    public ResponseEntity<?> deleteByCodeDepartement(@PathVariable String codeDepartement) {
+        filiereService.deleteByCodeDepartement(codeDepartement);
+        return ResponseEntity
+                .noContent()
+                .build();
+    }
+
+    @DeleteMapping("/departement/bulk")
+    public ResponseEntity<?> deleteAllByCodeDepartement(@RequestParam @NotEmpty Set<@NotBlank String> codeDepartement) {
+        filiereService.deleteByCodeDepartement(codeDepartement);
+        return ResponseEntity
+                .noContent()
+                .build();
+    }
 
 }
