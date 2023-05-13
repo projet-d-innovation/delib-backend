@@ -338,4 +338,45 @@ public class FiliereServiceImp implements FiliereService {
         if (foundFilieres.isEmpty()) return;
         filiereRepository.deleteAll(foundFilieres);
     }
+
+
+    @Override
+    public FiliereByDepartementResponse findByCodeDepartement(String codeDepartement, boolean includeSemestre, boolean includeRegleDeCalcule, boolean includeChefFiliere) throws ElementNotFoundException {
+
+        Set<String> codeFilieres = filiereRepository.findAllByCodeDepartement(codeDepartement)
+                .stream()
+                .map(Filiere::getCodeFiliere)
+                .collect(Collectors.toSet());
+
+        return FiliereByDepartementResponse.builder()
+                .codeDepartement(codeDepartement)
+                .filieres(this.findAllById(codeFilieres, includeSemestre, includeRegleDeCalcule, includeChefFiliere))
+                .build();
+    }
+
+    @Override
+    public List<FiliereByDepartementResponse> findAllByCodeDepartement(Set<String> codeDepartement, boolean includeSemestre, boolean includeRegleDeCalcule, boolean includeChefFiliere) throws ElementNotFoundException {
+        Set<String> codeFilieres = filiereRepository.findAllByCodeDepartementIn(codeDepartement)
+                .stream()
+                .map(Filiere::getCodeFiliere)
+                .collect(Collectors.toSet());
+
+        List<FiliereResponse> filiereResponses = this.findAllById(codeFilieres, includeSemestre, includeRegleDeCalcule, includeChefFiliere);
+
+        List<FiliereByDepartementResponse> filiereByDepartementResponses = new ArrayList<>();
+
+        for (String code : codeDepartement) {
+            filiereByDepartementResponses.add(
+                    FiliereByDepartementResponse.builder()
+                            .codeDepartement(code)
+                            .filieres(
+                                    filiereResponses.stream()
+                                            .filter(filiereResponse -> filiereResponse.getCodeDepartement().equals(code))
+                                            .collect(Collectors.toList())
+                            )
+                            .build()
+            );
+        }
+        return filiereByDepartementResponses;
+    }
 }

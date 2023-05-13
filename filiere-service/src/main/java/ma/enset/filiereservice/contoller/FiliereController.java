@@ -5,11 +5,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import ma.enset.filiereservice.dto.FiliereCreationRequest;
-import ma.enset.filiereservice.dto.FilierePagingResponse;
-import ma.enset.filiereservice.dto.FiliereResponse;
-import ma.enset.filiereservice.dto.FiliereUpdateRequest;
+import ma.enset.filiereservice.dto.*;
 import ma.enset.filiereservice.service.FiliereService;
 import org.hibernate.validator.constraints.Range;
 import org.springframework.http.HttpStatus;
@@ -117,6 +113,40 @@ public class FiliereController {
         return ResponseEntity
                 .noContent()
                 .build();
+    }
+
+    @GetMapping("/departement/{codeDepartement}")
+    public ResponseEntity<FiliereByDepartementResponse> getFilieresByCodeDepartement(
+            @PathVariable String codeDepartement,
+            @RequestParam(defaultValue = "false") boolean includeSemestre,
+            @RequestParam(defaultValue = "false") boolean includeRegleDeCalcule,
+            @RequestParam(defaultValue = "false") boolean includeChefFiliere
+    ) {
+        return ResponseEntity
+                .ok()
+                .body(filiereService.findByCodeDepartement(
+                        codeDepartement,
+                        includeSemestre,
+                        includeRegleDeCalcule,
+                        includeChefFiliere)
+                );
+    }
+
+    @GetMapping("/departement/bulk")
+    public ResponseEntity<List<FiliereByDepartementResponse>> getFilieresByCodeDepartement(
+            @RequestParam Set<String> codeDepartements,
+            @RequestParam(defaultValue = "false") boolean includeSemestre,
+            @RequestParam(defaultValue = "false") boolean includeRegleDeCalcule,
+            @RequestParam(defaultValue = "false") boolean includeChefFiliere
+    ) {
+        return ResponseEntity
+                .ok()
+                .body(filiereService.findAllByCodeDepartement(
+                        codeDepartements,
+                        includeSemestre,
+                        includeRegleDeCalcule,
+                        includeChefFiliere)
+                );
     }
 
 }
