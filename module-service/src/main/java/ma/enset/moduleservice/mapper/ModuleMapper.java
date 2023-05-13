@@ -1,4 +1,4 @@
-package ma.enset.moduleservice.util;
+package ma.enset.moduleservice.mapper;
 
 import ma.enset.moduleservice.dto.ModuleCreationRequest;
 import ma.enset.moduleservice.dto.ModuleResponse;
@@ -17,12 +17,14 @@ import java.util.List;
 public interface ModuleMapper {
     Module toModule(ModuleCreationRequest moduleCreationRequest);
 
+    List<Module> toModuleList(List<ModuleCreationRequest> request);
+
     @Mapping(
         target = "coefficientModule",
-        expression = "java(new java.math.BigDecimal( String.valueOf(module.getCoefficientModule())) )"
+        expression = "java(new java.math.BigDecimal(String.valueOf(module.getCoefficientModule())))"
     )
     ModuleResponse toModuleResponse(Module module);
-    List<Module> toModuleList(List<ModuleCreationRequest> moduleCreationRequestList);
+
     List<ModuleResponse> toModuleResponseList(List<Module> moduleList);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
@@ -32,7 +34,7 @@ public interface ModuleMapper {
     @Mapping(target = "size", expression = "java(modulePage.getSize())")
     @Mapping(target = "totalPages", expression = "java(modulePage.getTotalPages())")
     @Mapping(target = "totalElements", expression = "java(modulePage.getNumberOfElements())")
-    @Mapping(source = "content", target = "records")
+    @Mapping(target = "records", expression = "java(toModuleResponseList(modulePage.getContent()))")
     ModulePagingResponse toPagingResponse(Page<Module> modulePage);
 
 }

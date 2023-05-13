@@ -10,12 +10,15 @@ import java.math.BigDecimal;
 public record ModuleCreationRequest(
     @NotBlank
     String codeModule,
+
     @NotBlank
     String intituleModule,
+
     @NotNull
     @DecimalMin("0.1")
     @DecimalMax("1")
     BigDecimal coefficientModule,
+
     @NotBlank
     String codeSemestre
 ) {}

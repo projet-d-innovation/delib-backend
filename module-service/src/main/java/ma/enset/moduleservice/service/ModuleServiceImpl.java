@@ -1,107 +1,201 @@
 package ma.enset.moduleservice.service;
 
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import lombok.RequiredArgsConstructor;
 import ma.enset.moduleservice.constant.CoreConstants;
+import ma.enset.moduleservice.dto.ModuleCreationRequest;
+import ma.enset.moduleservice.dto.ModulePagingResponse;
+import ma.enset.moduleservice.dto.ModuleResponse;
+import ma.enset.moduleservice.dto.ModuleUpdateRequest;
+import ma.enset.moduleservice.exception.DuplicateEntryException;
 import ma.enset.moduleservice.exception.ElementAlreadyExistsException;
 import ma.enset.moduleservice.exception.ElementNotFoundException;
-import ma.enset.moduleservice.exception.InternalErrorException;
+import ma.enset.moduleservice.mapper.ModuleMapper;
 import ma.enset.moduleservice.model.Module;
 import ma.enset.moduleservice.repository.ModuleRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
-@AllArgsConstructor
-@Slf4j
+@RequiredArgsConstructor
 public class ModuleServiceImpl implements ModuleService {
-    private final ModuleRepository moduleRepository;
+    private final String ELEMENT_TYPE = "Module";
+    private final String ID_FIELD_NAME = "codeModule";
+    private final ModuleRepository repository;
+    private final ModuleMapper mapper;
 
     @Override
-    public Module save(Module module) throws ElementAlreadyExistsException, InternalErrorException {
-        if (moduleRepository.existsByCodeModule(module.getCodeModule())) {
-            throw ElementAlreadyExistsException.builder()
-                    .key(CoreConstants.BusinessExceptionMessage.MODULE_ALREADY_EXISTS)
-                    .args(new Object[]{module.getCodeModule()})
-                    .build();
-        }
+    public ModuleResponse save(ModuleCreationRequest request) throws ElementAlreadyExistsException {
 
-        Module createdModule = null;
+        // TODO (aymane): check the existence of the semester before saving
+
+        Module module = mapper.toModule(request);
 
         try {
-            createdModule = moduleRepository.save(module);
-        } catch (Exception e) {
-            log.error(e.getMessage(), e.getCause());
-            throw new InternalErrorException();
+            return mapper.toModuleResponse(repository.save(module));
+        } catch (DataIntegrityViolationException e) {
+            throw new ElementAlreadyExistsException(
+                CoreConstants.BusinessExceptionMessage.ALREADY_EXISTS,
+                new Object[] {ELEMENT_TYPE, ID_FIELD_NAME, request.codeModule()},
+                null
+            );
+        }
+    }
+
+    @Override
+    public List<ModuleResponse> saveAll(List<ModuleCreationRequest> request) throws ElementAlreadyExistsException,
+                                                                                    DuplicateEntryException {
+        List<Module> foundModules = repository.findAllById(
+            request.stream()
+                    .map(ModuleCreationRequest::codeModule)
+                    .collect(Collectors.toSet())
+        );
+
+        if (!foundModules.isEmpty()) {
+            throw new ElementAlreadyExistsException(
+                CoreConstants.BusinessExceptionMessage.MANY_ALREADY_EXISTS,
+                new Object[] {ELEMENT_TYPE},
+                foundModules.stream()
+                            .map(Module::getCodeModule)
+                            .toList()
+            );
         }
 
-        return createdModule;
-    }
+        // TODO (aymane): check the existence of the semesters before saving
 
-    @Override
-    @Transactional
-    public List<Module> saveAll(List<Module> modules) throws ElementAlreadyExistsException, InternalErrorException {
-        List<Module> createdModules = new ArrayList<>(modules.size());
-
-        modules.forEach(module -> createdModules.add(save(module)));
-
-        return createdModules;
-    }
-
-    @Override
-    public Module findByCodeModule(String codeModule) throws ElementNotFoundException {
-        return moduleRepository.findByCodeModule(codeModule)
-                    .orElseThrow(() -> moduleNotFoundException(codeModule));
-    }
-
-    @Override
-    public Page<Module> findAll(Pageable pageable) {
-        return moduleRepository.findAll(pageable);
-    }
-
-    @Override
-    public Module update(Module module) throws ElementNotFoundException, InternalErrorException {
-        if (!moduleRepository.existsByCodeModule(module.getCodeModule())) {
-            throw moduleNotFoundException(module.getCodeModule());
-        }
-
-        Module updatedModule = null;
+        List<Module> modules = mapper.toModuleList(request);
 
         try {
-            updatedModule = moduleRepository.save(module);
-        } catch (Exception e) {
-            log.error(e.getMessage(), e.getCause());
-            throw new InternalErrorException();
+            return mapper.toModuleResponseList(repository.saveAll(modules));
+        } catch (DataIntegrityViolationException e) {
+            throw new DuplicateEntryException(
+                CoreConstants.BusinessExceptionMessage.DUPLICATE_ENTRY,
+                null
+            );
         }
-
-        return updatedModule;
     }
 
     @Override
-    public void deleteByCodeModule(String codeModule) throws ElementNotFoundException {
-        if (!moduleRepository.existsByCodeModule(codeModule)) {
-            throw moduleNotFoundException(codeModule);
-        }
+    public ModuleResponse findById(String codeModule, boolean includeElements) throws ElementNotFoundException {
 
-        moduleRepository.deleteByCodeModule(codeModule);
+        ModuleResponse response = mapper.toModuleResponse(
+            repository.findById(codeModule).orElseThrow(() ->
+                new ElementNotFoundException(
+                    CoreConstants.BusinessExceptionMessage.NOT_FOUND,
+                    new Object[] {ELEMENT_TYPE, ID_FIELD_NAME, codeModule},
+                    null
+                )
+            )
+        );
+
+//        if (includeElements) {
+//            // TODO (aymane): fetch the module's elements from the `Element` service
+//            //                and inject them in the response
+//        }
+
+        return response;
     }
 
     @Override
-    @Transactional
-    public void deleteAllByCodeModule(List<String> codesModules) throws ElementNotFoundException {
-        codesModules.forEach(this::deleteByCodeModule);
+    public ModulePagingResponse findAll(int page, int size, boolean includeElements) {
+
+        ModulePagingResponse response = mapper.toPagingResponse(
+            repository.findAll(PageRequest.of(page, size))
+        );
+
+//        if (includeElements) {
+//            // TODO (aymane): fetch the modules' elements from the `Element` service
+//            //                and inject them in the response
+//        }
+
+        return response;
     }
 
-    private ElementNotFoundException moduleNotFoundException(String codeModule) {
-        return ElementNotFoundException.builder()
-                .key(CoreConstants.BusinessExceptionMessage.MODULE_NOT_FOUND)
-                .args(new Object[]{codeModule})
-                .build();
+    @Override
+    public boolean existsAllId(Set<String> codesModule) throws ElementNotFoundException {
+
+        List<String> foundModulesCodes = repository.findAllById(codesModule)
+                                                    .stream().map(Module::getCodeModule).toList();
+
+        if (codesModule.size() != foundModulesCodes.size()) {
+            throw new ElementNotFoundException(
+                CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
+                new Object[] {ELEMENT_TYPE},
+                codesModule.stream()
+                            .filter(code -> !foundModulesCodes.contains(code))
+                            .toList()
+            );
+        }
+
+        return true;
+    }
+
+    @Override
+    public ModuleResponse update(String codeModule, ModuleUpdateRequest request) throws ElementNotFoundException {
+
+        Module module = repository.findById(codeModule).orElseThrow(() ->
+            new ElementNotFoundException(
+                CoreConstants.BusinessExceptionMessage.NOT_FOUND,
+                new Object[] {ELEMENT_TYPE, ID_FIELD_NAME, codeModule},
+                null
+            )
+        );
+
+        mapper.updateModuleFromDTO(request, module);
+
+        return mapper.toModuleResponse(repository.save(module));
+    }
+
+    @Override
+    public void deleteById(String codeModule) throws ElementNotFoundException {
+
+        if (!repository.existsById(codeModule)) {
+            throw new ElementNotFoundException(
+                CoreConstants.BusinessExceptionMessage.NOT_FOUND,
+                new Object[] {ELEMENT_TYPE, ID_FIELD_NAME, codeModule},
+                null
+            );
+        }
+
+        repository.deleteById(codeModule);
+
+        // TODO (aymane): trigger the deletion of the `Elements`
+        //                that are linked to the `codeModule`
+    }
+
+    @Override
+    public void deleteByCodeSemestre(String codeSemestre) throws ElementNotFoundException {
+
+        List<Module> foundModules = repository.findAllByCodeSemestre(codeSemestre);
+
+        if (foundModules.isEmpty()) {
+            throw new ElementNotFoundException(
+                CoreConstants.BusinessExceptionMessage.NOT_FOUND,
+                new Object[] {ELEMENT_TYPE, "codeSemestre", codeSemestre},
+                null
+            );
+        }
+
+        deleteAllById(
+            foundModules.stream()
+                        .map(Module::getCodeModule)
+                        .collect(Collectors.toSet())
+        );
+    }
+
+    @Override
+    public void deleteAllById(Set<String> codesModule) throws ElementNotFoundException {
+
+        existsAllId(codesModule);
+
+        repository.deleteAllById(codesModule);
+
+        // TODO (aymane): trigger the deletion of the `Elements`
+        //                that are linked to the `codesModule`
     }
 
 }
