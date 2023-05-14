@@ -1,37 +1,42 @@
 package ma.enset.element.service;
 
-import ma.enset.element.exception.InternalErrorException;
-import ma.enset.element.model.Element;
+import ma.enset.element.dto.*;
+import ma.enset.element.exception.DuplicateEntryException;
 import ma.enset.element.exception.ElementAlreadyExistsException;
 import ma.enset.element.exception.ElementNotFoundException;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Set;
 
 public interface ElementService {
-    Element save(Element element) throws ElementAlreadyExistsException, InternalErrorException;
+    ElementResponse save(ElementCreationRequest request) throws ElementAlreadyExistsException;
 
-    List<Element> saveAll(List<Element> elements) throws ElementAlreadyExistsException, InternalErrorException;
+    List<ElementResponse> saveAll(List<ElementCreationRequest> request) throws ElementAlreadyExistsException,
+        DuplicateEntryException;
 
-    Element findByCodeElement(String codeElement) throws ElementNotFoundException;
+    ElementResponse findById(String codeElement) throws ElementNotFoundException;
 
-    List<Element> findAllByCodeElement(List<String> codesElement) throws ElementNotFoundException;
+    ElementPagingResponse findAll(int page, int size);
 
-    Page<Element> findAll(Pageable pageable);
+    List<ElementResponse> findAllByIds(Set<String> codesElement) throws ElementNotFoundException;
 
-    Element update(Element element) throws ElementNotFoundException, InternalErrorException;;
-    List<Element> updateAll(List<Element> elements) throws ElementNotFoundException, InternalErrorException;;
+    List<ElementResponse> findModuleElements(String codeModule);
 
-    void deleteByCodeElement(String codeElement) throws ElementNotFoundException;
+    List<ModuleElementResponse> findAllModulesElements(Set<String> codesModule);
 
-    void deleteAllByCodeElement(List<String> codesElement) throws ElementNotFoundException;
+    List<ElementResponse> findProfesseurElements(String codeProfesseur);
 
-    List<Element> findByCodeModule(String codeModule);
+    List<ProfesseurElementsResponse> findAllProfesseursElements(Set<String> codesProfesseur);
 
-    List<List<Element>> findAllByCodeModule(List<String> codesModule);
+    boolean existAllByIds(Set<String> codesElement) throws ElementNotFoundException;
 
-    List<Element> findByCodeProfesseur(String codeProfesseur);
+    ElementResponse update(String codeElement, ElementUpdateRequest request) throws ElementNotFoundException;
 
-    List<List<Element>> findAllByCodeProfesseur(List<String> codesProfesseur);
+    void deleteById(String codeElement) throws ElementNotFoundException;
+
+    void deleteAllByIds(Set<String> codesElement) throws ElementNotFoundException;
+
+    void deleteModuleElements(String codeModule) throws ElementNotFoundException;
+
+    void deleteAllModulesElements(Set<String> codesModule) throws ElementNotFoundException;
 }

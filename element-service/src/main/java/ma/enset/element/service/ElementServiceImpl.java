@@ -1,246 +1,291 @@
 package ma.enset.element.service;
 
-import jakarta.transaction.Transactional;
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import lombok.RequiredArgsConstructor;
 import ma.enset.element.client.ModuleClient;
-import ma.enset.element.client.UtilisateurClient;
 import ma.enset.element.constant.CoreConstants;
-import ma.enset.element.dto.ModuleResponse;
-import ma.enset.element.dto.ProfesseurResponse;
+import ma.enset.element.dto.*;
+import ma.enset.element.exception.DuplicateEntryException;
 import ma.enset.element.exception.ElementAlreadyExistsException;
 import ma.enset.element.exception.ElementNotFoundException;
-import ma.enset.element.exception.ExchangerException;
-import ma.enset.element.exception.InternalErrorException;
+import ma.enset.element.mapper.ElementMapper;
 import ma.enset.element.model.Element;
 import ma.enset.element.repository.ElementRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.ResponseEntity;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpServerErrorException;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
-@AllArgsConstructor
-@Slf4j
+@RequiredArgsConstructor
 public class ElementServiceImpl implements ElementService {
-    private final ElementRepository elementRepository;
+    private final String ELEMENT_TYPE = "Element";
+    private final String ID_FIELD_NAME = "codeElement";
+    private final ElementRepository repository;
+    private final ElementMapper mapper;
     private final ModuleClient moduleClient;
-    private final UtilisateurClient utilisateurClient;
+//    private final UtilisateurClient utilisateurClient;
+
     @Override
-    public Element save(Element element) throws ElementAlreadyExistsException, InternalErrorException {
+    public ElementResponse save(ElementCreationRequest request) throws ElementAlreadyExistsException {
 
-        if (elementRepository.existsByCodeElement(element.getCodeElement()))
-            throw ElementAlreadyExistsException.builder()
-                    .key(CoreConstants.BusinessExceptionMessage.ELEMENT_ALREADY_EXISTS)
-                    .args(new Object[]{element.getCodeElement()})
-                    .build();
+        moduleClient.modulesExist(Set.of(request.codeModule()));
 
+//        if (request.codeProfesseur() != null) {
+//            // TODO (aymane): check the existence of the prof before saving
+//        }
 
-        getProfesseur(element.getCodeProfesseur());
-
-        getModule(element.getCodeModule());
-
-        Element savedElement = null;
+        Element element = mapper.toElement(request);
 
         try {
-            savedElement = elementRepository.save(element);
-        } catch (Exception e) {
-            log.error(e.getMessage(), e.getCause());
-            throw new InternalErrorException();
+            return mapper.toElementResponse(repository.save(element));
+        } catch (DataIntegrityViolationException e) {
+            throw new ElementAlreadyExistsException(
+                CoreConstants.BusinessExceptionMessage.ALREADY_EXISTS,
+                new Object[] {ELEMENT_TYPE, ID_FIELD_NAME, request.codeElement()},
+                null
+            );
+        }
+    }
+
+    @Override
+    public List<ElementResponse> saveAll(List<ElementCreationRequest> request) throws ElementAlreadyExistsException,
+        DuplicateEntryException {
+        int uniqueElementsCount = (int) request.stream()
+                                                .map(ElementCreationRequest::codeElement)
+                                                .distinct().count();
+
+        if (uniqueElementsCount != request.size()) {
+            throw new DuplicateEntryException(
+                CoreConstants.BusinessExceptionMessage.DUPLICATE_ENTRY,
+                new Object[]{ELEMENT_TYPE}
+            );
         }
 
-        return savedElement;
-    }
+        List<Element> foundElements = repository.findAllById(
+            request.stream()
+                    .map(ElementCreationRequest::codeElement)
+                    .collect(Collectors.toSet())
+        );
 
-    @Transactional
-    @Override
-    public List<Element> saveAll(List<Element> elements) throws ElementNotFoundException, InternalErrorException {
-
-
-        elements.forEach(element -> {
-            if (elementRepository.existsByCodeElement(element.getCodeElement())) {
-                throw ElementAlreadyExistsException.builder()
-                        .key(CoreConstants.BusinessExceptionMessage.ELEMENT_ALREADY_EXISTS)
-                        .args(new Object[]{element.getCodeElement()})
-                        .build();
-            }
-        });
-
-        List<String> codesProfesseur = elements.stream().map(Element::getCodeProfesseur).toList();
-        getProfesseurs(codesProfesseur);
-
-        List<String> codesModule = elements.stream().map(Element::getCodeModule).toList();
-        getModules(codesModule);
-
-        List<Element> savedElements;
-        try {
-            savedElements = elementRepository.saveAll(elements);
-        } catch (Exception e) {
-            log.error(e.getMessage(), e.getCause());
-            throw new InternalErrorException();
-        }
-        return savedElements;
-    }
-
-    @Override
-    public Page<Element> findAll(Pageable pageable) {
-        return elementRepository.findAll(pageable);
-    }
-    @Override
-    public Element update(Element element) throws ElementNotFoundException, InternalErrorException {
-
-        if (!elementRepository.existsByCodeElement(element.getCodeElement())) {
-            throw elementNotFoundException(element.getCodeElement());
+        if (!foundElements.isEmpty()) {
+            throw new ElementAlreadyExistsException(
+                CoreConstants.BusinessExceptionMessage.MANY_ALREADY_EXISTS,
+                new Object[]{ELEMENT_TYPE},
+                foundElements.stream()
+                                .map(Element::getCodeElement)
+                                .toList()
+            );
         }
 
-        getProfesseur(element.getCodeProfesseur());
+        moduleClient.modulesExist(
+            request.stream()
+                    .map(ElementCreationRequest::codeModule)
+                    .collect(Collectors.toSet())
+        );
 
-        Element updatedElement = null;
-        try {
-            updatedElement = elementRepository.save(element);
-        } catch (Exception e) {
-            log.error(e.getMessage(), e.getCause());
-            throw new InternalErrorException();
+//        Set<String> codesProfesseur = request.stream()
+//                                            .map(ElementCreationRequest::codeProfesseur)
+//                                            .collect(Collectors.toSet());
+//
+//        if (!codesProfesseur.isEmpty()) {
+//            // TODO (aymane): check the existence of the profs before saving
+//        }
+
+        List<Element> elements = mapper.toElementList(request);
+
+        return mapper.toElementResponseList(repository.saveAll(elements));
+    }
+
+    @Override
+    public ElementResponse findById(String codeElement) throws ElementNotFoundException {
+        return mapper.toElementResponse(
+            repository.findById(codeElement).orElseThrow(() ->
+                new ElementNotFoundException(
+                    CoreConstants.BusinessExceptionMessage.NOT_FOUND,
+                    new Object[] {ELEMENT_TYPE, ID_FIELD_NAME, codeElement},
+                    null
+                )
+            )
+        );
+    }
+
+    @Override
+    public ElementPagingResponse findAll(int page, int size) {
+        return mapper.toPagingResponse(repository.findAll(PageRequest.of(page, size)));
+    }
+
+    @Override
+    public List<ElementResponse> findAllByIds(Set<String> codesElement) throws ElementNotFoundException {
+
+        List<Element> foundElements = repository.findAllById(codesElement);
+
+        if (codesElement.size() != foundElements.size()) {
+            throw new ElementNotFoundException(
+                CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
+                new Object[] {ELEMENT_TYPE},
+                codesElement.stream()
+                            .filter(
+                                codeElement -> !foundElements.stream()
+                                                                .map(Element::getCodeElement)
+                                                                .toList()
+                                                                .contains(codeElement)
+                            )
+                            .toList()
+            );
         }
-        return updatedElement;
+
+        return mapper.toElementResponseList(foundElements);
     }
 
-    @Transactional
     @Override
-    public List<Element> updateAll(List<Element> elements) throws ElementNotFoundException, InternalErrorException {
+    public List<ElementResponse> findModuleElements(String codeModule) {
+        return mapper.toElementResponseList(repository.findAllByCodeModule(codeModule));
+    }
 
-        elements.forEach(element -> {
-            if (!elementRepository.existsByCodeElement(element.getCodeElement())) {
-                throw elementNotFoundException(element.getCodeElement());
-            }
-        });
+    @Override
+    public List<ModuleElementResponse> findAllModulesElements(Set<String> codesModule) {
 
-        List<String> codeProfesseurs = elements.stream().map(Element::getCodeProfesseur).toList();
-        getProfesseurs(codeProfesseurs);
+        return repository.findAllByCodeModuleIn(codesModule)
+                            .stream()
+                            .collect(Collectors.groupingBy(Element::getCodeModule))
+                            .entrySet().stream()
+                                        .map(entry -> new ModuleElementResponse(
+                                                entry.getKey(),
+                                                mapper.toElementResponseList(entry.getValue()))
+                                        )
+                                        .toList();
+    }
 
-        List<Element> updatedElements;
-        try {
-            updatedElements = elementRepository.saveAll(elements);
-        } catch (Exception e) {
-            log.error(e.getMessage(), e.getCause());
-            throw new InternalErrorException();
+    @Override
+    public List<ElementResponse> findProfesseurElements(String codeProfesseur) {
+        return mapper.toElementResponseList(repository.findAllByCodeProfesseur(codeProfesseur));
+    }
+
+    @Override
+    public List<ProfesseurElementsResponse> findAllProfesseursElements(Set<String> codesProfesseur) {
+
+        return repository.findAllByCodeProfesseurIn(codesProfesseur)
+                            .stream()
+                            .collect(Collectors.groupingBy(Element::getCodeProfesseur))
+                            .entrySet().stream()
+                                        .map(entry -> new ProfesseurElementsResponse(
+                                            entry.getKey(),
+                                            mapper.toElementResponseList(entry.getValue()))
+                                        )
+                                        .toList();
+    }
+
+    @Override
+    public boolean existAllByIds(Set<String> codesElement) throws ElementNotFoundException {
+
+        List<String> foundElementsCodes = repository.findAllById(codesElement)
+                                                    .stream().map(Element::getCodeElement).toList();
+
+        if (codesElement.size() != foundElementsCodes.size()) {
+            throw new ElementNotFoundException(
+                CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
+                new Object[] {ELEMENT_TYPE},
+                codesElement.stream()
+                            .filter(code -> !foundElementsCodes.contains(code))
+                            .toList()
+            );
         }
-        return updatedElements;
+
+        return true;
     }
 
     @Override
-    public void deleteByCodeElement(String codeElement) throws ElementNotFoundException {
-        if (!elementRepository.existsByCodeElement(codeElement)) {
-            throw elementNotFoundException(codeElement);
+    public ElementResponse update(String codeElement, ElementUpdateRequest request) throws ElementNotFoundException {
+
+        Element element = repository.findById(codeElement).orElseThrow(() ->
+            new ElementNotFoundException(
+                CoreConstants.BusinessExceptionMessage.NOT_FOUND,
+                new Object[] {ELEMENT_TYPE, ID_FIELD_NAME, codeElement},
+                null
+            )
+        );
+
+//        String oldCodeProfesseur = element.getCodeProfesseur();
+
+        mapper.updateElementFromDTO(request, element);
+
+//        if (!Objects.equals(oldCodeProfesseur, element.getCodeProfesseur()) &&
+//            element.getCodeProfesseur() != null) {
+//
+//            // TODO (aymane): check the existence of the prof before updating
+//        }
+
+        return mapper.toElementResponse(repository.save(element));
+    }
+
+    @Override
+    public void deleteById(String codeElement) throws ElementNotFoundException {
+
+        if (!repository.existsById(codeElement)) {
+            throw new ElementNotFoundException(
+                CoreConstants.BusinessExceptionMessage.NOT_FOUND,
+                new Object[] {ELEMENT_TYPE, ID_FIELD_NAME, codeElement},
+                null
+            );
         }
 
-        elementRepository.deleteByCodeElement(codeElement);
+        repository.deleteById(codeElement);
     }
 
     @Override
-    @Transactional
-    public void deleteAllByCodeElement(List<String> codeElements) throws ElementNotFoundException {
-        codeElements.forEach(this::deleteByCodeElement);
+    public void deleteAllByIds(Set<String> codesElement) throws ElementNotFoundException {
+
+        existAllByIds(codesElement);
+
+        repository.deleteAllById(codesElement);
     }
 
     @Override
-    public Element findByCodeElement(String codeElement) throws ElementNotFoundException {
-        return elementRepository.findByCodeElement(codeElement)
-                .orElseThrow(() -> elementNotFoundException(codeElement));
-    }
+    public void deleteModuleElements(String codeModule) throws ElementNotFoundException {
 
-    @Override
-    public List<Element> findAllByCodeElement(List<String> codeElements) throws ElementNotFoundException {
-        List<Element> elements = new ArrayList<>();
-        codeElements.forEach(codeElement -> elements.add(elementRepository.findById(codeElement).orElseThrow(() -> elementNotFoundException(codeElement))));
-        return elements;
-    }
+        List<Element> foundElements = repository.findAllByCodeModule(codeModule);
 
-    @Override
-    public List<Element> findByCodeModule(String codeModule) {
-        return elementRepository.findByCodeModule(codeModule);
-    }
-
-    @Override
-    public List<List<Element>> findAllByCodeModule(List<String> codesModule) {
-        List<List<Element>> elements = new ArrayList<>();
-        codesModule.forEach(codeModule -> elements.add(this.findByCodeModule(codeModule)));
-        return elements;
-    }
-
-    @Override
-    public List<Element> findByCodeProfesseur(String codeProfesseur) throws ExchangerException {
-        return elementRepository.findByCodeProfesseur(codeProfesseur);
-    }
-
-    @Override
-    public List<List<Element>> findAllByCodeProfesseur(List<String> codesProfesseur) {
-        List<List<Element>> elements = new ArrayList<>();
-        codesProfesseur.forEach(codeProf -> elements.add(this.findByCodeProfesseur(codeProf)));
-        return elements;
-    }
-
-    private ElementNotFoundException elementNotFoundException(String codeModule) {
-        return ElementNotFoundException.builder()
-                .key(CoreConstants.BusinessExceptionMessage.ELEMENT_NOT_FOUND)
-                .args(new Object[]{codeModule})
-                .build();
-    }
-
-    private ProfesseurResponse getProfesseur(String codeProfesseur) throws ExchangerException{
-        ProfesseurResponse professeurResponse;
-        try{
-            professeurResponse = utilisateurClient.getProfesseur(codeProfesseur).getBody();
-        }catch (HttpClientErrorException | HttpServerErrorException e) {
-            throw ExchangerException.builder()
-                    .exceptionBody(e.getResponseBodyAsString())
-                    .build();
+        if (foundElements.isEmpty()) {
+            throw new ElementNotFoundException(
+                CoreConstants.BusinessExceptionMessage.NOT_FOUND,
+                new Object[] {ELEMENT_TYPE, "codeModule", codeModule},
+                null
+            );
         }
-        return professeurResponse;
+
+        repository.deleteAllById(
+            foundElements.stream()
+                            .map(Element::getCodeElement)
+                            .collect(Collectors.toSet())
+        );
     }
 
-    private List<ProfesseurResponse> getProfesseurs(List<String> codesProfesseur) throws ExchangerException{
-        List<ProfesseurResponse> professeurResponses = new ArrayList<>();
-            try {
-                professeurResponses = utilisateurClient.findByCodes(codesProfesseur).getBody();
-            } catch (HttpClientErrorException | HttpServerErrorException e) {
-                throw ExchangerException.builder()
-                        .exceptionBody(e.getResponseBodyAsString())
-                        .build();
-            }
-        return professeurResponses;
-    }
+    @Override
+    public void deleteAllModulesElements(Set<String> codesModule) throws ElementNotFoundException {
 
-    private ModuleResponse getModule(String codeModule) throws ExchangerException {
-        ModuleResponse moduleResponse;
-        try{
-            moduleResponse = moduleClient.getModule(codeModule).getBody();
-        }catch (HttpClientErrorException | HttpServerErrorException e) {
-            throw ExchangerException.builder()
-                    .exceptionBody(e.getResponseBodyAsString())
-                    .build();
+        List<Element> foundElements = repository.findAllByCodeModuleIn(codesModule);
+
+        Set<String> foundElementsModuleCodes = foundElements.stream()
+                                                            .map(Element::getCodeModule)
+                                                            .collect(Collectors.toSet());
+
+        if (codesModule.size() != foundElementsModuleCodes.size()) {
+            throw new ElementNotFoundException(
+                CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
+                new Object[] {ELEMENT_TYPE},
+                codesModule.stream()
+                            .filter(code -> !foundElementsModuleCodes.contains(code))
+                            .toList()
+            );
         }
-        return moduleResponse;
-    }
 
-    private List<ModuleResponse> getModules(List<String> codesModule) throws ExchangerException{
-        List<ModuleResponse> moduleResponses = new ArrayList<>();
-        try {
-            codesModule.forEach(codeModule -> moduleResponses.add(moduleClient.getModule(codeModule).getBody()));
-            // TODO: implement that in module service
-            // moduleResponses = moduleClient.findByCodes(codesModule).getBody();
-        } catch (HttpClientErrorException | HttpServerErrorException e) {
-            throw ExchangerException.builder()
-                    .exceptionBody(e.getResponseBodyAsString())
-                    .build();
-        }
-        return moduleResponses;
+        repository.deleteAllById(
+            foundElements.stream()
+                            .map(Element::getCodeElement)
+                            .collect(Collectors.toSet())
+        );
     }
-
 }

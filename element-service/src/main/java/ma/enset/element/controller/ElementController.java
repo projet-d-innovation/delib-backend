@@ -2,181 +2,116 @@ package ma.enset.element.controller;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import ma.enset.element.dto.*;
-import ma.enset.element.model.Element;
 import ma.enset.element.service.ElementService;
-import ma.enset.element.util.ElementMapper;
 import org.hibernate.validator.constraints.Range;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/v1/elements")
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Validated
 public class ElementController {
-    private final ElementService elementService;
-    private final ElementMapper elementMapper;
-
+    private final ElementService service;
 
     @PostMapping
-    public ResponseEntity<ElementResponse> save(@Valid @RequestBody ElementCreationRequest elementCreationRequest) {
-        Element element = elementMapper.toElement(elementCreationRequest);
-        ElementResponse elementResponse = elementMapper.toElementResponse(elementService.save(element));
-
+    public ResponseEntity<ElementResponse> save(@Valid @RequestBody ElementCreationRequest request) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(elementResponse);
-
+                .body(service.save(request));
     }
 
     @PostMapping("/bulk")
-    public ResponseEntity<List<ElementResponse>> saveAll(@Valid @RequestBody List<ElementCreationRequest> elementRequests) {
-        List<Element> elements = elementMapper.toElementList(elementRequests);
-        List<ElementResponse> elementResponses = elementMapper.toElementResponseList(elementService.saveAll(elements));
-
+    public ResponseEntity<List<ElementResponse>> saveAll(@RequestBody @NotEmpty List<@Valid ElementCreationRequest> request) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(elementResponses);
+                .body(service.saveAll(request));
     }
 
-    @PatchMapping("/{codeElement}")
-    public ResponseEntity<ElementResponse> update(
-            @PathVariable("codeElement") String codeElement,
-            @Valid @RequestBody ElementUpdateRequest elementUpdateRequest) {
-
-        Element element = elementService.findByCodeElement(codeElement);
-        elementMapper.updateElementFromDTO(elementUpdateRequest, element);
-        System.out.println(elementUpdateRequest);
-        System.out.println(element);
-        Element updatedElement = elementService.update(element);
-        ElementResponse elementResponse = elementMapper.toElementResponse(updatedElement);
-
-        return ResponseEntity
-                .ok()
-                .body(elementResponse);
-    }
-
-    @PatchMapping("/bulk")
-    public ResponseEntity<List<ElementResponse>> updateAll(@Valid @RequestBody List<ElementUpdateRequest> elementUpdateRequests) {
-
-        List<Element> elements = elementService.findAllByCodeElement(elementMapper.toCodeElementList(elementUpdateRequests));
-
-        elementMapper.updateElementFromDTO(elementUpdateRequests, elements);
-
-        List<Element> updatedElements = elementService.updateAll(elements);
-
-        List<ElementResponse> elementResponses = elementMapper.toElementResponseList(updatedElements);
-
-        return ResponseEntity
-                .ok()
-                .body(elementResponses);
-    }
-
-
-    @DeleteMapping("/{codeElement}")
-    public ResponseEntity<Void> delete(
-            @PathVariable("codeElement") String codeElement) {
-        elementService.deleteByCodeElement(codeElement);
-        return ResponseEntity
-                .noContent()
-                .build();
-    }
-
-    @DeleteMapping("/bulk")
-    public ResponseEntity<Void> deleteAll(@RequestParam List<String> codesElement) {
-        elementService.deleteAllByCodeElement(codesElement);
-        return ResponseEntity
-                .noContent()
-                .build();
-    }
-
-
-    @GetMapping
-    public ResponseEntity<ElementPagingResponse> findAll(
-            @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Range(min = 1, max = 10) int size) {
-
-        Pageable pageRequest = PageRequest.of(page, size);
-        Page<Element> elementsPage = elementService.findAll(pageRequest);
-        ElementPagingResponse elementPagingResponse = elementMapper.toPagingResponse(elementsPage);
-
-        return ResponseEntity
-                .ok()
-                .body(elementPagingResponse);
-    }
-
-    @GetMapping("{codeElement}")
-    public ResponseEntity<ElementResponse> findByCodeElement(@PathVariable("codeElement") String codeElement) {
-        Element element = elementService.findByCodeElement(codeElement);
-        ElementResponse elementResponse = elementMapper.toElementResponse(element);
-
-        return ResponseEntity
-                .ok()
-                .body(elementResponse);
+    @GetMapping("/{codeElement}")
+    public ResponseEntity<ElementResponse> get(@PathVariable String codeElement) {
+        return ResponseEntity.ok(service.findById(codeElement));
     }
 
     @GetMapping("/bulk")
-    public ResponseEntity<List<ElementResponse>> findByCodeElements(@NotEmpty @RequestParam List<String> codesElement) {
-        List<Element> elements = elementService.findAllByCodeElement(codesElement);
-        List<ElementResponse> elementResponses = elementMapper.toElementResponseList(elements);
-
-        return ResponseEntity
-                .ok()
-                .body(elementResponses);
+    public ResponseEntity<List<ElementResponse>> getAllByIds(@RequestParam @NotEmpty Set<@NotBlank String> codesElement) {
+        return ResponseEntity.ok(service.findAllByIds(codesElement));
     }
 
-    @GetMapping("/module/bulk")
-    public ResponseEntity<List<ElementByCodeModuleResponse>> findByModules(@NotEmpty @RequestParam List<String> codesModule) {
-        List<List<Element>> elements = elementService.findAllByCodeModule(codesModule);
+    @GetMapping
+    public ResponseEntity<ElementPagingResponse> getAll(@RequestParam(defaultValue = "0") @Min(0) int page,
+                                                        @RequestParam(defaultValue = "10") @Range(min = 1, max = 100) int size) {
 
-        List<ElementByCodeModuleResponse> elementByCodeModuleResponses = elementMapper.toElementByCodeModuleResponseList(codesModule,elements);
-
-        return ResponseEntity
-                .ok()
-                .body(elementByCodeModuleResponses);
+        return ResponseEntity.ok(service.findAll(page, size));
     }
 
     @GetMapping("/module/{codeModule}")
-    public ResponseEntity<ElementByCodeModuleResponse> findByModule(@PathVariable("codeModule") String codeModule) {
-        List<Element> elements = elementService.findByCodeModule(codeModule);
-        ElementByCodeModuleResponse elementByCodeModuleResponse = elementMapper.toElementByCodeModuleResponse(codeModule,elements);
-
-        return ResponseEntity
-                .ok()
-                .body(elementByCodeModuleResponse);
+    public ResponseEntity<List<ElementResponse>> getModuleElements(@PathVariable String codeModule) {
+        return ResponseEntity.ok(service.findModuleElements(codeModule));
     }
 
-    @GetMapping("/professeur/bulk")
-    public ResponseEntity<List<ElementByCodeProfesseurResponse>> findByProfesseurs(@NotEmpty @RequestParam List<String> codesProfesseur) {
-        List<List<Element>> elements = elementService.findAllByCodeProfesseur(codesProfesseur);
-        List<ElementByCodeProfesseurResponse> elementByCodeProfesseurResponses = elementMapper.toElementByCodeProfesseurResponseList(codesProfesseur,elements);
+    @GetMapping("/module/bulk")
+    public ResponseEntity<List<ModuleElementResponse>> getAllModulesElements(
+                                        @RequestParam @NotEmpty Set<@NotBlank String> codesModule) {
 
-        return ResponseEntity
-                .ok()
-                .body(elementByCodeProfesseurResponses);
+        return ResponseEntity.ok(service.findAllModulesElements(codesModule));
     }
 
     @GetMapping("/professeur/{codeProfesseur}")
-    public ResponseEntity<ElementByCodeProfesseurResponse> findByProfesseur(
-            @PathVariable("codeProfesseur") String codeProfesseur
-    ) {
-        List<Element> elements = elementService.findByCodeProfesseur(codeProfesseur);
-        ElementByCodeProfesseurResponse elementByCodeProfesseurResponse = elementMapper.toElementByCodeProfesseurResponse(codeProfesseur,elements);
-
-        return ResponseEntity
-                .ok()
-                .body(elementByCodeProfesseurResponse);
+    public ResponseEntity<List<ElementResponse>> getProfesseurElements(@PathVariable String codeProfesseur) {
+        return ResponseEntity.ok(service.findProfesseurElements(codeProfesseur));
     }
 
+    @GetMapping("/professeur/bulk")
+    public ResponseEntity<List<ProfesseurElementsResponse>> getAllProfesseursElements(
+                                    @RequestParam @NotEmpty Set<@NotBlank String> codesProfesseur) {
 
+        return ResponseEntity.ok(service.findAllProfesseursElements(codesProfesseur));
+    }
+
+    @GetMapping("/exist")
+    public ResponseEntity<Void> existAll(@RequestParam @NotEmpty Set<@NotBlank String> codesElement) {
+        service.existAllByIds(codesElement);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{codeElement}")
+    public ResponseEntity<ElementResponse> update(@PathVariable String codeElement,
+                                                  @Valid @RequestBody ElementUpdateRequest request) {
+
+        return ResponseEntity.ok(service.update(codeElement, request));
+    }
+
+    @DeleteMapping("/{codeElement}")
+    public ResponseEntity<Void> delete(@PathVariable String codeElement) {
+        service.deleteById(codeElement);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/bulk")
+    public ResponseEntity<Void> deleteAll(@RequestBody @NotEmpty Set<@NotBlank String> codesElement) {
+        service.deleteAllByIds(codesElement);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/module/{codeModule}")
+    public ResponseEntity<Void> deleteModuleElements(@PathVariable String codeModule) {
+        service.deleteModuleElements(codeModule);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/module/bulk")
+    public ResponseEntity<Void> deleteAllModulesElements(@RequestBody @NotEmpty Set<@NotBlank String> codesModule) {
+        service.deleteAllModulesElements(codesModule);
+        return ResponseEntity.noContent().build();
+    }
 }

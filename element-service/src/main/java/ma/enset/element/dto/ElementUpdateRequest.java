@@ -8,12 +8,12 @@ import java.math.BigDecimal;
 
 @Builder
 public record ElementUpdateRequest(
+    String intituleElement,
 
-        String codeElement,
-        String intituleElement,
-        @DecimalMin("0.1")
-        @DecimalMax("1")
-        BigDecimal coefficientElement,
-        String codeProfesseur
+    @DecimalMin("0.1")
+    @DecimalMax("1")
+    BigDecimal coefficientElement,
+
+    String codeProfesseur
 ) {
 }

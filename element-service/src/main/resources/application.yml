@@ -14,11 +14,10 @@ spring:
     hibernate:
       ddl-auto: update
     generate-ddl: true
-    database-platform:
+    database-platform: org.hibernate.dialect.MySQLDialect
 
   messages:
     basename: messages.messages
-    encoding: UTF-8
 
 eureka:
   instance:
@@ -26,5 +25,3 @@ eureka:
   client:
     service-url:
       defaultZone:
-    fetch-registry: true
-    register-with-eureka: true

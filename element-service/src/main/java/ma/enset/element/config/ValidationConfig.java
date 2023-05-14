@@ -8,9 +8,9 @@ import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.ParameterNameDiscoverer;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.validation.beanvalidation.MethodValidationPostProcessor;
-@Configuration(proxyBeanMethods = false)
 
-public class ValidationConfig  {
+@Configuration(proxyBeanMethods = false)
+public class ValidationConfig {
 
     @Bean
     public ParameterNameDiscoverer parameterNameDiscoverer() {
@@ -26,7 +26,7 @@ public class ValidationConfig  {
 
     @Bean
     public MethodValidationPostProcessor methodValidationPostProcessor(
-            @Qualifier("customValidatorFactory") ValidatorFactory validatorFactory
+        @Qualifier("customValidatorFactory") ValidatorFactory validatorFactory
     ) {
         MethodValidationPostProcessor processor = new MethodValidationPostProcessor();
         processor.setValidatorFactory(validatorFactory);
