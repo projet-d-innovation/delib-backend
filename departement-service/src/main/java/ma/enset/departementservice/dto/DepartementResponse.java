@@ -2,7 +2,6 @@ package ma.enset.departementservice.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
-import ma.enset.filiereservice.dto.FiliereResponse;
 
 import java.util.List;
 

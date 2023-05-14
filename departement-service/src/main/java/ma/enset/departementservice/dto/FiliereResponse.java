@@ -1,4 +1,4 @@
-package ma.enset.filiereservice.dto;
+package ma.enset.departementservice.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;

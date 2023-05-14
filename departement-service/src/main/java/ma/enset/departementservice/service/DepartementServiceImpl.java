@@ -2,11 +2,9 @@ package ma.enset.departementservice.service;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import ma.enset.departementservice.client.FiliereClient;
 import ma.enset.departementservice.constant.CoreConstants;
-import ma.enset.departementservice.dto.DepartementCreationRequest;
-import ma.enset.departementservice.dto.DepartementPagingResponse;
-import ma.enset.departementservice.dto.DepartementResponse;
-import ma.enset.departementservice.dto.DepartementUpdateRequest;
+import ma.enset.departementservice.dto.*;
 import ma.enset.departementservice.exception.DuplicateEntryException;
 import ma.enset.departementservice.exception.ElementAlreadyExistsException;
 import ma.enset.departementservice.exception.ElementNotFoundException;
@@ -19,10 +17,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,7 +28,9 @@ public class DepartementServiceImpl implements DepartementService {
     private final String ID_FIELD_NAME = "ID";
 
     private final DepartementMapper departementMapper;
-    DepartementRepository departementRepository;
+    private final DepartementRepository departementRepository;
+
+    private final FiliereClient filiereClient;
 
     @Override
     public DepartementResponse save(final DepartementCreationRequest departementCreationRequest) throws ElementAlreadyExistsException, InternalErrorException {
@@ -123,7 +120,9 @@ public class DepartementServiceImpl implements DepartementService {
         );
 
         if (includeFilieres) {
-            // TODO (ahmed) : get filieres
+            FiliereByDepartementResponse filiereByDepartementResponse = filiereClient.getFilieresByCodeDepartement(id, true, true, true).getBody();
+            if (filiereByDepartementResponse != null)
+                departement.setFilieres(filiereByDepartementResponse.filieres());
         }
 
         return departement;
@@ -152,7 +151,19 @@ public class DepartementServiceImpl implements DepartementService {
         List<DepartementResponse> departementResponses = departementMapper.toDepartementResponseList(departements);
 
         if (includeFilieres) {
-            // TODO (ahmed) : get filieres
+            List<FiliereByDepartementResponse> filiereByDepartementResponse = filiereClient.getFilieresByCodesDepartement(ids, true, true, true).getBody();
+            departementResponses.forEach(
+                    departement -> {
+                        if (filiereByDepartementResponse != null)
+                            departement.setFilieres(
+                                    Objects.requireNonNull(filiereByDepartementResponse.stream()
+                                                    .filter(filiereByDepartementResponse1 -> filiereByDepartementResponse1.codeDepartement().equals(departement.getCodeDepartement()))
+                                                    .findFirst()
+                                                    .orElse(null))
+                                            .filieres()
+                            );
+                    }
+            );
         }
 
         return departementResponses;
@@ -165,7 +176,28 @@ public class DepartementServiceImpl implements DepartementService {
         );
 
         if (includeFilieres) {
-            // TODO (ahmed) : get filieres
+            List<FiliereByDepartementResponse> filiereByDepartementResponse = filiereClient.getFilieresByCodesDepartement(
+                    departementPagingResponse.records()
+                            .stream()
+                            .map(DepartementResponse::getCodeDepartement)
+                            .collect(Collectors.toSet()),
+                    true,
+                    true,
+                    true
+            ).getBody();
+
+            departementPagingResponse.records().forEach(
+                    departement -> {
+                        if (filiereByDepartementResponse != null)
+                            departement.setFilieres(
+                                    Objects.requireNonNull(filiereByDepartementResponse.stream()
+                                                    .filter(filiereByDepartementResponse1 -> filiereByDepartementResponse1.codeDepartement().equals(departement.getCodeDepartement()))
+                                                    .findFirst()
+                                                    .orElse(null))
+                                            .filieres()
+                            );
+                    }
+            );
         }
 
         return departementPagingResponse;
@@ -210,12 +242,31 @@ public class DepartementServiceImpl implements DepartementService {
             );
         }
 
+        FiliereByDepartementResponse filiereByDepartementResponse = filiereClient.getFilieresByCodeDepartement(id, false, false, false).getBody();
+        if (filiereByDepartementResponse != null) {
+            Set<String> codesFiliere = filiereByDepartementResponse.filieres()
+                    .stream()
+                    .map(FiliereResponse::getCodeFiliere)
+                    .collect(Collectors.toSet());
+            filiereClient.deleteAll(codesFiliere);
+        }
+
         departementRepository.deleteById(id);
     }
 
     @Override
     public void deleteById(Set<String> ids) throws ElementNotFoundException {
         this.findAllById(ids, false);
+
+        List<FiliereByDepartementResponse> filiereByDepartementResponse = filiereClient.getFilieresByCodesDepartement(ids, false, false, false).getBody();
+        if (filiereByDepartementResponse != null && !filiereByDepartementResponse.isEmpty()) {
+            Set<String> codesFiliere = filiereByDepartementResponse.stream()
+                    .flatMap(filiereByDepartementResponse1 -> filiereByDepartementResponse1.filieres().stream())
+                    .map(FiliereResponse::getCodeFiliere)
+                    .collect(Collectors.toSet());
+            filiereClient.deleteAll(codesFiliere);
+        }
+
         departementRepository.deleteAllById(ids);
     }
 
@@ -223,13 +274,13 @@ public class DepartementServiceImpl implements DepartementService {
     public boolean existsAllId(Set<String> codesDepartement) throws ElementNotFoundException {
 
         List<String> foundDepartementCodes = departementRepository.findAllById(codesDepartement)
-                                                    .stream().map(Departement::getCodeDepartement).toList();
+                .stream().map(Departement::getCodeDepartement).toList();
 
         if (codesDepartement.size() != foundDepartementCodes.size()) {
             throw new ElementNotFoundException(
-                CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
-                new Object[] {ELEMENT_TYPE},
-                codesDepartement.stream()
+                    CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
+                    new Object[]{ELEMENT_TYPE},
+                    codesDepartement.stream()
                             .filter(code -> !foundDepartementCodes.contains(code))
                             .toList()
             );
