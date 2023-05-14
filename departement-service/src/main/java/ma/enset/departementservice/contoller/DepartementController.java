@@ -70,6 +70,13 @@ public class DepartementController {
         );
     }
 
+    
+    @GetMapping("/exists")
+    public ResponseEntity<Void> existsAll(@RequestParam @NotEmpty Set<@NotBlank String> codesDepartement) {
+        departementService.existsAllId(codesDepartement);
+        return ResponseEntity.noContent().build();
+    }
+
 
     @PatchMapping("/{codeDepartement}")
     public ResponseEntity<DepartementResponse> update(
@@ -96,5 +103,7 @@ public class DepartementController {
                 .noContent()
                 .build();
     }
+
+
 
 }

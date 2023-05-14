@@ -31,5 +31,6 @@ public interface DepartementService {
 
     void deleteById(Set<String> ids) throws ElementNotFoundException;
 
+    boolean existsAllId(Set<String> codesDepartement) throws ElementNotFoundException;
 
 }

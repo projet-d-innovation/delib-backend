@@ -219,4 +219,23 @@ public class DepartementServiceImpl implements DepartementService {
         departementRepository.deleteAllById(ids);
     }
 
+    @Override
+    public boolean existsAllId(Set<String> codesDepartement) throws ElementNotFoundException {
+
+        List<String> foundDepartementCodes = departementRepository.findAllById(codesDepartement)
+                                                    .stream().map(Departement::getCodeDepartement).toList();
+
+        if (codesDepartement.size() != foundDepartementCodes.size()) {
+            throw new ElementNotFoundException(
+                CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
+                new Object[] {ELEMENT_TYPE},
+                codesDepartement.stream()
+                            .filter(code -> !foundDepartementCodes.contains(code))
+                            .toList()
+            );
+        }
+
+        return true;
+    }
+
 }
