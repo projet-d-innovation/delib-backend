@@ -6,7 +6,7 @@ import jakarta.validation.Path;
 import lombok.extern.slf4j.Slf4j;
 import ma.enset.filiereservice.constant.CoreConstants;
 import ma.enset.filiereservice.exception.*;
-import ma.enset.moduleservice.exception.handler.dto.ExceptionResponse;
+import ma.enset.filiereservice.exception.handler.dto.ExceptionResponse;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -23,6 +23,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import java.util.Locale;
 import java.util.Objects;
 
+
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
@@ -35,7 +36,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .body(
                         ExceptionResponse.builder()
                                 .code(HttpStatus.CONFLICT.value())
-                                .status(HttpStatus.CONFLICT)
+                                .status(HttpStatus.CONFLICT.name())
                                 .message(getMessage(e))
                                 .identifiers(e.getIdentifiers())
                                 .build()
@@ -50,7 +51,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .body(
                         ExceptionResponse.builder()
                                 .code(HttpStatus.CONFLICT.value())
-                                .status(HttpStatus.CONFLICT)
+                                .status(HttpStatus.CONFLICT.name())
                                 .message(getMessage(e))
                                 .build()
                 );
@@ -64,7 +65,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .body(
                         ExceptionResponse.builder()
                                 .code(HttpStatus.NOT_FOUND.value())
-                                .status(HttpStatus.NOT_FOUND)
+                                .status(HttpStatus.NOT_FOUND.name())
                                 .message(getMessage(e))
                                 .identifiers(e.getIdentifiers())
                                 .build()
@@ -81,7 +82,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .body(
                         ExceptionResponse.builder()
                                 .code(HttpStatus.BAD_REQUEST.value())
-                                .status(HttpStatus.BAD_REQUEST)
+                                .status(HttpStatus.BAD_REQUEST.name())
                                 .errors(
                                         e.getBindingResult().getFieldErrors().stream()
                                                 .map(fieldError -> ExceptionResponse.ValidationError.builder()
@@ -102,7 +103,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .body(
                         ExceptionResponse.builder()
                                 .code(HttpStatus.BAD_REQUEST.value())
-                                .status(HttpStatus.BAD_REQUEST)
+                                .status(HttpStatus.BAD_REQUEST.name())
                                 .errors(
                                         e.getConstraintViolations().stream()
                                                 .map(violation -> ExceptionResponse.ValidationError.builder()
@@ -128,7 +129,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .body(
                         ExceptionResponse.builder()
                                 .code(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                .status(HttpStatus.INTERNAL_SERVER_ERROR.name())
                                 .message(
                                         getMessage(
                                                 CoreConstants.BusinessExceptionMessage.INTERNAL_ERROR,
@@ -136,6 +137,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                 )
                                 .build()
                 );
+    }
+
+    @ExceptionHandler(ApiClientException.class)
+    public ResponseEntity<ExceptionResponse> handleApiClientException(ApiClientException e) {
+        return ResponseEntity
+                .status(e.getException().code())
+                .body(e.getException());
     }
 
     private String removeFirstNodeFromPropertyPath(Path propertyPath) {

@@ -2,12 +2,12 @@ package ma.enset.filiereservice.service;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import ma.enset.filiereservice.client.DepartementClient;
 import ma.enset.filiereservice.constant.CoreConstants;
 import ma.enset.filiereservice.dto.*;
 import ma.enset.filiereservice.exception.DuplicateEntryException;
 import ma.enset.filiereservice.exception.ElementAlreadyExistsException;
 import ma.enset.filiereservice.exception.ElementNotFoundException;
-import ma.enset.filiereservice.exception.InternalErrorException;
 import ma.enset.filiereservice.mapper.FiliereMapper;
 import ma.enset.filiereservice.model.Filiere;
 import ma.enset.filiereservice.repository.FiliereRepository;
@@ -24,13 +24,14 @@ import java.util.stream.Collectors;
 @Service
 @AllArgsConstructor
 @Slf4j
-
 public class FiliereServiceImp implements FiliereService {
     private final String ELEMENT_TYPE = "Filiere";
     private final String ID_FIELD_NAME = "codeFiliere";
     private final FiliereMapper filiereMapper;
     private final FiliereRepository filiereRepository;
     private final RegleDeCalculService regleDeCalculService;
+
+    private final DepartementClient departementClient;
 
     private final static ExampleMatcher FILIERE_EXAMPLE_MATCHER = ExampleMatcher.matching()
             .withIgnorePaths("codeChefFiliere", "codeRegleDeCalcul", "codeDepartement")
@@ -48,7 +49,9 @@ public class FiliereServiceImp implements FiliereService {
         }
         Filiere filiere = filiereMapper.toFiliere(filiereCreationRequest);
 
-        // TODO (ahmed) check if departement exists
+        departementClient.exists(
+                Set.of(filiereCreationRequest.codeDepartement())
+        );
 
         if (filiereCreationRequest.codeRegleDeCalcul() != null) {
             regleDeCalculService.findById(filiereCreationRequest.codeRegleDeCalcul());
@@ -92,28 +95,29 @@ public class FiliereServiceImp implements FiliereService {
             );
         }
 
+        departementClient.exists(
+                filiereResponseList.stream()
+                        .map(FiliereCreationRequest::codeDepartement)
+                        .collect(Collectors.toSet())
+        );
+
         Set<String> codeRegleDeCalculs = filiereResponseList.stream()
                 .map(FiliereCreationRequest::codeRegleDeCalcul)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
+
         if (!codeRegleDeCalculs.isEmpty()) {
             regleDeCalculService.findAllById(codeRegleDeCalculs);
         }
 
-        Set<String> codeDepartements = filiereResponseList.stream()
-                .map(FiliereCreationRequest::codeDepartement)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-
-        if (!codeDepartements.isEmpty()) {
-            // TODO (ahmed) check if departement exists
-        }
 
         Set<String> codeChefFilieres = filiereResponseList.stream()
                 .map(FiliereCreationRequest::codeChefFiliere)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
+
+
         if (!codeChefFilieres.isEmpty()) {
             // TODO (ahmed) check if chef filiere exists
         }
@@ -223,9 +227,8 @@ public class FiliereServiceImp implements FiliereService {
                                          boolean includeRegleDeCalcule,
                                          boolean includeChefFiliere) {
 
-        Filiere filiereExample = Filiere.builder()
-                .intituleFiliere(search)
-                .build();
+        Filiere filiereExample = new Filiere();
+        filiereExample.setIntituleFiliere(search);
 
         FilierePagingResponse filierePagingResponse = filiereMapper.toPagingResponse(
                 filiereRepository.findAll(
@@ -288,16 +291,7 @@ public class FiliereServiceImp implements FiliereService {
             // TODO (ahmed) : check if chef filiere exists
         }
 
-        Filiere updatedFiliere = null;
-
-        try {
-            updatedFiliere = filiereRepository.save(filiere);
-        } catch (Exception e) {
-            log.error(e.getMessage(), e.getCause());
-            throw new InternalErrorException();
-        }
-
-        return filiereMapper.toFiliereResponse(updatedFiliere);
+        return filiereMapper.toFiliereResponse(filiereRepository.save(filiere));
 
     }
 
@@ -328,15 +322,34 @@ public class FiliereServiceImp implements FiliereService {
     @Override
     public void deleteByCodeDepartement(String codeDepartement) throws ElementNotFoundException {
         List<Filiere> foundFilieres = filiereRepository.findAllByCodeDepartement(codeDepartement);
-        if (foundFilieres.isEmpty()) return;
+        if (foundFilieres.isEmpty()) {
+            throw new ElementNotFoundException(
+                    CoreConstants.BusinessExceptionMessage.NOT_FOUND,
+                    new Object[]{ELEMENT_TYPE, "codeDepartement", codeDepartement},
+                    null
+            );
+        }
         filiereRepository.deleteAll(foundFilieres);
     }
 
     @Override
     public void deleteByCodeDepartement(Set<String> codes) throws ElementNotFoundException {
         List<Filiere> foundFilieres = filiereRepository.findAllByCodeDepartementIn(codes);
-        if (foundFilieres.isEmpty()) return;
-        filiereRepository.deleteAll(foundFilieres);
+
+        Set<String> ids = foundFilieres.stream()
+                .map(Filiere::getCodeFiliere)
+                .collect(Collectors.toSet());
+
+        if (foundFilieres.size() != codes.size()) {
+            throw new ElementNotFoundException(
+                    CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
+                    new Object[]{ELEMENT_TYPE},
+                    codes.stream()
+                            .filter(code -> !ids.contains(code))
+                            .toList()
+            );
+        }
+        filiereRepository.deleteAllById(ids);
     }
 
 
