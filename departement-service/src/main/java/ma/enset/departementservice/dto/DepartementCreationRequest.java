@@ -7,6 +7,5 @@ public record DepartementCreationRequest(
         String codeDepartement,
         @NotBlank
         String intituleDepartement ,
-        @NotBlank
         String codeChefDepartement
 ) {}

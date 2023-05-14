@@ -1,30 +1,43 @@
 package ma.enset.departementservice.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.validation.constraints.Min;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.springframework.data.domain.Persistable;
 
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @Data
-public class Departement {
+public class Departement implements Persistable<String> {
     @Id
-
+    @Column(updatable = false)
     private String codeDepartement;
 
-    @NotBlank
     private String codeChefDepartement;
     @NotBlank
+    @Column(nullable = false)
     private String intituleDepartement;
 
-    @Min(0)
-    private int nombreEmployes;
 
+    @Transient
+    @Setter(AccessLevel.NONE)
+    private boolean isNew = true;
+
+    @Override
+    public String getId() {
+        return codeDepartement;
+    }
+
+    @Override
+    public boolean isNew() {
+        return isNew;
+    }
+
+    @PrePersist
+    @PostLoad
+    void markNotNew() {
+        this.isNew = false;
+    }
 }
