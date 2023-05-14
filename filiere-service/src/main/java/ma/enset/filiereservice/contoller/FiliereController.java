@@ -2,131 +2,151 @@ package ma.enset.filiereservice.contoller;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
-import lombok.AllArgsConstructor;
-import ma.enset.filiereservice.dto.FiliereCreationRequest;
-import ma.enset.filiereservice.dto.FilierePagingResponse;
-import ma.enset.filiereservice.dto.FiliereResponse;
-import ma.enset.filiereservice.model.Filiere;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import lombok.RequiredArgsConstructor;
+import ma.enset.filiereservice.dto.*;
 import ma.enset.filiereservice.service.FiliereService;
-import ma.enset.filiereservice.service.RegleDeCalculService;
-import ma.enset.filiereservice.util.FiliereMapper;
 import org.hibernate.validator.constraints.Range;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @Validated
-@AllArgsConstructor
+@RequiredArgsConstructor
 @RequestMapping("/api/v1/filieres")
 public class FiliereController {
-
-
     private final FiliereService filiereService;
-    private final FiliereMapper filiereMapper;
-
-    private RegleDeCalculService regleDeCalculService;
 
     @PostMapping
     public ResponseEntity<FiliereResponse> save(@Valid @RequestBody FiliereCreationRequest filiereCreationRequest) {
-        Filiere filiere = filiereMapper.toFiliere(filiereCreationRequest, regleDeCalculService);
-        FiliereResponse filiereResponse = filiereMapper.toFiliereResponse(filiereService.save(filiere));
-
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(filiereResponse);
+                .body(filiereService.save(filiereCreationRequest));
     }
 
     @PostMapping("/bulk")
-    public ResponseEntity<List<FiliereResponse>> saveAll(@RequestBody List<@Valid FiliereCreationRequest> filiereCreationRequestList) {
-        List<Filiere> filiereList = filiereMapper.toFiliereList(filiereCreationRequestList, regleDeCalculService);
-        List<FiliereResponse> filiereResponseList = filiereMapper.toFiliereResponseList(filiereService.saveAll(filiereList));
+    public ResponseEntity<List<FiliereResponse>> saveAll(@RequestBody @NotEmpty List<@Valid FiliereCreationRequest> filiereCreationRequestList) {
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(filiereResponseList);
+                .body(filiereService.saveAll(filiereCreationRequestList));
     }
 
     @GetMapping("/{codeFiliere}")
-    public ResponseEntity<FiliereResponse> getByCodeFiliere(@PathVariable("codeFiliere") String codeFiliere) {
-
-        Filiere foundFiliere = filiereService.findByCodeFiliere(codeFiliere);
-        FiliereResponse foundFiliereDeResponse = filiereMapper.toFiliereResponse(foundFiliere);
-
+    public ResponseEntity<FiliereResponse> getById(@PathVariable("codeFiliere") String codeFiliere,
+                                                   @RequestParam(defaultValue = "false") boolean includeSemestre,
+                                                   @RequestParam(defaultValue = "false") boolean includeRegleDeCalcule,
+                                                   @RequestParam(defaultValue = "false") boolean includeChefFiliere) {
         return ResponseEntity
                 .ok()
-                .body(foundFiliereDeResponse);
+                .body(filiereService.findById(codeFiliere, includeSemestre, includeRegleDeCalcule, includeChefFiliere));
     }
 
-    @GetMapping("/byCodeDepartement/{codeDepartement}")
-    public ResponseEntity<List<FiliereResponse>> getByCodeDepartement(@PathVariable("codeDepartement") String codeDepartement) {
-
-        List<Filiere> foundFilieres = filiereService.findByCodeDepartement(codeDepartement);
-        List<FiliereResponse> foundFiliereResponseList = filiereMapper.toFiliereResponseList(foundFilieres);
-
+    @GetMapping("/bulk")
+    public ResponseEntity<List<FiliereResponse>> getAllById(@RequestParam @NotEmpty Set<@NotBlank String> codeFiliere,
+                                                            @RequestParam(defaultValue = "false") boolean includeSemestre,
+                                                            @RequestParam(defaultValue = "false") boolean includeRegleDeCalcule,
+                                                            @RequestParam(defaultValue = "false") boolean includeChefFiliere) {
         return ResponseEntity
                 .ok()
-                .body(foundFiliereResponseList);
-    }
-    @GetMapping("/byCodeDeRegle/{codeRegle}")
-    public ResponseEntity<List<FiliereResponse>> getByCodeRegle(@PathVariable("codeRegle") String codeRegle) {
-
-        List<Filiere> foundFilieres = filiereService.findByCodeRegle(codeRegle);
-        List<FiliereResponse> foundFiliereResponseList = filiereMapper.toFiliereResponseList(foundFilieres);
-
-        return ResponseEntity
-                .ok()
-                .body(foundFiliereResponseList);
+                .body(filiereService.findAllById(codeFiliere, includeSemestre, includeRegleDeCalcule, includeChefFiliere));
     }
 
-
-    @GetMapping("/byCodeChef/{codeChef}")
-    public ResponseEntity<FiliereResponse> getByCodeChefFiliere(@PathVariable("codeChef") String codeChef) {
-        Filiere foundFiliere = filiereService.findByCodeChefFiliere(codeChef);
-
-        FiliereResponse foundFiliereDeResponse = filiereMapper.toFiliereResponse(foundFiliere);
-
-        return ResponseEntity
-                .ok()
-                .body(foundFiliereDeResponse);
-    }
     @GetMapping
     public ResponseEntity<FilierePagingResponse> getAll(@RequestParam(defaultValue = "0") @Min(0) int page,
-                                                        @RequestParam(defaultValue = "10") @Range(min = 1, max = 10) int size) {
+                                                        @RequestParam(defaultValue = "10") @Range(min = 1, max = 10) int size,
+                                                        @RequestParam(defaultValue = "") String searchByIntitute,
+                                                        @RequestParam(defaultValue = "false") boolean includeSemestre,
+                                                        @RequestParam(defaultValue = "false") boolean includeRegleDeCalcule,
+                                                        @RequestParam(defaultValue = "false") boolean includeChefFiliere
 
-        Pageable pageRequest = PageRequest.of(page, size);
-        Page<Filiere> filierePage = filiereService.findAll(pageRequest);
-        FilierePagingResponse pagedResponse = filiereMapper.toPagingResponse(filierePage);
-
+    ) {
         return ResponseEntity
                 .ok()
-                .body(pagedResponse);
+                .body(filiereService.findAll(page, size, searchByIntitute, includeSemestre, includeRegleDeCalcule, includeChefFiliere));
+    }
+
+    @PatchMapping("/{codeFiliere}")
+    public ResponseEntity<FiliereResponse> update(@PathVariable String codeFiliere,
+                                                  @Valid @RequestBody FiliereUpdateRequest filiereUpdateRequest) {
+        return ResponseEntity
+                .ok()
+                .body(filiereService.update(codeFiliere, filiereUpdateRequest));
     }
 
 
     @DeleteMapping("/{codeFiliere}")
-    public ResponseEntity<?> delete(@PathVariable("codeFiliere") String codeFiliere) {
-        filiereService.deleteByCodeFiliere(codeFiliere);
-
+    public ResponseEntity<?> delete(@PathVariable String codeFiliere) {
+        filiereService.deleteById(codeFiliere);
         return ResponseEntity
                 .noContent()
                 .build();
     }
+
 
     @DeleteMapping("/bulk")
-    public ResponseEntity<?> deleteAll(@RequestBody List<String> codeFiliere) {
-        filiereService.deleteAllByCodeFiliere(codeFiliere);
-
+    public ResponseEntity<?> deleteAll(@RequestParam @NotEmpty Set<@NotBlank String> codeFiliere) {
+        filiereService.deleteById(codeFiliere);
         return ResponseEntity
                 .noContent()
                 .build();
     }
 
+
+    @DeleteMapping("/departement/{codeDepartement}")
+    public ResponseEntity<?> deleteByCodeDepartement(@PathVariable String codeDepartement) {
+        filiereService.deleteByCodeDepartement(codeDepartement);
+        return ResponseEntity
+                .noContent()
+                .build();
+    }
+
+    @DeleteMapping("/departement/bulk")
+    public ResponseEntity<?> deleteAllByCodeDepartement(@RequestParam @NotEmpty Set<@NotBlank String> codeDepartement) {
+        filiereService.deleteByCodeDepartement(codeDepartement);
+        return ResponseEntity
+                .noContent()
+                .build();
+    }
+
+    @GetMapping("/departement/{codeDepartement}")
+    public ResponseEntity<FiliereByDepartementResponse> getFilieresByCodeDepartement(
+            @PathVariable String codeDepartement,
+            @RequestParam(defaultValue = "false") boolean includeSemestre,
+            @RequestParam(defaultValue = "false") boolean includeRegleDeCalcule,
+            @RequestParam(defaultValue = "false") boolean includeChefFiliere
+    ) {
+        return ResponseEntity
+                .ok()
+                .body(filiereService.findByCodeDepartement(
+                        codeDepartement,
+                        includeSemestre,
+                        includeRegleDeCalcule,
+                        includeChefFiliere)
+                );
+    }
+
+    @GetMapping("/departement/bulk")
+    public ResponseEntity<List<FiliereByDepartementResponse>> getFilieresByCodeDepartement(
+            @RequestParam Set<String> codeDepartements,
+            @RequestParam(defaultValue = "false") boolean includeSemestre,
+            @RequestParam(defaultValue = "false") boolean includeRegleDeCalcule,
+            @RequestParam(defaultValue = "false") boolean includeChefFiliere
+    ) {
+        return ResponseEntity
+                .ok()
+                .body(filiereService.findAllByCodeDepartement(
+                        codeDepartements,
+                        includeSemestre,
+                        includeRegleDeCalcule,
+                        includeChefFiliere)
+                );
+    }
 
 }
