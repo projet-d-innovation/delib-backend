@@ -5,7 +5,7 @@ import lombok.Builder;
 import java.util.List;
 
 @Builder
-public record ElementByCodeModuleResponse(
+public record ModuleElementResponse(
         String codeModule,
         List<ElementResponse> elements
 

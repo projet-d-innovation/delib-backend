@@ -10,16 +10,18 @@ import java.math.BigDecimal;
 
 @Builder
 public record ElementCreationRequest(
-        @NotBlank()
+        @NotBlank
         String codeElement,
-        @NotBlank()
+
+        @NotBlank
         String intituleElement,
 
         @NotNull
         @DecimalMin("0.1")
         @DecimalMax("1")
         BigDecimal coefficientElement,
-        @NotBlank()
+
+        @NotBlank
         String codeModule,
 
         String codeProfesseur

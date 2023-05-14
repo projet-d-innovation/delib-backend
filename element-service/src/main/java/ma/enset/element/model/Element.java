@@ -1,29 +1,46 @@
 package ma.enset.element.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
+import org.springframework.data.domain.Persistable;
 
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 @Data
-public class Element {
+public class Element implements Persistable<String> {
     @Id
-    @Column(updatable = false)
+    @Column(nullable = false, updatable = false)
     private String codeElement;
+
     @Column(nullable = false)
     private String intituleElement;
+
     @Column(nullable = false)
     private float coefficientElement;
+
     @Column(nullable = false, updatable = false)
     private String codeModule;
 
     private String codeProfesseur;
 
+    @Transient
+    @Setter(AccessLevel.NONE)
+    private boolean isNew = true;
+
+    @Override
+    public String getId() {
+        return codeElement;
+    }
+
+    @Override
+    public boolean isNew() {
+        return isNew;
+    }
+
+    @PostPersist
+    @PostLoad
+    void markNotNew() {
+        this.isNew = false;
+    }
 }

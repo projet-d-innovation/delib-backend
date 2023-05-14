@@ -1,22 +1,19 @@
 package ma.enset.element.repository;
 
-import jakarta.transaction.Transactional;
 import ma.enset.element.model.Element;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface ElementRepository extends JpaRepository<Element, String> {
+    List<Element> findAllByCodeModule(String codeModule);
 
-    Optional<Element> findByCodeElement(String codeModule);
-    boolean existsByCodeElement(String codeModule);
-    @Transactional
-    void deleteByCodeElement(String codeModule);
+    List<Element> findAllByCodeModuleIn(Set<String> codesModule);
 
-    List<Element> findByCodeModule(String codeModule);
+    List<Element> findAllByCodeProfesseur(String codeProfesseur);
 
-    List<Element> findByCodeProfesseur(String codeProfesseur);
+    List<Element> findAllByCodeProfesseurIn(Set<String> codeProfesseur);
 }
