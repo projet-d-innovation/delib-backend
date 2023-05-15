@@ -31,7 +31,7 @@ public class Utilisateur implements Persistable<String> {
     private String ville;
     private String pays = "Maroc";
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "utilisateur_role",
             joinColumns = @JoinColumn(name = "utilisateurCode"),
             inverseJoinColumns = @JoinColumn(name = "roleId"))

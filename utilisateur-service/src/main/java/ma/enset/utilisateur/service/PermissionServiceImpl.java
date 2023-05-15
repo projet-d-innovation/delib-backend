@@ -12,11 +12,11 @@ import ma.enset.utilisateur.exception.ElementAlreadyExistsException;
 import ma.enset.utilisateur.exception.ElementNotFoundException;
 import ma.enset.utilisateur.mapper.PermissionMapper;
 import ma.enset.utilisateur.model.Permission;
+import ma.enset.utilisateur.model.Role;
 import ma.enset.utilisateur.repository.PermissionRepository;
+import ma.enset.utilisateur.repository.RoleRepository;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +32,7 @@ public class PermissionServiceImpl implements PermissionService {
     private final String ID_FIELD_NAME = "permissionId";
     private final PermissionMapper permissionMapper;
     private final PermissionRepository permissionRepository;
+    private final RoleRepository roleRepository;
 
     @Override
     public PermissionResponse save(PermissionCreateRequest permissionCreateRequest) throws ElementAlreadyExistsException {
@@ -39,12 +40,6 @@ public class PermissionServiceImpl implements PermissionService {
         Permission permission = permissionMapper.toPermission(permissionCreateRequest);
 
         Permission savedPermission = null;
-        if (permissionRepository.existsById(permission.getPermissionId()))
-            throw new ElementAlreadyExistsException(
-                    CoreConstants.BusinessExceptionMessage.ALREADY_EXISTS,
-                    new Object[]{ELEMENT_TYPE, ID_FIELD_NAME, permission.getPermissionId()},
-                    null
-            );
 
         try {
             savedPermission = permissionRepository.save(permission);
@@ -63,7 +58,6 @@ public class PermissionServiceImpl implements PermissionService {
     @Transactional
     public List<PermissionResponse> saveAll(List<PermissionCreateRequest> permissionCreateRequestList) throws ElementAlreadyExistsException {
         List<Permission> permissionList = permissionMapper.toPermissionList(permissionCreateRequestList);
-        System.out.println(permissionList.size());
         List<PermissionResponse> createdPermissionList;
         try {
             createdPermissionList = permissionMapper.toPermissionResponseList(permissionRepository.saveAll(permissionList));
@@ -135,6 +129,13 @@ public class PermissionServiceImpl implements PermissionService {
                 .map(PermissionUpdateRequest::permissionId)
                 .collect(Collectors.toSet());
 
+        if (ids.size() != permissionUpdateRequestList.size())
+            throw new DuplicateEntryException(
+                    CoreConstants.BusinessExceptionMessage.DUPLICATE_ENTRY,
+                    new Object[]{ELEMENT_TYPE}
+            );
+
+
         final List<Permission> permissionList = permissionRepository.findAllById(ids);
 
         Set<Integer> foundIds = permissionList.stream()
@@ -180,6 +181,7 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     @Override
+    @Transactional
     public void deleteById(int permissionId) throws ElementNotFoundException {
         if (!permissionRepository.existsById(permissionId))
             throw new ElementNotFoundException(
@@ -187,6 +189,16 @@ public class PermissionServiceImpl implements PermissionService {
                     new Object[]{ELEMENT_TYPE, ID_FIELD_NAME, permissionId},
                     null
             );
+
+        List<Role> roles = roleRepository.findAllByPermissionId(permissionId);
+
+        roles.forEach(
+                role -> {
+                    role.getPermissions().removeIf(permission -> permission.getPermissionId() == permissionId);
+                }
+        );
+        roleRepository.saveAll(roles);
+
         permissionRepository.deleteById(permissionId);
     }
 
@@ -194,6 +206,16 @@ public class PermissionServiceImpl implements PermissionService {
     @Transactional
     public void deleteAllById(Set<Integer> permissionIds) throws ElementNotFoundException {
         this.exists(permissionIds);
+
+        List<Role> roles = roleRepository.findAllByPermissionIdIn(permissionIds);
+
+        roles.forEach(
+                role -> {
+                    role.getPermissions().removeIf(permission -> permissionIds.contains(permission.getPermissionId()));
+                }
+        );
+        roleRepository.saveAll(roles);
+
         permissionRepository.deleteAllById(permissionIds);
     }
 }

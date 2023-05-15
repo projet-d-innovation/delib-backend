@@ -20,7 +20,7 @@ public class Role implements Persistable<String> {
     @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
     private List<Utilisateur> utilisateurs;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "permission_role",
             joinColumns = @JoinColumn(name = "roleId"),
             inverseJoinColumns = @JoinColumn(name = "permissionId"))

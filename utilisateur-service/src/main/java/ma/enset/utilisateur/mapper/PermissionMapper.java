@@ -9,6 +9,7 @@ import org.mapstruct.*;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
+import java.util.Set;
 
 
 @Mapper(
@@ -30,6 +31,17 @@ public interface PermissionMapper {
     default Integer toPermissionId(PermissionUpdateRequest permission) {
         return permission.permissionId();
     }
+
+
+//    default Permission fromId(Integer id) {
+//        return Permission.builder().permissionId(id).build();
+//    }
+//
+//    List<Permission> fromIdList(Set<Integer> id);
+
+    Permission fromResponse(PermissionResponse permissionResponse);
+
+    List<Permission> fromResponseList(List<PermissionResponse> permissionResponseList);
 
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
