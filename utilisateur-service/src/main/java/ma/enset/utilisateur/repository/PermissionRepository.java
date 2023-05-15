@@ -10,12 +10,4 @@ import java.util.Optional;
 
 @Repository
 public interface PermissionRepository extends JpaRepository<Permission, Integer> {
-
-    boolean existsByPermissionId(int permissionId);
-
-    Optional<Permission> findByPermissionId(int permissionId);
-
-    @Transactional
-    void deleteByPermissionId(int permissionId);
-
 }

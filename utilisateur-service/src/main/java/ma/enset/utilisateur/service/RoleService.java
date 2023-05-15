@@ -1,5 +1,8 @@
 package ma.enset.utilisateur.service;
 
+import ma.enset.utilisateur.dto.role.RoleCreateRequest;
+import ma.enset.utilisateur.dto.role.RoleResponse;
+import ma.enset.utilisateur.dto.role.RoleUpdateRequest;
 import ma.enset.utilisateur.exception.InternalErrorException;
 import ma.enset.utilisateur.exception.ElementAlreadyExistsException;
 import ma.enset.utilisateur.exception.ElementNotFoundException;
@@ -10,22 +13,24 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 public interface RoleService {
-    Role save(Role role) throws ElementAlreadyExistsException, InternalErrorException;
+    RoleResponse save(RoleCreateRequest roleCreateRequest) throws ElementAlreadyExistsException;
 
-    List<Role> saveAll(List<Role> roles) throws ElementAlreadyExistsException, InternalErrorException;
+    List<RoleResponse> saveAll(List<RoleCreateRequest> roleCreateRequests) throws ElementAlreadyExistsException;
 
-    Role findByRoleId(String codeRole) throws ElementNotFoundException;
+    RoleResponse findById(String id) throws ElementNotFoundException;
 
-    List<Role> findAllByRoleId(List<String> codeRoles) throws ElementNotFoundException;
+    List<RoleResponse> findAllById(List<String> ids) throws ElementNotFoundException;
 
-    Page<Role> findAll(Pageable pageable);
+    Page<RoleResponse> findAll(Pageable pageable);
 
-    Role update(Role role) throws ElementNotFoundException, InternalErrorException;
+    RoleResponse update(RoleUpdateRequest roleUpdateRequest) throws ElementNotFoundException;
 
-    List<Role> updateAll(List<Role> roles) throws ElementNotFoundException, InternalErrorException;
+    List<RoleResponse> updateAll(List<RoleUpdateRequest> roleUpdateRequests) throws ElementNotFoundException;
 
-    void deleteByRoleId(String codeRole) throws ElementNotFoundException;
+    boolean exists(List<String> roleIdList);
 
-    void deleteAllByRoleId(List<String> codesRole) throws ElementNotFoundException;
+    void deleteById(String id) throws ElementNotFoundException;
+
+    void deleteAllById(List<String> ids) throws ElementNotFoundException;
 
 }
