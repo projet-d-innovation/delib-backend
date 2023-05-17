@@ -1,9 +1,6 @@
 package ma.enset.moduleservice.service;
 
-import ma.enset.moduleservice.dto.ModuleCreationRequest;
-import ma.enset.moduleservice.dto.ModulePagingResponse;
-import ma.enset.moduleservice.dto.ModuleResponse;
-import ma.enset.moduleservice.dto.ModuleUpdateRequest;
+import ma.enset.moduleservice.dto.*;
 import ma.enset.moduleservice.exception.DuplicateEntryException;
 import ma.enset.moduleservice.exception.ElementAlreadyExistsException;
 import ma.enset.moduleservice.exception.ElementNotFoundException;
@@ -16,11 +13,17 @@ public interface ModuleService {
 
     List<ModuleResponse> saveAll(List<ModuleCreationRequest> request) throws ElementAlreadyExistsException, DuplicateEntryException;
 
+    boolean existAllByIds(Set<String> codesModule) throws ElementNotFoundException;
+
     ModuleResponse findById(String codeModule, boolean includeElements) throws ElementNotFoundException;
+
+    List<ModuleResponse> findAllByIds(Set<String> codesModule, boolean includeElements) throws ElementNotFoundException;
 
     ModulePagingResponse findAll(int page, int size, boolean includeElements);
 
-    boolean existAllByIds(Set<String> codesModule) throws ElementNotFoundException;
+    List<ModuleResponse> findAllByCodeSemestre(String codeSemestre);
+
+    List<GroupedModulesResponse> findAllByCodesSemestre(Set<String> codesSemestre);
 
     ModuleResponse update(String codeModule, ModuleUpdateRequest request) throws ElementNotFoundException;
 
@@ -29,4 +32,6 @@ public interface ModuleService {
     void deleteAllByIds(Set<String> codesModule);
 
     void deleteAllByCodeSemestre(String codeSemestre);
+
+    void deleteAllByCodesSemestre(Set<String> codesSemestre);
 }

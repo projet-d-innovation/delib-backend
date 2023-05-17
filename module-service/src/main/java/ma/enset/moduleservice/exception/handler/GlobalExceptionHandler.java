@@ -35,7 +35,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .body(
                     ExceptionResponse.builder()
                         .code(HttpStatus.CONFLICT.value())
-                        .status(HttpStatus.CONFLICT)
+                        .status(HttpStatus.CONFLICT.name())
                         .message(getMessage(e))
                         .identifiers(e.getIdentifiers())
                         .build()
@@ -50,7 +50,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .body(
                     ExceptionResponse.builder()
                         .code(HttpStatus.CONFLICT.value())
-                        .status(HttpStatus.CONFLICT)
+                        .status(HttpStatus.CONFLICT.name())
                         .message(getMessage(e))
                         .build()
                 );
@@ -64,7 +64,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .body(
                     ExceptionResponse.builder()
                         .code(HttpStatus.NOT_FOUND.value())
-                        .status(HttpStatus.NOT_FOUND)
+                        .status(HttpStatus.NOT_FOUND.name())
                         .message(getMessage(e))
                         .identifiers(e.getIdentifiers())
                         .build()
@@ -81,7 +81,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .body(
                     ExceptionResponse.builder()
                         .code(HttpStatus.BAD_REQUEST.value())
-                        .status(HttpStatus.BAD_REQUEST)
+                        .status(HttpStatus.BAD_REQUEST.name())
                         .errors(
                             e.getBindingResult().getFieldErrors().stream()
                                 .map(fieldError -> ExceptionResponse.ValidationError.builder()
@@ -102,7 +102,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             .body(
                 ExceptionResponse.builder()
                     .code(HttpStatus.BAD_REQUEST.value())
-                    .status(HttpStatus.BAD_REQUEST)
+                    .status(HttpStatus.BAD_REQUEST.name())
                     .errors(
                         e.getConstraintViolations().stream()
                             .map(violation -> ExceptionResponse.ValidationError.builder()
@@ -128,7 +128,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .body(
                     ExceptionResponse.builder()
                         .code(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .status(HttpStatus.INTERNAL_SERVER_ERROR.name())
                         .message(
                             getMessage(
                                 CoreConstants.BusinessExceptionMessage.INTERNAL_ERROR,
@@ -136,6 +136,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                         )
                         .build()
                 );
+    }
+
+    @ExceptionHandler(ApiClientException.class)
+    public ResponseEntity<ExceptionResponse> handleApiClientException(ApiClientException e) {
+        return ResponseEntity
+                .status(e.getException().code())
+                .body(e.getException());
     }
 
     private String removeFirstNodeFromPropertyPath(Path propertyPath) {

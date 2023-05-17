@@ -1,11 +1,9 @@
 package ma.enset.moduleservice.service;
 
 import lombok.RequiredArgsConstructor;
+import ma.enset.moduleservice.client.ElementClient;
 import ma.enset.moduleservice.constant.CoreConstants;
-import ma.enset.moduleservice.dto.ModuleCreationRequest;
-import ma.enset.moduleservice.dto.ModulePagingResponse;
-import ma.enset.moduleservice.dto.ModuleResponse;
-import ma.enset.moduleservice.dto.ModuleUpdateRequest;
+import ma.enset.moduleservice.dto.*;
 import ma.enset.moduleservice.exception.DuplicateEntryException;
 import ma.enset.moduleservice.exception.ElementAlreadyExistsException;
 import ma.enset.moduleservice.exception.ElementNotFoundException;
@@ -15,18 +13,21 @@ import ma.enset.moduleservice.repository.ModuleRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class ModuleServiceImpl implements ModuleService {
     private final String ELEMENT_TYPE = "Module";
     private final String ID_FIELD_NAME = "codeModule";
     private final ModuleRepository repository;
     private final ModuleMapper mapper;
+    private final ElementClient elementClient;
 
     @Override
     public ModuleResponse save(ModuleCreationRequest request) throws ElementAlreadyExistsException {
@@ -49,19 +50,14 @@ public class ModuleServiceImpl implements ModuleService {
     @Override
     public List<ModuleResponse> saveAll(List<ModuleCreationRequest> request) throws ElementAlreadyExistsException,
                                                                                     DuplicateEntryException {
-        List<Module> foundModules = repository.findAllById(
-            request.stream()
-                    .map(ModuleCreationRequest::codeModule)
-                    .collect(Collectors.toSet())
-        );
+        int uniqueModulesCount = (int) request.stream()
+                                                .map(ModuleCreationRequest::codeModule)
+                                                .distinct().count();
 
-        if (!foundModules.isEmpty()) {
-            throw new ElementAlreadyExistsException(
-                CoreConstants.BusinessExceptionMessage.MANY_ALREADY_EXISTS,
-                new Object[] {ELEMENT_TYPE},
-                foundModules.stream()
-                            .map(Module::getCodeModule)
-                            .toList()
+        if (uniqueModulesCount != request.size()) {
+            throw new DuplicateEntryException(
+                CoreConstants.BusinessExceptionMessage.DUPLICATE_ENTRY,
+                new Object[]{ELEMENT_TYPE}
             );
         }
 
@@ -77,42 +73,6 @@ public class ModuleServiceImpl implements ModuleService {
                 null
             );
         }
-    }
-
-    @Override
-    public ModuleResponse findById(String codeModule, boolean includeElements) throws ElementNotFoundException {
-
-        ModuleResponse response = mapper.toModuleResponse(
-            repository.findById(codeModule).orElseThrow(() ->
-                new ElementNotFoundException(
-                    CoreConstants.BusinessExceptionMessage.NOT_FOUND,
-                    new Object[] {ELEMENT_TYPE, ID_FIELD_NAME, codeModule},
-                    null
-                )
-            )
-        );
-
-//        if (includeElements) {
-//            // TODO (aymane): fetch the module's elements from the `Element` service
-//            //                and inject them in the response
-//        }
-
-        return response;
-    }
-
-    @Override
-    public ModulePagingResponse findAll(int page, int size, boolean includeElements) {
-
-        ModulePagingResponse response = mapper.toPagingResponse(
-            repository.findAll(PageRequest.of(page, size))
-        );
-
-//        if (includeElements) {
-//            // TODO (aymane): fetch the modules' elements from the `Element` service
-//            //                and inject them in the response
-//        }
-
-        return response;
     }
 
     @Override
@@ -132,6 +92,95 @@ public class ModuleServiceImpl implements ModuleService {
         }
 
         return true;
+    }
+
+    @Override
+    public ModuleResponse findById(String codeModule, boolean includeElements) throws ElementNotFoundException {
+
+        ModuleResponse response = mapper.toModuleResponse(
+            repository.findById(codeModule).orElseThrow(() ->
+                new ElementNotFoundException(
+                    CoreConstants.BusinessExceptionMessage.NOT_FOUND,
+                    new Object[] {ELEMENT_TYPE, ID_FIELD_NAME, codeModule},
+                    null
+                )
+            )
+        );
+
+        if (includeElements) {
+            response.setElements(elementClient.getElementsByCodeModule(codeModule).getBody());
+        }
+
+        return response;
+    }
+
+    @Override
+    public List<ModuleResponse> findAllByIds(Set<String> codesModule, boolean includeElements) throws ElementNotFoundException {
+
+        List<ModuleResponse> response = mapper.toModuleResponseList(repository.findAllById(codesModule));
+
+        if (codesModule.size() != response.size()) {
+            throw new ElementNotFoundException(
+                CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
+                new Object[] {ELEMENT_TYPE},
+                codesModule.stream()
+                    .filter(
+                        codeModule -> !response.stream()
+                                                .map(ModuleResponse::getCodeModule)
+                                                .toList()
+                                                .contains(codeModule)
+                    )
+                    .toList()
+            );
+        }
+
+        if (includeElements) {
+            mapper.enrichModuleResponseListWithElements(
+                response,
+                elementClient.getElementsByCodesModule(codesModule).getBody()
+            );
+        }
+
+        return response;
+    }
+
+    @Override
+    public ModulePagingResponse findAll(int page, int size, boolean includeElements) {
+
+        ModulePagingResponse response = mapper.toPagingResponse(repository.findAll(PageRequest.of(page, size)));
+
+        if (includeElements) {
+            Set<String> codesModule = response.records().stream()
+                                                        .map(ModuleResponse::getCodeModule)
+                                                        .collect(Collectors.toSet());
+
+            mapper.enrichModuleResponseListWithElements(
+                response.records(),
+                elementClient.getElementsByCodesModule(codesModule).getBody()
+            );
+        }
+
+        return response;
+    }
+
+    @Override
+    public List<ModuleResponse> findAllByCodeSemestre(String codeSemestre) {
+        return mapper.toModuleResponseList(repository.findAllByCodeSemestre(codeSemestre));
+    }
+
+    @Override
+    public List<GroupedModulesResponse> findAllByCodesSemestre(Set<String> codesSemestre) {
+        return repository.findAllByCodeSemestreIn(codesSemestre)
+                            .stream()
+                            .collect(Collectors.groupingBy(Module::getCodeSemestre))
+                            .entrySet().stream()
+                            .map(entry ->
+                                GroupedModulesResponse.builder()
+                                    .codeSemestre(entry.getKey())
+                                    .modules(mapper.toModuleResponseList(entry.getValue()))
+                                    .build()
+                            )
+                            .toList();
     }
 
     @Override
@@ -163,24 +212,49 @@ public class ModuleServiceImpl implements ModuleService {
 
         repository.deleteById(codeModule);
 
-        // TODO (aymane): trigger the deletion of the `Elements`
-        //                that are linked to the `codeModule`
-    }
-
-    @Override
-    public void deleteAllByCodeSemestre(String codeSemestre) {
-        repository.deleteAllByCodeSemestre(codeSemestre);
+        elementClient.deleteElementsByCodeModule(codeModule);
     }
 
     @Override
     public void deleteAllByIds(Set<String> codesModule) throws ElementNotFoundException {
-
         existAllByIds(codesModule);
 
         repository.deleteAllById(codesModule);
 
-        // TODO (aymane): trigger the deletion of the `Elements`
-        //                that are linked to the `codesModule`
+        elementClient.deleteElementsByCodesModule(codesModule);
     }
 
+    @Override
+    public void deleteAllByCodeSemestre(String codeSemestre) {
+
+        Set<String> modulesToDeleteCodes = repository.findAllByCodeSemestre(codeSemestre)
+                                                        .stream()
+                                                        .map(Module::getCodeModule)
+                                                        .collect(Collectors.toSet());
+
+        if(modulesToDeleteCodes.isEmpty()) {
+            return;
+        }
+
+        repository.deleteAllByCodeSemestre(codeSemestre);
+
+        elementClient.deleteElementsByCodesModule(modulesToDeleteCodes);
+    }
+
+    @Override
+    public void deleteAllByCodesSemestre(Set<String> codesSemestre) {
+
+        Set<String> modulesToDeleteCodes = repository.findAllByCodeSemestreIn(codesSemestre)
+                                                        .stream()
+                                                        .map(Module::getCodeModule)
+                                                        .collect(Collectors.toSet());
+
+        if (modulesToDeleteCodes.isEmpty()) {
+            return;
+        }
+
+        repository.deleteAllByCodeSemestreIn(codesSemestre);
+
+        elementClient.deleteElementsByCodesModule(modulesToDeleteCodes);
+    }
 }

@@ -26,6 +26,7 @@ public class ModuleResponse {
     public record Element (
         String codeElement,
         String intituleElement,
-        float coefficientElement
+        float coefficientElement,
+        String codeProfesseur
     ) {}
 }
