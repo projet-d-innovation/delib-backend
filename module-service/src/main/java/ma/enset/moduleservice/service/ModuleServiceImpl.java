@@ -116,7 +116,7 @@ public class ModuleServiceImpl implements ModuleService {
     }
 
     @Override
-    public boolean existsAllId(Set<String> codesModule) throws ElementNotFoundException {
+    public boolean existAllByIds(Set<String> codesModule) throws ElementNotFoundException {
 
         List<String> foundModulesCodes = repository.findAllById(codesModule)
                                                     .stream().map(Module::getCodeModule).toList();
@@ -168,14 +168,14 @@ public class ModuleServiceImpl implements ModuleService {
     }
 
     @Override
-    public void deleteByCodeSemestre(String codeSemestre) {
+    public void deleteAllByCodeSemestre(String codeSemestre) {
         repository.deleteAllByCodeSemestre(codeSemestre);
     }
 
     @Override
-    public void deleteAllById(Set<String> codesModule) throws ElementNotFoundException {
+    public void deleteAllByIds(Set<String> codesModule) throws ElementNotFoundException {
 
-        existsAllId(codesModule);
+        existAllByIds(codesModule);
 
         repository.deleteAllById(codesModule);
 

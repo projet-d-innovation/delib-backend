@@ -56,8 +56,8 @@ public class ModuleController {
     }
 
     @GetMapping("/exists")
-    public ResponseEntity<Void> existsAll(@RequestParam @NotEmpty Set<@NotBlank String> codesModule) {
-        service.existsAllId(codesModule);
+    public ResponseEntity<Void> existAll(@RequestParam @NotEmpty Set<@NotBlank String> codesModule) {
+        service.existAllByIds(codesModule);
         return ResponseEntity.noContent().build();
     }
 
@@ -69,20 +69,20 @@ public class ModuleController {
     }
 
     @DeleteMapping("/{codeModule}")
-    public ResponseEntity<Void> delete(@PathVariable String codeModule) {
+    public ResponseEntity<Void> deleteById(@PathVariable String codeModule) {
         service.deleteById(codeModule);
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping
-    public ResponseEntity<Void> deleteByCodeSemestre(@RequestParam String codeSemestre) {
-        service.deleteByCodeSemestre(codeSemestre);
+    @DeleteMapping("/bulk")
+    public ResponseEntity<Void> deleteAllByIds(@RequestBody @NotEmpty Set<@NotBlank String> codesModule) {
+        service.deleteAllByIds(codesModule);
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/bulk")
-    public ResponseEntity<Void> deleteAll(@RequestBody @NotEmpty Set<@NotBlank String> codesModule) {
-        service.deleteAllById(codesModule);
+    @DeleteMapping
+    public ResponseEntity<Void> deleteAllByCodeSemestre(@RequestParam String codeSemestre) {
+        service.deleteAllByCodeSemestre(codeSemestre);
         return ResponseEntity.noContent().build();
     }
 }

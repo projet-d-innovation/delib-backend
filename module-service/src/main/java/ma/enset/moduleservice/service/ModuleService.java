@@ -20,13 +20,13 @@ public interface ModuleService {
 
     ModulePagingResponse findAll(int page, int size, boolean includeElements);
 
-    boolean existsAllId(Set<String> codesModule) throws ElementNotFoundException;
+    boolean existAllByIds(Set<String> codesModule) throws ElementNotFoundException;
 
     ModuleResponse update(String codeModule, ModuleUpdateRequest request) throws ElementNotFoundException;
 
     void deleteById(String codeModule) throws ElementNotFoundException;
 
-    void deleteByCodeSemestre(String codeSemestre);
+    void deleteAllByIds(Set<String> codesModule);
 
-    void deleteAllById(Set<String> codesModule);
+    void deleteAllByCodeSemestre(String codeSemestre);
 }
