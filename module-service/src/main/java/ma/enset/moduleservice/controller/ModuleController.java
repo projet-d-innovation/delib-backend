@@ -5,10 +5,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.RequiredArgsConstructor;
-import ma.enset.moduleservice.dto.ModuleCreationRequest;
-import ma.enset.moduleservice.dto.ModulePagingResponse;
-import ma.enset.moduleservice.dto.ModuleResponse;
-import ma.enset.moduleservice.dto.ModuleUpdateRequest;
+import ma.enset.moduleservice.dto.*;
 import ma.enset.moduleservice.service.ModuleService;
 import org.hibernate.validator.constraints.Range;
 import org.springframework.http.HttpStatus;
@@ -40,11 +37,34 @@ public class ModuleController {
             .body(service.saveAll(request));
     }
 
+    @GetMapping("/exists")
+    public ResponseEntity<Void> existAllByIds(@RequestParam @NotEmpty Set<@NotBlank String> codesModule) {
+        service.existAllByIds(codesModule);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/{codeModule}")
-    public ResponseEntity<ModuleResponse> get(@PathVariable String codeModule,
+    public ResponseEntity<ModuleResponse> getById(@PathVariable String codeModule,
                                               @RequestParam(defaultValue = "false") boolean includeElements) {
 
         return ResponseEntity.ok(service.findById(codeModule, includeElements));
+    }
+
+    @GetMapping("/bulk")
+    public ResponseEntity<List<ModuleResponse>> getAllByIds(@RequestBody Set<String> codesModule,
+                                                            @RequestParam(defaultValue = "false") boolean includeElements) {
+
+        return ResponseEntity.ok(service.findAllByIds(codesModule, includeElements));
+    }
+
+    @GetMapping("/semestre/{codeSemestre}")
+    public ResponseEntity<List<ModuleResponse>> getAllByCodeSemestre(@PathVariable String codeSemestre) {
+        return ResponseEntity.ok(service.findAllByCodeSemestre(codeSemestre));
+    }
+
+    @GetMapping("/semestre/bulk")
+    public ResponseEntity<List<GroupedModulesResponse>> getAllByCodeSemestre(@RequestParam Set<String> codesSemestre) {
+        return ResponseEntity.ok(service.findAllByCodesSemestre(codesSemestre));
     }
 
     @GetMapping
@@ -55,12 +75,6 @@ public class ModuleController {
         return ResponseEntity.ok(service.findAll(page, size, includeElements));
     }
 
-    @GetMapping("/exists")
-    public ResponseEntity<Void> existsAll(@RequestParam @NotEmpty Set<@NotBlank String> codesModule) {
-        service.existsAllId(codesModule);
-        return ResponseEntity.noContent().build();
-    }
-
     @PatchMapping("/{codeModule}")
     public ResponseEntity<ModuleResponse> update(@PathVariable String codeModule,
                                                  @Valid @RequestBody ModuleUpdateRequest request) {
@@ -69,20 +83,26 @@ public class ModuleController {
     }
 
     @DeleteMapping("/{codeModule}")
-    public ResponseEntity<Void> delete(@PathVariable String codeModule) {
+    public ResponseEntity<Void> deleteById(@PathVariable String codeModule) {
         service.deleteById(codeModule);
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping
-    public ResponseEntity<Void> deleteByCodeSemestre(@RequestParam String codeSemestre) {
-        service.deleteByCodeSemestre(codeSemestre);
+    @DeleteMapping("/bulk")
+    public ResponseEntity<Void> deleteAllByIds(@RequestBody @NotEmpty Set<@NotBlank String> codesModule) {
+        service.deleteAllByIds(codesModule);
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/bulk")
-    public ResponseEntity<Void> deleteAll(@RequestBody @NotEmpty Set<@NotBlank String> codesModule) {
-        service.deleteAllById(codesModule);
+    @DeleteMapping("/semestre/{codeSemestre}")
+    public ResponseEntity<Void> deleteAllByCodeSemestre(@PathVariable String codeSemestre) {
+        service.deleteAllByCodeSemestre(codeSemestre);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/semestre/bulk")
+    public ResponseEntity<Void> deleteAllByCodesSemestre(@RequestBody @NotEmpty Set<@NotBlank String> codesSemestre) {
+        service.deleteAllByCodesSemestre(codesSemestre);
         return ResponseEntity.noContent().build();
     }
 }

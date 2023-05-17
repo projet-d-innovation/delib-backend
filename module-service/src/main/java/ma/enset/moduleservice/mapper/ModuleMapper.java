@@ -9,6 +9,7 @@ import org.mapstruct.*;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
+import java.util.Objects;
 
 @Mapper(
     componentModel = MappingConstants.ComponentModel.SPRING,
@@ -36,5 +37,15 @@ public interface ModuleMapper {
     @Mapping(target = "totalElements", expression = "java(modulePage.getNumberOfElements())")
     @Mapping(target = "records", expression = "java(toModuleResponseList(modulePage.getContent()))")
     ModulePagingResponse toPagingResponse(Page<Module> modulePage);
+
+    default void enrichModuleResponseListWithElements(List<ModuleResponse> response,
+                                           List<ModuleResponse> clientResponse) {
+        response.forEach(module -> {
+            clientResponse.stream()
+                .filter(clientModule -> Objects.equals(module.getCodeModule(), clientModule.getCodeModule()))
+                .findFirst()
+                .ifPresent(matchedModule -> module.setElements(matchedModule.getElements()));
+        });
+    }
 
 }
