@@ -62,22 +62,31 @@ public class ModuleServiceImpl implements ModuleService {
             );
         }
 
+        List<Module> foundModules = repository.findAllById(
+            request.stream()
+                    .map(ModuleCreationRequest::codeModule)
+                    .collect(Collectors.toSet())
+        );
+
+        if (!foundModules.isEmpty()) {
+            throw new ElementAlreadyExistsException(
+                CoreConstants.BusinessExceptionMessage.MANY_ALREADY_EXISTS,
+                new Object[]{ELEMENT_TYPE},
+                foundModules.stream()
+                    .map(Module::getCodeModule)
+                    .toList()
+            );
+        }
+
         semestreClient.semestresExist(
             request.stream()
-                    .map(ModuleCreationRequest::codeSemestre)
-                    .collect(Collectors.toSet())
+                .map(ModuleCreationRequest::codeSemestre)
+                .collect(Collectors.toSet())
         );
 
         List<Module> modules = mapper.toModuleList(request);
 
-        try {
-            return mapper.toModuleResponseList(repository.saveAll(modules));
-        } catch (DataIntegrityViolationException e) {
-            throw new DuplicateEntryException(
-                CoreConstants.BusinessExceptionMessage.DUPLICATE_ENTRY,
-                null
-            );
-        }
+        return mapper.toModuleResponseList(repository.saveAll(modules));
     }
 
     @Override
