@@ -20,15 +20,15 @@ public interface ElementService {
 
     List<ElementResponse> findAllByIds(Set<String> codesElement) throws ElementNotFoundException;
 
-    List<ElementResponse> findModuleElements(String codeModule);
+    List<ElementResponse> findAllByCodeModule(String codeModule);
 
-    List<ModuleElementResponse> findAllModulesElements(Set<String> codesModule);
+    List<GroupedElementsResponse> findAllByCodesModule(Set<String> codesModule);
 
-    List<ElementResponse> findProfesseurElements(String codeProfesseur);
+    List<ElementResponse> findAllByCodeProfesseur(String codeProfesseur);
 
-    List<ProfesseurElementsResponse> findAllProfesseursElements(Set<String> codesProfesseur);
+    List<GroupedElementsResponse> findAllByCodesProfesseur(Set<String> codesProfesseur);
 
-    boolean existAllByIds(Set<String> codesElement) throws ElementNotFoundException;
+    void existAllByIds(Set<String> codesElement) throws ElementNotFoundException;
 
     ElementResponse update(String codeElement, ElementUpdateRequest request) throws ElementNotFoundException;
 
@@ -36,7 +36,7 @@ public interface ElementService {
 
     void deleteAllByIds(Set<String> codesElement) throws ElementNotFoundException;
 
-    void deleteModuleElements(String codeModule) throws ElementNotFoundException;
+    void deleteAllByCodeModule(String codeModule);
 
-    void deleteAllModulesElements(Set<String> codesModule) throws ElementNotFoundException;
+    void deleteAllByCodesModule(Set<String> codesModule);
 }

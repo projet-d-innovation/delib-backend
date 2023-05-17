@@ -52,7 +52,7 @@ public class ElementServiceImpl implements ElementService {
 
     @Override
     public List<ElementResponse> saveAll(List<ElementCreationRequest> request) throws ElementAlreadyExistsException,
-        DuplicateEntryException {
+                                                                                        DuplicateEntryException {
         int uniqueElementsCount = (int) request.stream()
                                                 .map(ElementCreationRequest::codeElement)
                                                 .distinct().count();
@@ -141,45 +141,49 @@ public class ElementServiceImpl implements ElementService {
     }
 
     @Override
-    public List<ElementResponse> findModuleElements(String codeModule) {
+    public List<ElementResponse> findAllByCodeModule(String codeModule) {
         return mapper.toElementResponseList(repository.findAllByCodeModule(codeModule));
     }
 
     @Override
-    public List<ModuleElementResponse> findAllModulesElements(Set<String> codesModule) {
+    public List<GroupedElementsResponse> findAllByCodesModule(Set<String> codesModule) {
 
         return repository.findAllByCodeModuleIn(codesModule)
                             .stream()
                             .collect(Collectors.groupingBy(Element::getCodeModule))
                             .entrySet().stream()
-                                        .map(entry -> new ModuleElementResponse(
-                                                entry.getKey(),
-                                                mapper.toElementResponseList(entry.getValue()))
+                                        .map(entry ->
+                                            GroupedElementsResponse.builder()
+                                                .codeModule(entry.getKey())
+                                                .elements(mapper.toElementResponseList(entry.getValue()))
+                                                .build()
                                         )
                                         .toList();
     }
 
     @Override
-    public List<ElementResponse> findProfesseurElements(String codeProfesseur) {
+    public List<ElementResponse> findAllByCodeProfesseur(String codeProfesseur) {
         return mapper.toElementResponseList(repository.findAllByCodeProfesseur(codeProfesseur));
     }
 
     @Override
-    public List<ProfesseurElementsResponse> findAllProfesseursElements(Set<String> codesProfesseur) {
+    public List<GroupedElementsResponse> findAllByCodesProfesseur(Set<String> codesProfesseur) {
 
         return repository.findAllByCodeProfesseurIn(codesProfesseur)
                             .stream()
                             .collect(Collectors.groupingBy(Element::getCodeProfesseur))
                             .entrySet().stream()
-                                        .map(entry -> new ProfesseurElementsResponse(
-                                            entry.getKey(),
-                                            mapper.toElementResponseList(entry.getValue()))
+                                        .map(entry ->
+                                            GroupedElementsResponse.builder()
+                                                .codeProfesseur(entry.getKey())
+                                                .elements(mapper.toElementResponseList(entry.getValue()))
+                                                .build()
                                         )
                                         .toList();
     }
 
     @Override
-    public boolean existAllByIds(Set<String> codesElement) throws ElementNotFoundException {
+    public void existAllByIds(Set<String> codesElement) throws ElementNotFoundException {
 
         List<String> foundElementsCodes = repository.findAllById(codesElement)
                                                     .stream().map(Element::getCodeElement).toList();
@@ -193,8 +197,6 @@ public class ElementServiceImpl implements ElementService {
                             .toList()
             );
         }
-
-        return true;
     }
 
     @Override
@@ -244,48 +246,12 @@ public class ElementServiceImpl implements ElementService {
     }
 
     @Override
-    public void deleteModuleElements(String codeModule) throws ElementNotFoundException {
-
-        List<Element> foundElements = repository.findAllByCodeModule(codeModule);
-
-        if (foundElements.isEmpty()) {
-            throw new ElementNotFoundException(
-                CoreConstants.BusinessExceptionMessage.NOT_FOUND,
-                new Object[] {ELEMENT_TYPE, "codeModule", codeModule},
-                null
-            );
-        }
-
-        repository.deleteAllById(
-            foundElements.stream()
-                            .map(Element::getCodeElement)
-                            .collect(Collectors.toSet())
-        );
+    public void deleteAllByCodeModule(String codeModule) {
+        repository.deleteAllByCodeModule(codeModule);
     }
 
     @Override
-    public void deleteAllModulesElements(Set<String> codesModule) throws ElementNotFoundException {
-
-        List<Element> foundElements = repository.findAllByCodeModuleIn(codesModule);
-
-        Set<String> foundElementsModuleCodes = foundElements.stream()
-                                                            .map(Element::getCodeModule)
-                                                            .collect(Collectors.toSet());
-
-        if (codesModule.size() != foundElementsModuleCodes.size()) {
-            throw new ElementNotFoundException(
-                CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
-                new Object[] {ELEMENT_TYPE},
-                codesModule.stream()
-                            .filter(code -> !foundElementsModuleCodes.contains(code))
-                            .toList()
-            );
-        }
-
-        repository.deleteAllById(
-            foundElements.stream()
-                            .map(Element::getCodeElement)
-                            .collect(Collectors.toSet())
-        );
+    public void deleteAllByCodesModule(Set<String> codesModule) {
+        repository.deleteAllByCodeModuleIn(codesModule);
     }
 }
