@@ -45,13 +45,13 @@ public class ModuleController {
 
     @GetMapping("/{codeModule}")
     public ResponseEntity<ModuleResponse> getById(@PathVariable String codeModule,
-                                              @RequestParam(defaultValue = "false") boolean includeElements) {
+                                                  @RequestParam(defaultValue = "false") boolean includeElements) {
 
         return ResponseEntity.ok(service.findById(codeModule, includeElements));
     }
 
     @GetMapping("/bulk")
-    public ResponseEntity<List<ModuleResponse>> getAllByIds(@RequestBody Set<String> codesModule,
+    public ResponseEntity<List<ModuleResponse>> getAllByIds(@RequestParam Set<String> codesModule,
                                                             @RequestParam(defaultValue = "false") boolean includeElements) {
 
         return ResponseEntity.ok(service.findAllByIds(codesModule, includeElements));
