@@ -4,11 +4,17 @@ import ma.enset.semestreservice.model.Semestre;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
+import java.util.List;
+import java.util.Set;
 
 public interface SemestreRepository extends JpaRepository<Semestre, String> {
-    boolean existsByCodeSemestre(String codeSemestre);
-    Optional<Semestre> findByCodeSemestre(String codeSemestre);
+    List<Semestre> findAllByCodeFiliere(String codeFiliere);
+
+    List<Semestre> findAllByCodeFiliereIn(Set<String> codesFiliere);
 
     @Transactional
-    void deleteByCodeSemestre(String codeSemestre);}
+    void deleteAllByCodeFiliere(String CodeFiliere);
+
+    @Transactional
+    void deleteAllByCodeFiliereIn(Set<String> CodesFiliere);
+}

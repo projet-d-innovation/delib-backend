@@ -18,14 +18,10 @@ spring:
 
     messages:
         basename: messages.messages
-        encoding: UTF-8
 
 eureka:
+    instance:
+        prefer-ip-address: true
     client:
         service-url:
             defaultZone:
-info:
-    app:
-        name: semestre-service
-        version: 1.0.2
-        description: semestre Service

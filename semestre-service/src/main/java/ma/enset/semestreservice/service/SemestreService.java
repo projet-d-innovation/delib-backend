@@ -1,23 +1,37 @@
 package ma.enset.semestreservice.service;
 
-
+import ma.enset.semestreservice.dto.*;
+import ma.enset.semestreservice.exception.DuplicateEntryException;
 import ma.enset.semestreservice.exception.ElementAlreadyExistsException;
 import ma.enset.semestreservice.exception.ElementNotFoundException;
-import ma.enset.semestreservice.exception.InternalErrorException;
-import ma.enset.semestreservice.model.Semestre;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Set;
 
 public interface SemestreService {
+    SemestreResponse save(SemestreCreationRequest request) throws ElementAlreadyExistsException;
 
-    Semestre save(Semestre module) throws ElementAlreadyExistsException, InternalErrorException;
-    List<Semestre> saveAll(List<Semestre> modules) throws ElementAlreadyExistsException, InternalErrorException;
-    Semestre findByCodeSemestre(String codeSemestre) throws ElementNotFoundException;
-    Page<Semestre> findAll(Pageable pageable);
-    Semestre update(Semestre module) throws ElementNotFoundException, InternalErrorException;
-    void deleteByCodeSemestre(String codeSemestre) throws ElementNotFoundException;
-    void deleteAllByCodeSemestre(List<String> codesSemestres) throws ElementNotFoundException;
+    List<SemestreResponse> saveAll(List<SemestreCreationRequest> request) throws ElementAlreadyExistsException, DuplicateEntryException;
 
+    boolean existAllByIds(Set<String> codesSemestre) throws ElementNotFoundException;
+
+    SemestreResponse findById(String codeSemestre, boolean includeModules) throws ElementNotFoundException;
+
+    List<SemestreResponse> findAllByIds(Set<String> codesSemestre, boolean includeModules) throws ElementNotFoundException;
+
+    SemestrePagingResponse findAll(int page, int size, boolean includeModules);
+
+    List<SemestreResponse> findAllByCodeFiliere(String codeFiliere);
+
+    List<GroupedSemestresResponse> findAllByCodesFiliere(Set<String> codesFiliere);
+
+    SemestreResponse update(String codeSemestre, SemestreUpdateRequest request) throws ElementNotFoundException;
+
+    void deleteById(String codeSemestre) throws ElementNotFoundException;
+
+    void deleteAllByIds(Set<String> codesSemestre);
+
+    void deleteAllByCodeFiliere(String CodeFiliere);
+
+    void deleteAllByCodesFiliere(Set<String> CodesFiliere);
 }
