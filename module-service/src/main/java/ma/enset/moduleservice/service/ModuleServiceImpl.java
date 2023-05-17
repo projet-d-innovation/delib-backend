@@ -2,6 +2,7 @@ package ma.enset.moduleservice.service;
 
 import lombok.RequiredArgsConstructor;
 import ma.enset.moduleservice.client.ElementClient;
+import ma.enset.moduleservice.client.SemestreClient;
 import ma.enset.moduleservice.constant.CoreConstants;
 import ma.enset.moduleservice.dto.*;
 import ma.enset.moduleservice.exception.DuplicateEntryException;
@@ -20,7 +21,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class ModuleServiceImpl implements ModuleService {
     private final String ELEMENT_TYPE = "Module";
@@ -28,11 +28,12 @@ public class ModuleServiceImpl implements ModuleService {
     private final ModuleRepository repository;
     private final ModuleMapper mapper;
     private final ElementClient elementClient;
+    private final SemestreClient semestreClient;
 
     @Override
     public ModuleResponse save(ModuleCreationRequest request) throws ElementAlreadyExistsException {
 
-        // TODO (aymane): check the existence of the semester before saving
+        semestreClient.semestresExist(Set.of(request.codeSemestre()));
 
         Module module = mapper.toModule(request);
 
@@ -61,7 +62,11 @@ public class ModuleServiceImpl implements ModuleService {
             );
         }
 
-        // TODO (aymane): check the existence of the semesters before saving
+        semestreClient.semestresExist(
+            request.stream()
+                    .map(ModuleCreationRequest::codeSemestre)
+                    .collect(Collectors.toSet())
+        );
 
         List<Module> modules = mapper.toModuleList(request);
 
@@ -200,6 +205,7 @@ public class ModuleServiceImpl implements ModuleService {
     }
 
     @Override
+    @Transactional
     public void deleteById(String codeModule) throws ElementNotFoundException {
 
         if (!repository.existsById(codeModule)) {
@@ -216,6 +222,7 @@ public class ModuleServiceImpl implements ModuleService {
     }
 
     @Override
+    @Transactional
     public void deleteAllByIds(Set<String> codesModule) throws ElementNotFoundException {
         existAllByIds(codesModule);
 
@@ -225,6 +232,7 @@ public class ModuleServiceImpl implements ModuleService {
     }
 
     @Override
+    @Transactional
     public void deleteAllByCodeSemestre(String codeSemestre) {
 
         Set<String> modulesToDeleteCodes = repository.findAllByCodeSemestre(codeSemestre)
@@ -242,6 +250,7 @@ public class ModuleServiceImpl implements ModuleService {
     }
 
     @Override
+    @Transactional
     public void deleteAllByCodesSemestre(Set<String> codesSemestre) {
 
         Set<String> modulesToDeleteCodes = repository.findAllByCodeSemestreIn(codesSemestre)
