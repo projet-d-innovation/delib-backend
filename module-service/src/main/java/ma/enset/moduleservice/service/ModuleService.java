@@ -26,7 +26,7 @@ public interface ModuleService {
 
     void deleteById(String codeModule) throws ElementNotFoundException;
 
-    void deleteByCodeSemestre(String codeSemestre) throws ElementNotFoundException;
+    void deleteByCodeSemestre(String codeSemestre);
 
-    void deleteAllById(Set<String> codesModule) throws ElementNotFoundException;
+    void deleteAllById(Set<String> codesModule);
 }

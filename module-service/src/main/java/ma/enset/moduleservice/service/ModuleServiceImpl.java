@@ -168,23 +168,8 @@ public class ModuleServiceImpl implements ModuleService {
     }
 
     @Override
-    public void deleteByCodeSemestre(String codeSemestre) throws ElementNotFoundException {
-
-        List<Module> foundModules = repository.findAllByCodeSemestre(codeSemestre);
-
-        if (foundModules.isEmpty()) {
-            throw new ElementNotFoundException(
-                CoreConstants.BusinessExceptionMessage.NOT_FOUND,
-                new Object[] {ELEMENT_TYPE, "codeSemestre", codeSemestre},
-                null
-            );
-        }
-
-        deleteAllById(
-            foundModules.stream()
-                        .map(Module::getCodeModule)
-                        .collect(Collectors.toSet())
-        );
+    public void deleteByCodeSemestre(String codeSemestre) {
+        repository.deleteAllByCodeSemestre(codeSemestre);
     }
 
     @Override
