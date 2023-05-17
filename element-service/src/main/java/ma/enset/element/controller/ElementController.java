@@ -55,27 +55,27 @@ public class ElementController {
     }
 
     @GetMapping("/module/{codeModule}")
-    public ResponseEntity<List<ElementResponse>> getModuleElements(@PathVariable String codeModule) {
-        return ResponseEntity.ok(service.findModuleElements(codeModule));
+    public ResponseEntity<List<ElementResponse>> getAllByCodeModule(@PathVariable String codeModule) {
+        return ResponseEntity.ok(service.findAllByCodeModule(codeModule));
     }
 
     @GetMapping("/module/bulk")
-    public ResponseEntity<List<ModuleElementResponse>> getAllModulesElements(
+    public ResponseEntity<List<GroupedElementsResponse>> getAllByCodesModule(
                                         @RequestParam @NotEmpty Set<@NotBlank String> codesModule) {
 
-        return ResponseEntity.ok(service.findAllModulesElements(codesModule));
+        return ResponseEntity.ok(service.findAllByCodesModule(codesModule));
     }
 
     @GetMapping("/professeur/{codeProfesseur}")
-    public ResponseEntity<List<ElementResponse>> getProfesseurElements(@PathVariable String codeProfesseur) {
-        return ResponseEntity.ok(service.findProfesseurElements(codeProfesseur));
+    public ResponseEntity<List<ElementResponse>> getAllByCodeProfesseur(@PathVariable String codeProfesseur) {
+        return ResponseEntity.ok(service.findAllByCodeProfesseur(codeProfesseur));
     }
 
     @GetMapping("/professeur/bulk")
-    public ResponseEntity<List<ProfesseurElementsResponse>> getAllProfesseursElements(
+    public ResponseEntity<List<GroupedElementsResponse>> getAllByCodesProfesseur(
                                     @RequestParam @NotEmpty Set<@NotBlank String> codesProfesseur) {
 
-        return ResponseEntity.ok(service.findAllProfesseursElements(codesProfesseur));
+        return ResponseEntity.ok(service.findAllByCodesProfesseur(codesProfesseur));
     }
 
     @GetMapping("/exist")
@@ -104,14 +104,14 @@ public class ElementController {
     }
 
     @DeleteMapping("/module/{codeModule}")
-    public ResponseEntity<Void> deleteModuleElements(@PathVariable String codeModule) {
-        service.deleteModuleElements(codeModule);
+    public ResponseEntity<Void> deleteAllByCodeModule(@PathVariable String codeModule) {
+        service.deleteAllByCodeModule(codeModule);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/module/bulk")
-    public ResponseEntity<Void> deleteAllModulesElements(@RequestBody @NotEmpty Set<@NotBlank String> codesModule) {
-        service.deleteAllModulesElements(codesModule);
+    public ResponseEntity<Void> deleteAllByCodesModule(@RequestBody @NotEmpty Set<@NotBlank String> codesModule) {
+        service.deleteAllByCodesModule(codesModule);
         return ResponseEntity.noContent().build();
     }
 }
