@@ -52,7 +52,7 @@ public class ElementServiceImpl implements ElementService {
 
     @Override
     public List<ElementResponse> saveAll(List<ElementCreationRequest> request) throws ElementAlreadyExistsException,
-        DuplicateEntryException {
+                                                                                        DuplicateEntryException {
         int uniqueElementsCount = (int) request.stream()
                                                 .map(ElementCreationRequest::codeElement)
                                                 .distinct().count();
@@ -244,48 +244,12 @@ public class ElementServiceImpl implements ElementService {
     }
 
     @Override
-    public void deleteModuleElements(String codeModule) throws ElementNotFoundException {
-
-        List<Element> foundElements = repository.findAllByCodeModule(codeModule);
-
-        if (foundElements.isEmpty()) {
-            throw new ElementNotFoundException(
-                CoreConstants.BusinessExceptionMessage.NOT_FOUND,
-                new Object[] {ELEMENT_TYPE, "codeModule", codeModule},
-                null
-            );
-        }
-
-        repository.deleteAllById(
-            foundElements.stream()
-                            .map(Element::getCodeElement)
-                            .collect(Collectors.toSet())
-        );
+    public void deleteModuleElements(String codeModule) {
+        repository.deleteAllByCodeModule(codeModule);
     }
 
     @Override
-    public void deleteAllModulesElements(Set<String> codesModule) throws ElementNotFoundException {
-
-        List<Element> foundElements = repository.findAllByCodeModuleIn(codesModule);
-
-        Set<String> foundElementsModuleCodes = foundElements.stream()
-                                                            .map(Element::getCodeModule)
-                                                            .collect(Collectors.toSet());
-
-        if (codesModule.size() != foundElementsModuleCodes.size()) {
-            throw new ElementNotFoundException(
-                CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
-                new Object[] {ELEMENT_TYPE},
-                codesModule.stream()
-                            .filter(code -> !foundElementsModuleCodes.contains(code))
-                            .toList()
-            );
-        }
-
-        repository.deleteAllById(
-            foundElements.stream()
-                            .map(Element::getCodeElement)
-                            .collect(Collectors.toSet())
-        );
+    public void deleteAllModulesElements(Set<String> codesModule) {
+        repository.deleteAllByCodeModuleIn(codesModule);
     }
 }

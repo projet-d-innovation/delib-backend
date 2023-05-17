@@ -36,7 +36,7 @@ public interface ElementService {
 
     void deleteAllByIds(Set<String> codesElement) throws ElementNotFoundException;
 
-    void deleteModuleElements(String codeModule) throws ElementNotFoundException;
+    void deleteModuleElements(String codeModule);
 
-    void deleteAllModulesElements(Set<String> codesModule) throws ElementNotFoundException;
+    void deleteAllModulesElements(Set<String> codesModule);
 }
