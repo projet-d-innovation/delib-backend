@@ -40,13 +40,13 @@ public class WebClientConfig {
     }
 
     @Bean
-    public ModuleClient elementClient(WebClient.Builder builder) {
-        WebClient elementWebClient = builder
+    public ModuleClient moduleClient(WebClient.Builder builder) {
+        WebClient moduleWebClient = builder
                                         .baseUrl("http://" + MODULE_SERVICE_NAME)
                                         .build();
 
         HttpServiceProxyFactory factory = HttpServiceProxyFactory
-                                            .builder(WebClientAdapter.forClient(elementWebClient))
+                                            .builder(WebClientAdapter.forClient(moduleWebClient))
                                             .build();
 
         return factory.createClient(ModuleClient.class);
