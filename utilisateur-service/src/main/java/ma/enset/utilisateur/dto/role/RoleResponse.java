@@ -6,7 +6,6 @@ import ma.enset.utilisateur.dto.permission.PermissionResponse;
 
 import java.util.List;
 
-
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -16,6 +15,7 @@ import java.util.List;
 public class RoleResponse {
     private String roleId;
     private String roleName;
+    private String groupe;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private List<PermissionResponse> permissions;
 

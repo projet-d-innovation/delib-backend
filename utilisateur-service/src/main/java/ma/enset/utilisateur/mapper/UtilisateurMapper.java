@@ -1,15 +1,16 @@
 package ma.enset.utilisateur.mapper;
 
 import ma.enset.utilisateur.dto.*;
-import ma.enset.utilisateur.dto.utilisateur.administrateur.UtilisateurCreateRequest;
-import ma.enset.utilisateur.dto.utilisateur.administrateur.UtilisateurResponse;
-import ma.enset.utilisateur.dto.utilisateur.administrateur.UtilisateurUpdateRequest;
+import ma.enset.utilisateur.dto.utilisateur.UtilisateurCreateRequest;
+import ma.enset.utilisateur.dto.utilisateur.UtilisateurResponse;
+import ma.enset.utilisateur.dto.utilisateur.UtilisateurUpdateRequest;
 import ma.enset.utilisateur.model.Role;
 import ma.enset.utilisateur.model.Utilisateur;
 import org.mapstruct.*;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 
@@ -33,17 +34,29 @@ public interface UtilisateurMapper {
     Role mapRoleIdToRole(String roleId);
 
     @Named("mapRoleIdsToRoles")
-    default List<Role> mapRoleIdsToRoles(List<String> roleIds) {
+    default List<Role> mapRoleIdsToRoles(Set<String> roleIds) {
         if (roleIds == null) {
             return null;
         }
         return roleIds.stream()
                 .map(this::mapRoleIdToRole)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "roles", source = "roles", qualifiedByName = "mapRoleIdsToRoles", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateRequestToUtilisateur(UtilisateurUpdateRequest utilisateurUpdateRequest, @MappingTarget Utilisateur utilisateur);
+
+    default void updateRequestToUtilisateurList(List<UtilisateurUpdateRequest> utilisateurUpdateRequests, @MappingTarget List<Utilisateur> utilisateurList) {
+        if (utilisateurUpdateRequests == null) {
+            return;
+        }
+        for (int i = 0; i < utilisateurUpdateRequests.size(); i++) {
+            UtilisateurUpdateRequest utilisateurUpdateRequest = utilisateurUpdateRequests.get(i);
+            Utilisateur utilisateur = utilisateurList.get(i);
+            updateRequestToUtilisateur(utilisateurUpdateRequest, utilisateur);
+        }
+    }
 
     @Mapping(target = "page", expression = "java(utilisateurPage.getNumber())")
     @Mapping(target = "size", expression = "java(utilisateurPage.getSize())")

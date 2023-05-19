@@ -2,12 +2,9 @@ package ma.enset.utilisateur.constant;
 
 public class CoreConstants {
 
-
-    public static class RoleID {
-        public static final String ROLE_ADMIN = "ADMIN";
-        public static final String ROLE_PROFESSEUR = "PROFESSEUR";
-
-        public static final String ROLE_ETUDIANT = "ETUDIANT";
+    public static class Groups {
+        public static final String GROUP_ADMIN = "ADMIN";
+        public static final String GROUP_NORMAL = "NORMAL";
     }
 
     public static class BusinessExceptionMessage {

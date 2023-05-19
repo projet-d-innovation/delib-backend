@@ -16,7 +16,7 @@ public class Role implements Persistable<String> {
     private String roleId;
     @Column(nullable = false)
     private String roleName;
-
+    private String groupe;
     @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
     private List<Utilisateur> utilisateurs;
 

@@ -8,7 +8,6 @@ import org.springframework.data.domain.Persistable;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 @Data
 public class Departement implements Persistable<String> {
     @Id
