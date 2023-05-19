@@ -14,7 +14,9 @@ import ma.enset.utilisateur.mapper.PermissionMapper;
 import ma.enset.utilisateur.mapper.RoleMapper;
 import ma.enset.utilisateur.model.Permission;
 import ma.enset.utilisateur.model.Role;
+import ma.enset.utilisateur.model.Utilisateur;
 import ma.enset.utilisateur.repository.RoleRepository;
+import ma.enset.utilisateur.repository.UtilisateurRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -36,6 +38,8 @@ public class RoleServiceImpl implements RoleService {
     private final PermissionService permissionService;
     private final RoleMapper roleMapper;
     private final PermissionMapper permissionMapper;
+
+    private final UtilisateurRepository utilisateurRepository;
 
     @Override
     public RoleResponse save(RoleCreateRequest roleCreateRequest) throws ElementAlreadyExistsException {
@@ -320,6 +324,7 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
+    @Transactional
     public void deleteById(String id) throws ElementNotFoundException {
         if (!roleRepository.existsById(id))
             throw new ElementNotFoundException(
@@ -328,6 +333,14 @@ public class RoleServiceImpl implements RoleService {
                     null
             );
 
+        List<Utilisateur> utilisateurs = utilisateurRepository.findAllByRoleId(id);
+        utilisateurs.forEach(
+                utilisateur -> {
+                    utilisateur.getRoles().removeIf(role -> role.getRoleId().equals(id));
+                }
+        );
+        utilisateurRepository.saveAll(utilisateurs);
+
         roleRepository.deleteById(id);
     }
 
@@ -335,6 +348,15 @@ public class RoleServiceImpl implements RoleService {
     @Transactional
     public void deleteAllById(Set<String> ids) throws ElementNotFoundException {
         this.exists(ids);
+
+        List<Utilisateur> utilisateurs = utilisateurRepository.findAllByRoleIdIn(ids);
+        utilisateurs.forEach(
+                utilisateur -> {
+                    utilisateur.getRoles().removeIf(role -> ids.contains(role.getRoleId()));
+                }
+        );
+        utilisateurRepository.saveAll(utilisateurs);
+
         roleRepository.deleteAllById(ids);
     }
 
