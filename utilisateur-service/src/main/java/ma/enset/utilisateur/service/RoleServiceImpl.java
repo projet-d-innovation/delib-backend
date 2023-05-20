@@ -1,157 +1,363 @@
 package ma.enset.utilisateur.service;
 
-import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import ma.enset.utilisateur.constant.CoreConstants;
+import ma.enset.utilisateur.dto.PagingResponse;
+import ma.enset.utilisateur.dto.role.RoleCreateRequest;
+import ma.enset.utilisateur.dto.role.RoleResponse;
+import ma.enset.utilisateur.dto.role.RoleUpdateRequest;
+import ma.enset.utilisateur.exception.DuplicateEntryException;
 import ma.enset.utilisateur.exception.ElementAlreadyExistsException;
 import ma.enset.utilisateur.exception.ElementNotFoundException;
-import ma.enset.utilisateur.exception.InternalErrorException;
+import ma.enset.utilisateur.mapper.PermissionMapper;
+import ma.enset.utilisateur.mapper.RoleMapper;
 import ma.enset.utilisateur.model.Permission;
 import ma.enset.utilisateur.model.Role;
+import ma.enset.utilisateur.model.Utilisateur;
 import ma.enset.utilisateur.repository.RoleRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import ma.enset.utilisateur.repository.UtilisateurRepository;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
 @Slf4j
 public class RoleServiceImpl implements RoleService {
-    private final RoleRepository roleRepository;
 
+    private final String ELEMENT_TYPE = "Role";
+    private final String ID_FIELD_NAME = "roleId";
+    private final RoleRepository roleRepository;
     private final PermissionService permissionService;
+    private final RoleMapper roleMapper;
+    private final PermissionMapper permissionMapper;
+
+    private final UtilisateurRepository utilisateurRepository;
 
     @Override
-    public Role save(Role role) throws ElementAlreadyExistsException {
-        if (roleRepository.existsByRoleId(role.getRoleId()))
-            throw ElementAlreadyExistsException.builder()
-                    .key(CoreConstants.BusinessExceptionMessage.ROLE_ALREADY_EXISTS)
-                    .args(new Object[]{role.getRoleId()})
-                    .build();
+    public RoleResponse save(RoleCreateRequest roleCreateRequest) throws ElementAlreadyExistsException {
 
-        checkPermissions(role);
+        roleRepository.findById(roleCreateRequest.roleId()).ifPresent(role -> {
+            throw new ElementAlreadyExistsException(
+                    CoreConstants.BusinessExceptionMessage.ALREADY_EXISTS,
+                    new Object[]{ELEMENT_TYPE, ID_FIELD_NAME, roleCreateRequest.roleId()},
+                    null
+            );
+        });
 
-        Role savedRole = null;
+        Role role = roleMapper.toRole(roleCreateRequest);
 
-        try {
-            savedRole = roleRepository.save(role);
-        } catch (Exception e) {
-            log.error(e.getMessage(), e.getCause());
-            throw new InternalErrorException();
+        if (roleCreateRequest.permissions() != null && !roleCreateRequest.permissions().isEmpty()) {
+            List<Permission> permissions = permissionMapper.fromResponseList(
+                    permissionService.findAllById(
+                            new HashSet<>(roleCreateRequest.permissions())
+                    )
+            );
+            role.setPermissions(permissions);
         }
 
-        return savedRole;
+        Role createdRole;
+
+        try {
+            createdRole = roleRepository.save(role);
+        } catch (DataIntegrityViolationException e) {
+            throw new ElementAlreadyExistsException(
+                    CoreConstants.BusinessExceptionMessage.ALREADY_EXISTS,
+                    new Object[]{ELEMENT_TYPE, ID_FIELD_NAME, role.getRoleId()},
+                    null
+            );
+        }
+
+        return roleMapper.toRoleResponse(createdRole);
     }
 
-
+    @Override
     @Transactional
-    @Override
-    public List<Role> saveAll(List<Role> roles) throws ElementAlreadyExistsException, InternalErrorException {
-        List<Role> savedRoles = new ArrayList<>();
-        roles.forEach(role -> savedRoles.add(save(role)));
-        return savedRoles;
-    }
+    public List<RoleResponse> saveAll(List<RoleCreateRequest> roleCreateRequests) throws ElementAlreadyExistsException {
 
-    @Override
-    public Page<Role> findAll(Pageable pageable) {
-        return roleRepository.findAll(pageable);
-    }
+        Set<String> ids = roleCreateRequests.stream()
+                .map(RoleCreateRequest::roleId)
+                .collect(Collectors.toSet());
 
+        if (ids.size() != roleCreateRequests.size()) {
+            throw new DuplicateEntryException(
+                    CoreConstants.BusinessExceptionMessage.DUPLICATE_ENTRY,
+                    new Object[]{ELEMENT_TYPE}
+            );
+        }
 
-    @Override
-    public Role update(Role role) throws ElementNotFoundException, InternalErrorException {
+        List<Role> roles = roleRepository.findAllById(ids);
 
-        Role roleToUpdate = roleRepository.findByRoleId(role.getRoleId()).orElseThrow(
-                () -> roleNotFoundException(role.getRoleId())
+        if (!roles.isEmpty()) {
+            throw new ElementAlreadyExistsException(
+                    CoreConstants.BusinessExceptionMessage.MANY_ALREADY_EXISTS,
+                    new Object[]{ELEMENT_TYPE},
+                    roles.stream()
+                            .map(Role::getRoleId)
+                            .collect(Collectors.toList())
+            );
+        }
+
+        List<Role> roleList = roleMapper.toRoleList(roleCreateRequests);
+
+        Set<Integer> permissionIdList = new HashSet<>();
+
+        roleCreateRequests.forEach(
+                roleCreateRequest -> {
+                    if (roleCreateRequest.permissions() != null && !roleCreateRequest.permissions().isEmpty())
+                        permissionIdList.addAll(roleCreateRequest.permissions());
+                }
         );
 
-        checkPermissions(roleToUpdate);
+        List<Permission> permissionList = permissionMapper.fromResponseList(
+                permissionService.findAllById(permissionIdList)
+        );
 
-        Role updatedRole = null;
-
-        try {
-            updatedRole = roleRepository.save(roleToUpdate);
-        } catch (Exception e) {
-            log.error(e.getMessage(), e.getCause());
-            throw new InternalErrorException();
+        for (int i = 0; i < roleList.size(); i++) {
+            if (roleCreateRequests.get(i).permissions() == null
+                    || roleCreateRequests.get(i).permissions().isEmpty())
+                continue;
+            Set<Integer> permsIds = roleCreateRequests.get(i).permissions();
+            List<Permission> perms = permissionList.stream()
+                    .filter(permission -> permsIds.contains(permission.getPermissionId()))
+                    .toList();
+            roleList.get(i).setPermissions(perms);
         }
 
-        return updatedRole;
-    }
+        List<Role> createdRoleList;
 
-
-    @Transactional
-    @Override
-    public List<Role> updateAll(List<Role> roles) throws ElementNotFoundException, InternalErrorException {
-
-        List<Role> updatedRoles = new ArrayList<>();
-
-        roles.forEach(role -> updatedRoles.add(update(role)));
-
-        return updatedRoles;
-    }
-
-    @Override
-    public void deleteByRoleId(String codeRole) throws ElementNotFoundException {
-
-        if (!roleRepository.existsByRoleId(codeRole))
-            throw roleNotFoundException(codeRole);
-
-        roleRepository.deleteByRoleId(codeRole);
-    }
-
-    @Transactional
-    @Override
-    public void deleteAllByRoleId(List<String> codeRoles) throws ElementNotFoundException {
-        codeRoles.forEach(this::deleteByRoleId);
+        try {
+            createdRoleList = roleRepository.saveAll(roleList);
+        } catch (DataIntegrityViolationException e) {
+            throw new DuplicateEntryException(
+                    CoreConstants.BusinessExceptionMessage.DUPLICATE_ENTRY,
+                    null
+            );
+        }
+        return roleMapper.toRoleResponseList(createdRoleList);
     }
 
     @Override
-    public Role findByRoleId(String codeRole) throws ElementNotFoundException {
-        return roleRepository.findByRoleId(codeRole)
-                .orElseThrow(() ->
-                        roleNotFoundException(codeRole)
-                );
+    public RoleResponse findById(String id, boolean includePermissions) throws ElementNotFoundException {
+
+        Role role = roleRepository.findById(id)
+                .orElseThrow(() -> new ElementNotFoundException(
+                        CoreConstants.BusinessExceptionMessage.NOT_FOUND,
+                        new Object[]{ELEMENT_TYPE, ID_FIELD_NAME, id},
+                        null
+                ));
+
+        RoleResponse roleResponse = roleMapper.toRoleResponse(role);
+
+        if (!includePermissions) {
+            roleResponse.setPermissions(null);
+        }
+
+        return roleResponse;
+
     }
 
     @Override
-    public List<Role> findAllByRoleId(List<String> codeRoles) throws ElementNotFoundException {
-        List<Role> roles = new ArrayList<>();
-        codeRoles.forEach(codeRole -> roles.add(findByRoleId(codeRole)));
-        return roles;
-    }
+    public List<RoleResponse> findAllById(Set<String> ids, boolean includePermissions) throws ElementNotFoundException {
 
-
-    private void checkPermissions(Role role) {
-
-        if (role.getPermissions() == null) return;
-
-        List<Integer> permissions = role.getPermissions()
-                .stream()
-                .map(Permission::getPermissionId)
+        List<Role> roleList = roleRepository.findAllById(ids);
+        List<String> foundIds = roleList.stream()
+                .map(Role::getRoleId)
                 .toList();
 
-        permissionService.findAllByPermissionId(permissions);
+        if (foundIds.size() != ids.size()) {
+            throw new ElementNotFoundException(
+                    CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
+                    new Object[]{ELEMENT_TYPE},
+                    ids.stream()
+                            .filter(id -> !foundIds.contains(id))
+                            .toList()
+            );
+        }
+
+        List<RoleResponse> roleResponseList = roleMapper.toRoleResponseList(
+                roleList
+        );
+
+        if (!includePermissions && !roleResponseList.isEmpty()) {
+            roleResponseList.forEach(
+                    roleResponse -> {
+                        roleResponse.setPermissions(null);
+                    }
+            );
+        }
+
+        return roleResponseList;
     }
 
+    @Override
+    public PagingResponse<RoleResponse> findAll(int page, int size, boolean includePermissions) {
 
-    private Role extractNullValues(Role role, Role roleToUpdate) {
-        if (role.getRoleName() != null)
-            roleToUpdate.setRoleName(role.getRoleName());
-        if (role.getPermissions() != null)
-            roleToUpdate.setPermissions(role.getPermissions());
-        return roleToUpdate;
+        PagingResponse<RoleResponse> roleResponseList = roleMapper.toPagingResponse(
+                roleRepository.findAll(PageRequest.of(page, size))
+        );
+
+        if (!includePermissions && !roleResponseList.records().isEmpty()) {
+            roleResponseList.records().forEach(
+                    roleResponse -> {
+                        roleResponse.setPermissions(null);
+                    }
+            );
+        }
+
+        return roleResponseList;
     }
 
-    private ElementNotFoundException roleNotFoundException(String codeRole) {
-        return ElementNotFoundException.builder()
-                .key(CoreConstants.BusinessExceptionMessage.ROLE_NOT_FOUND)
-                .args(new Object[]{codeRole})
-                .build();
+    @Override
+    public RoleResponse update(String id, RoleUpdateRequest roleUpdateRequest) throws ElementNotFoundException {
+
+        Role toBeUpdated = roleRepository.findById(id)
+                .orElseThrow(() -> new ElementNotFoundException(
+                        CoreConstants.BusinessExceptionMessage.NOT_FOUND,
+                        new Object[]{ELEMENT_TYPE, ID_FIELD_NAME, id},
+                        null
+                ));
+        roleMapper.updateRequestToRole(roleUpdateRequest, toBeUpdated);
+        toBeUpdated.setRoleId(id);
+
+        if (roleUpdateRequest.permissions() != null && !roleUpdateRequest.permissions().isEmpty()) {
+            List<Permission> permissions = permissionMapper.fromResponseList(
+                    permissionService.findAllById(
+                            roleUpdateRequest.permissions()
+                    )
+            );
+            toBeUpdated.setPermissions(permissions);
+        }
+
+        return roleMapper.toRoleResponse(
+                roleRepository.save(toBeUpdated)
+        );
+    }
+
+    @Override
+    @Transactional
+    public List<RoleResponse> updateAll(List<RoleUpdateRequest> roleUpdateRequests) throws ElementNotFoundException {
+
+        Set<String> ids = roleUpdateRequests.stream()
+                .map(RoleUpdateRequest::roleId)
+                .collect(Collectors.toSet());
+
+        if (ids.size() != roleUpdateRequests.size()) {
+            throw new DuplicateEntryException(
+                    CoreConstants.BusinessExceptionMessage.DUPLICATE_ENTRY,
+                    null
+            );
+        }
+
+        List<Role> roleList = roleRepository.findAllById(ids);
+
+        Set<String> foundIds = roleList.stream()
+                .map(Role::getRoleId)
+                .collect(Collectors.toSet());
+
+        if (foundIds.size() != ids.size()) {
+            throw new ElementNotFoundException(
+                    CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
+                    new Object[]{ELEMENT_TYPE},
+                    ids.stream()
+                            .filter(id -> !foundIds.contains(id))
+                            .toList()
+            );
+        }
+
+        roleMapper.updateRequestsToRoles(roleUpdateRequests, roleList);
+        Set<Integer> permissionIds = new HashSet<>();
+
+        roleUpdateRequests.forEach(
+                roleUpdateRequest -> {
+                    if (roleUpdateRequest.permissions() != null && !roleUpdateRequest.permissions().isEmpty())
+                        permissionIds.addAll(roleUpdateRequest.permissions());
+                }
+        );
+
+        if (!permissionIds.isEmpty()) {
+            List<Permission> permissions = permissionMapper.fromResponseList(
+                    permissionService.findAllById(permissionIds)
+            );
+            roleList.forEach(role -> {
+                Set<Integer> permsIds = roleUpdateRequests.stream()
+                        .filter(roleUpdateRequest -> roleUpdateRequest.roleId().equals(role.getRoleId()))
+                        .map(RoleUpdateRequest::permissions)
+                        .flatMap(Set::stream)
+                        .collect(Collectors.toSet());
+                List<Permission> perms = permissions.stream()
+                        .filter(permission -> permsIds.contains(permission.getPermissionId()))
+                        .toList();
+                role.setPermissions(perms);
+            });
+        }
+
+        return roleMapper.toRoleResponseList(
+                roleRepository.saveAll(roleList)
+        );
+    }
+
+    @Override
+    public boolean exists(Set<String> roleIdList) {
+        Set<String> foundIds = roleRepository.findAllById(roleIdList)
+                .stream()
+                .map(Role::getRoleId)
+                .collect(Collectors.toSet());
+
+        if (foundIds.size() != roleIdList.size())
+            throw new ElementNotFoundException(
+                    CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
+                    new Object[]{ELEMENT_TYPE},
+                    roleIdList.stream()
+                            .filter(id -> !foundIds.contains(id))
+                            .toList()
+            );
+
+        return true;
+    }
+
+    @Override
+    @Transactional
+    public void deleteById(String id) throws ElementNotFoundException {
+        if (!roleRepository.existsById(id))
+            throw new ElementNotFoundException(
+                    CoreConstants.BusinessExceptionMessage.NOT_FOUND,
+                    new Object[]{ELEMENT_TYPE, ID_FIELD_NAME, id},
+                    null
+            );
+
+        List<Utilisateur> utilisateurs = utilisateurRepository.findAllByRoleId(id);
+        utilisateurs.forEach(
+                utilisateur -> {
+                    utilisateur.getRoles().removeIf(role -> role.getRoleId().equals(id));
+                }
+        );
+        utilisateurRepository.saveAll(utilisateurs);
+
+        roleRepository.deleteById(id);
+    }
+
+    @Override
+    @Transactional
+    public void deleteAllById(Set<String> ids) throws ElementNotFoundException {
+        this.exists(ids);
+
+        List<Utilisateur> utilisateurs = utilisateurRepository.findAllByRoleIdIn(ids);
+        utilisateurs.forEach(
+                utilisateur -> {
+                    utilisateur.getRoles().removeIf(role -> ids.contains(role.getRoleId()));
+                }
+        );
+        utilisateurRepository.saveAll(utilisateurs);
+
+        roleRepository.deleteAllById(ids);
     }
 
 }

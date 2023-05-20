@@ -1,31 +1,34 @@
 package ma.enset.utilisateur.service;
 
-import ma.enset.utilisateur.exception.InternalErrorException;
+import ma.enset.utilisateur.dto.PagingResponse;
+import ma.enset.utilisateur.dto.role.RoleCreateRequest;
+import ma.enset.utilisateur.dto.role.RoleResponse;
+import ma.enset.utilisateur.dto.role.RoleUpdateRequest;
 import ma.enset.utilisateur.exception.ElementAlreadyExistsException;
 import ma.enset.utilisateur.exception.ElementNotFoundException;
-import ma.enset.utilisateur.model.Role;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Set;
 
 public interface RoleService {
-    Role save(Role role) throws ElementAlreadyExistsException, InternalErrorException;
+    RoleResponse save(RoleCreateRequest roleCreateRequest) throws ElementAlreadyExistsException;
 
-    List<Role> saveAll(List<Role> roles) throws ElementAlreadyExistsException, InternalErrorException;
+    List<RoleResponse> saveAll(List<RoleCreateRequest> roleCreateRequests) throws ElementAlreadyExistsException;
 
-    Role findByRoleId(String codeRole) throws ElementNotFoundException;
+    RoleResponse findById(String id, boolean includePermissions) throws ElementNotFoundException;
 
-    List<Role> findAllByRoleId(List<String> codeRoles) throws ElementNotFoundException;
+    List<RoleResponse> findAllById(Set<String> ids, boolean includePermissions) throws ElementNotFoundException;
 
-    Page<Role> findAll(Pageable pageable);
+    PagingResponse<RoleResponse> findAll(int page, int size, boolean includePermissions);
 
-    Role update(Role role) throws ElementNotFoundException, InternalErrorException;
+    RoleResponse update(String id, RoleUpdateRequest roleUpdateRequest) throws ElementNotFoundException;
 
-    List<Role> updateAll(List<Role> roles) throws ElementNotFoundException, InternalErrorException;
+    List<RoleResponse> updateAll(List<RoleUpdateRequest> roleUpdateRequests) throws ElementNotFoundException;
 
-    void deleteByRoleId(String codeRole) throws ElementNotFoundException;
+    boolean exists(Set<String> roleIdList);
 
-    void deleteAllByRoleId(List<String> codesRole) throws ElementNotFoundException;
+    void deleteById(String id) throws ElementNotFoundException;
+
+    void deleteAllById(Set<String> ids) throws ElementNotFoundException;
 
 }

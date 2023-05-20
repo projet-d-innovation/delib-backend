@@ -1,29 +1,36 @@
 package ma.enset.utilisateur.service;
 
+import ma.enset.utilisateur.dto.PagingResponse;
+import ma.enset.utilisateur.dto.permission.PermissionCreateRequest;
+import ma.enset.utilisateur.dto.permission.PermissionResponse;
+import ma.enset.utilisateur.dto.permission.PermissionUpdateRequest;
 import ma.enset.utilisateur.exception.ElementAlreadyExistsException;
 import ma.enset.utilisateur.exception.ElementNotFoundException;
-import ma.enset.utilisateur.model.Permission;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Set;
 
 public interface PermissionService {
-    Permission save(Permission permission) throws ElementAlreadyExistsException;
+    PermissionResponse save(PermissionCreateRequest permissionCreateRequest) throws ElementAlreadyExistsException;
 
-    List<Permission> saveAll(List<Permission> permissions) throws ElementAlreadyExistsException;
+    List<PermissionResponse> saveAll(List<PermissionCreateRequest> permissionCreateRequestList) throws ElementAlreadyExistsException;
 
-    Permission findByPermissionId(int permissionId) throws ElementNotFoundException;
+    PermissionResponse findById(int id) throws ElementNotFoundException;
 
-    List<Permission> findAllByPermissionId(List<Integer> permissionIds) throws ElementNotFoundException;
+    List<PermissionResponse> findAllById(Set<Integer> ids) throws ElementNotFoundException;
 
-    Page<Permission> findAll(Pageable pageable);
+    PagingResponse<PermissionResponse> findAll(int page, int size);
 
-    Permission update(Permission permission) throws ElementNotFoundException;
-    List<Permission> updateAll(List<Permission> permission) throws ElementNotFoundException;
+    PermissionResponse update(int id, PermissionUpdateRequest permissionUpdateRequest) throws ElementNotFoundException;
 
-    void deleteByPermissionId(int permissionId) throws ElementNotFoundException;
+    List<PermissionResponse> updateAll(List<PermissionUpdateRequest> permissionUpdateRequestList) throws ElementNotFoundException;
 
-    void deleteAllByPermissionId(List<Integer> permissionIds) throws ElementNotFoundException;
+    boolean exists(Set<Integer> permissionIdList);
+
+    void deleteById(int permissionId) throws ElementNotFoundException;
+
+    void deleteAllById(Set<Integer> permissionIds) throws ElementNotFoundException;
 
 }

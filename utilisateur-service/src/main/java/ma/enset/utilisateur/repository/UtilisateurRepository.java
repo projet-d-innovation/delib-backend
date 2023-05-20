@@ -1,30 +1,25 @@
 package ma.enset.utilisateur.repository;
 
-import jakarta.transaction.Transactional;
-import ma.enset.utilisateur.model.Role;
 import ma.enset.utilisateur.model.Utilisateur;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.util.Optional;
-
+import java.util.List;
+import java.util.Set;
 
 @Repository
 public interface UtilisateurRepository extends JpaRepository<Utilisateur, String> {
 
-    Optional<Utilisateur> findByCodeAndRolesContains(String code, Role role);
+    Page<Utilisateur> findAllByRoles_Groupe_AndNomContainsIgnoreCase(String groupe, String nom, Pageable pageable);
 
+    Page<Utilisateur> findAllByRoles_RoleId_AndNomContainsIgnoreCase(String roleId, String nom, Pageable pageable);
 
-    Page<Utilisateur> findAllByRolesContains(Role role, Pageable pageable);
+    @Query("select u from Utilisateur u join u.roles r where r.roleId = ?1")
+    List<Utilisateur> findAllByRoleId(String roleId);
 
-
-    boolean existsByCode(String code);
-
-    Optional<Utilisateur> findByCode(String code);
-
-    @Transactional
-    void deleteByCode(String code);
-
+    @Query("select u from Utilisateur u join u.roles r where r.roleId in ?1")
+    List<Utilisateur> findAllByRoleIdIn(Set<String> roleIds);
 }

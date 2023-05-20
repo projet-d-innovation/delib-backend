@@ -2,149 +2,126 @@ package ma.enset.utilisateur.controller;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import ma.enset.utilisateur.dto.PagingResponse;
-import ma.enset.utilisateur.dto.RoleCreateRequestDTO;
-import ma.enset.utilisateur.dto.RoleResponseDTO;
-import ma.enset.utilisateur.dto.RoleUpdateRequestDTO;
-import ma.enset.utilisateur.model.Role;
+import ma.enset.utilisateur.dto.role.RoleCreateRequest;
+import ma.enset.utilisateur.dto.role.RoleResponse;
+import ma.enset.utilisateur.dto.role.RoleUpdateRequest;
 import ma.enset.utilisateur.service.RoleService;
-import ma.enset.utilisateur.util.RoleMapper;
 import org.hibernate.validator.constraints.Range;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
-@RequestMapping("/api/v1/utilisateurs/roles")
+@RequestMapping("/api/v1/roles")
 @AllArgsConstructor
 @Validated
 public class RoleController {
 
-    private final RoleMapper roleMapper;
-    private final RoleService roleService;
+    private final RoleService service;
 
-
-    @GetMapping("{code}")
-    public ResponseEntity<RoleResponseDTO> findByCode(
-            @PathVariable String code
+    @GetMapping
+    public ResponseEntity<PagingResponse<RoleResponse>> findAll(
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Range(min = 1, max = 100) int size,
+            @RequestParam(defaultValue = "false") boolean includePermissions
     ) {
-        Role role = roleService.findByRoleId(code);
-
-        RoleResponseDTO roleResponse = roleMapper.toRoleResponse(role);
 
         return ResponseEntity
                 .ok()
-                .body(roleResponse);
+                .body(service.findAll(page, size, includePermissions));
+    }
+
+    @GetMapping("{code}")
+    public ResponseEntity<RoleResponse> findByCode(
+            @PathVariable String code,
+            @RequestParam(defaultValue = "false") boolean includePermissions
+    ) {
+        return ResponseEntity
+                .ok()
+                .body(service.findById(code, includePermissions));
     }
 
     @GetMapping("/bulk")
-    public ResponseEntity<Iterable<RoleResponseDTO>> findByCodes(
-            @NotEmpty @RequestParam List<String> codes
+    public ResponseEntity<Iterable<RoleResponse>> findByCodes(
+            @NotEmpty @RequestParam Set<@NotBlank String> codes,
+            @RequestParam(defaultValue = "false") boolean includePermissions
     ) {
-        List<Role> roles = roleService.findAllByRoleId(codes);
-        List<RoleResponseDTO> roleResponses = roleMapper.toRoleResponses(roles);
-
         return ResponseEntity
                 .ok()
-                .body(roleResponses);
+                .body(service.findAllById(codes, includePermissions));
     }
 
     @PostMapping
-    public ResponseEntity<RoleResponseDTO> save(
-            @Valid @RequestBody RoleCreateRequestDTO roleRequest
+    public ResponseEntity<RoleResponse> save(
+            @Valid @RequestBody RoleCreateRequest request
     ) {
-        Role role = roleMapper.toRole(roleRequest);
-        Role savedRole = roleService.save(role);
-        RoleResponseDTO roleResponse = roleMapper.toRoleResponse(savedRole);
-
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(roleResponse);
+                .body(service.save(request));
     }
 
+
+    // TODO (ahmed) : fix this issue :
+    // exemple :
+    //    [ {
+    //        "roleId": "striqsdqsdng",
+    //            "roleName": "string",
+    //            "permissions": [1]
+    //    },
+    //    {
+    //        "roleId": "strqsdqsdqsing",
+    //            "roleName": "string"
+    //    }]
+    // exception :
+    //    {
+    //        "code": 500,
+    //        "status": "INTERNAL_SERVER_ERROR",
+    //        "message": "The server encountered an internal error or misconfiguration and was unable to complete your request.",
+    //        "identifiers": null,
+    //        "errors": null
+    //    }
     @PostMapping("/bulk")
-    public ResponseEntity<List<RoleResponseDTO>> saveAll(
-            @RequestBody List<@Valid RoleCreateRequestDTO> roleRequests
+    public ResponseEntity<List<RoleResponse>> saveAll(
+            @RequestBody @NotEmpty List<@Valid RoleCreateRequest> roleRequests
     ) {
-        List<Role> roles = roleMapper.createToRoles(roleRequests);
-        List<Role> savedRoles = roleService.saveAll(roles);
-        List<RoleResponseDTO> roleResponses = roleMapper.toRoleResponses(savedRoles);
-
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(roleResponses);
+                .body(service.saveAll(roleRequests));
     }
 
-    @GetMapping
-    public ResponseEntity<PagingResponse<RoleResponseDTO>> findAll(
-            @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Range(min = 1, max = 100) int size
-    ) {
-
-        Pageable pageRequest = PageRequest.of(page, size);
-        Page<Role> elementsPage = roleService.findAll(pageRequest);
-
-        PagingResponse<RoleResponseDTO> pagedResult = roleMapper.toPagingResponse(elementsPage);
-
-        return ResponseEntity
-                .ok()
-                .body(pagedResult);
-    }
 
     @PatchMapping("/{code}")
-    public ResponseEntity<RoleResponseDTO> update(
+    public ResponseEntity<RoleResponse> update(
             @PathVariable String code,
-            @Valid @RequestBody RoleUpdateRequestDTO roleUpdateRequest
+            @Valid @RequestBody RoleUpdateRequest roleUpdateRequest
     ) {
-        
-        Role role = roleService.findByRoleId(code);
-
-        roleMapper.updateRequestToRole(roleUpdateRequest, role);
-
-        role.setRoleId(code);
-
-        Role updatedRole = roleService.update(role);
-
-        RoleResponseDTO roleResponse = roleMapper.toRoleResponse(updatedRole);
-
         return ResponseEntity
                 .ok()
-                .body(roleResponse);
+                .body(service.update(code, roleUpdateRequest));
     }
 
     @PatchMapping("/bulk")
-    public ResponseEntity<List<RoleResponseDTO>> updateAll(
-            @RequestBody List<@Valid RoleUpdateRequestDTO> roleUpdateRequests
+    public ResponseEntity<List<RoleResponse>> updateAll(
+            @RequestBody @NotEmpty List<@Valid RoleUpdateRequest> roleUpdateRequests
     ) {
-
-        List<String> ids = roleMapper.toRoleIds(roleUpdateRequests);
-
-        List<Role> roles = roleService.findAllByRoleId(ids);
-
-        roleMapper.updateRequestsToRoles(roleUpdateRequests, roles);
-
-        List<Role> updatedRoles = roleService.updateAll(roles);
-
-        List<RoleResponseDTO> roleResponses = roleMapper.toRoleResponses(updatedRoles);
-
         return ResponseEntity
                 .ok()
-                .body(roleResponses);
+                .body(service.updateAll(roleUpdateRequests));
     }
 
     @DeleteMapping("/{code}")
     public ResponseEntity<Void> delete(
             @PathVariable String code
     ) {
-        roleService.deleteByRoleId(code);
+        service.deleteById(code);
         return ResponseEntity
                 .noContent()
                 .build();
@@ -152,9 +129,9 @@ public class RoleController {
 
     @DeleteMapping("/bulk")
     public ResponseEntity<Void> deleteAll(
-            @NotEmpty @RequestParam List<String> codes
+            @RequestParam @NotEmpty Set<@NotBlank String> codes
     ) {
-        roleService.deleteAllByRoleId(codes);
+        service.deleteAllById(codes);
         return ResponseEntity
                 .noContent()
                 .build();
