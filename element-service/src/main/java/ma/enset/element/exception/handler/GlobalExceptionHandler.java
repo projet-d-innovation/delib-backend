@@ -141,7 +141,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(ApiClientException.class)
     public ResponseEntity<ExceptionResponse> handleApiClientException(ApiClientException e) {
         return ResponseEntity
-                .status(e.getException().code())
+                .status(e.getException().getCode())
                 .body(e.getException());
     }
 

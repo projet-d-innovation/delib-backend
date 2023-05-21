@@ -2,11 +2,14 @@ package ma.enset.element.service;
 
 import lombok.RequiredArgsConstructor;
 import ma.enset.element.client.ModuleClient;
+import ma.enset.element.client.UserClient;
 import ma.enset.element.constant.CoreConstants;
 import ma.enset.element.dto.*;
+import ma.enset.element.exception.ApiClientException;
 import ma.enset.element.exception.DuplicateEntryException;
 import ma.enset.element.exception.ElementAlreadyExistsException;
 import ma.enset.element.exception.ElementNotFoundException;
+import ma.enset.element.exception.handler.dao.ExceptionResponse;
 import ma.enset.element.mapper.ElementMapper;
 import ma.enset.element.model.Element;
 import ma.enset.element.repository.ElementRepository;
@@ -15,6 +18,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -26,16 +30,17 @@ public class ElementServiceImpl implements ElementService {
     private final ElementRepository repository;
     private final ElementMapper mapper;
     private final ModuleClient moduleClient;
-//    private final UtilisateurClient utilisateurClient;
+    private final UserClient userClient;
 
     @Override
-    public ElementResponse save(ElementCreationRequest request) throws ElementAlreadyExistsException {
+    public ElementResponse save(ElementCreationRequest request) throws ElementAlreadyExistsException,
+                                                                        ApiClientException {
 
         moduleClient.modulesExist(Set.of(request.codeModule()));
 
-//        if (request.codeProfesseur() != null) {
-//            // TODO (aymane): check the existence of the prof before saving
-//        }
+        if (request.codeProfesseur() != null) {
+            profExists(request.codeProfesseur());
+        }
 
         Element element = mapper.toElement(request);
 
@@ -52,7 +57,8 @@ public class ElementServiceImpl implements ElementService {
 
     @Override
     public List<ElementResponse> saveAll(List<ElementCreationRequest> request) throws ElementAlreadyExistsException,
-                                                                                        DuplicateEntryException {
+                                                                                        DuplicateEntryException,
+                                                                                        ApiClientException {
         int uniqueElementsCount = (int) request.stream()
                                                 .map(ElementCreationRequest::codeElement)
                                                 .distinct().count();
@@ -86,13 +92,13 @@ public class ElementServiceImpl implements ElementService {
                     .collect(Collectors.toSet())
         );
 
-//        Set<String> codesProfesseur = request.stream()
-//                                            .map(ElementCreationRequest::codeProfesseur)
-//                                            .collect(Collectors.toSet());
-//
-//        if (!codesProfesseur.isEmpty()) {
-//            // TODO (aymane): check the existence of the profs before saving
-//        }
+        Set<String> codesProfesseur = request.stream()
+                                            .map(ElementCreationRequest::codeProfesseur)
+                                            .collect(Collectors.toSet());
+
+        if (!codesProfesseur.isEmpty()) {
+            allProfsExist(codesProfesseur);
+        }
 
         List<Element> elements = mapper.toElementList(request);
 
@@ -200,7 +206,8 @@ public class ElementServiceImpl implements ElementService {
     }
 
     @Override
-    public ElementResponse update(String codeElement, ElementUpdateRequest request) throws ElementNotFoundException {
+    public ElementResponse update(String codeElement, ElementUpdateRequest request) throws ElementNotFoundException,
+                                                                                            ApiClientException {
 
         Element element = repository.findById(codeElement).orElseThrow(() ->
             new ElementNotFoundException(
@@ -210,15 +217,14 @@ public class ElementServiceImpl implements ElementService {
             )
         );
 
-//        String oldCodeProfesseur = element.getCodeProfesseur();
+        String oldCodeProfesseur = element.getCodeProfesseur();
 
         mapper.updateElementFromDTO(request, element);
 
-//        if (!Objects.equals(oldCodeProfesseur, element.getCodeProfesseur()) &&
-//            element.getCodeProfesseur() != null) {
-//
-//            // TODO (aymane): check the existence of the prof before updating
-//        }
+        if (!Objects.equals(oldCodeProfesseur, element.getCodeProfesseur()) &&
+                                                            element.getCodeProfesseur() != null) {
+            profExists(element.getCodeProfesseur());
+        }
 
         return mapper.toElementResponse(repository.save(element));
     }
@@ -253,5 +259,30 @@ public class ElementServiceImpl implements ElementService {
     @Override
     public void deleteAllByCodesModule(Set<String> codesModule) {
         repository.deleteAllByCodeModuleIn(codesModule);
+    }
+
+    private void profExists(String codeProfesseur) throws ApiClientException {
+        try {
+            userClient.profExits(codeProfesseur);
+        } catch (ApiClientException e) {
+            injectCustomProfMessage(e.getException());
+            throw new ApiClientException(e.getException());
+        }
+    }
+
+    private void allProfsExist(Set<String> codesProfesseur) throws ApiClientException {
+        try {
+            userClient.allProfsExit(codesProfesseur);
+        } catch (ApiClientException e) {
+            injectCustomProfMessage(e.getException());
+            throw new ApiClientException(e.getException());
+        }
+    }
+
+    private void injectCustomProfMessage(ExceptionResponse response) {
+        String customMessage = response.getMessage()
+                                        .replaceAll("(Utilisateur|User)", "Professeur");
+
+        response.setMessage(customMessage);
     }
 }
