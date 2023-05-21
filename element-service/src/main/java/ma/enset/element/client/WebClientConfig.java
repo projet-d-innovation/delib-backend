@@ -1,7 +1,5 @@
 package ma.enset.element.client;
 
-
-import lombok.extern.slf4j.Slf4j;
 import ma.enset.element.exception.ApiClientException;
 import ma.enset.element.exception.InternalErrorException;
 import ma.enset.element.exception.handler.dao.ExceptionResponse;
@@ -13,11 +11,11 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.support.WebClientAdapter;
 import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 
-@Slf4j
+
 @Configuration(proxyBeanMethods = false)
 public class WebClientConfig {
     private final String MODULE_SERVICE_NAME = "MODULE-SERVICE";
-//    private final String UTILISATEUR_SERVICE_NAME = "UTILISATEUR-SERVICE";
+    private final String USER_SERVICE_NAME = "USER-SERVICE";
 
     @Bean
     @LoadBalanced
@@ -52,16 +50,16 @@ public class WebClientConfig {
         return factory.createClient(ModuleClient.class);
     }
 
-//    @Bean
-//    public UtilisateurClient utilisateurClient(WebClient.Builder builder) {
-//        WebClient utilisateurWebClient = builder
-//                                            .baseUrl("http://" + UTILISATEUR_SERVICE_NAME)
-//                                            .build();
-//
-//        HttpServiceProxyFactory factory = HttpServiceProxyFactory
-//                                            .builder(WebClientAdapter.forClient(utilisateurWebClient))
-//                                            .build();
-//
-//        return factory.createClient(UtilisateurClient.class);
-//    }
+    @Bean
+    public UserClient userClient(WebClient.Builder builder) {
+        WebClient userWebClient = builder
+                                    .baseUrl("http://" + USER_SERVICE_NAME)
+                                    .build();
+
+        HttpServiceProxyFactory factory = HttpServiceProxyFactory
+                                            .builder(WebClientAdapter.forClient(userWebClient))
+                                            .build();
+
+        return factory.createClient(UserClient.class);
+    }
 }
