@@ -18,7 +18,7 @@ public interface ElementClient {
     ResponseEntity<List<ModuleResponse.Element>> getElementsByCodeModule(@PathVariable("codeModule") String codeModule);
 
     @GetExchange(url = "/bulk")
-    ResponseEntity<List<ModuleResponse>> getElementsByCodesModule(@RequestParam Set<String> codesModule);
+    ResponseEntity<List<ModuleResponse>> getElementsByCodesModule(@RequestParam("codesModule") Set<String> codesModule);
 
     @DeleteExchange(url = "/{codeModule}")
     ResponseEntity<Void> deleteElementsByCodeModule(@PathVariable("codeModule") String codeModule);
