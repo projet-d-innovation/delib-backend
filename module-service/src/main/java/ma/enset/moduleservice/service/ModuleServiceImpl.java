@@ -163,7 +163,7 @@ public class ModuleServiceImpl implements ModuleService {
 
         ModulePagingResponse response = mapper.toPagingResponse(repository.findAll(PageRequest.of(page, size)));
 
-        if (includeElements) {
+        if (includeElements && !response.records().isEmpty()) {
             Set<String> codesModule = response.records().stream()
                                                         .map(ModuleResponse::getCodeModule)
                                                         .collect(Collectors.toSet());
