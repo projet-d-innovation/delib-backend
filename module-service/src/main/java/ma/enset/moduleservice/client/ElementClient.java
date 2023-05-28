@@ -4,6 +4,7 @@ import ma.enset.moduleservice.dto.ModuleResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.service.annotation.DeleteExchange;
 import org.springframework.web.service.annotation.GetExchange;
 import org.springframework.web.service.annotation.HttpExchange;
@@ -17,7 +18,7 @@ public interface ElementClient {
     ResponseEntity<List<ModuleResponse.Element>> getElementsByCodeModule(@PathVariable("codeModule") String codeModule);
 
     @GetExchange(url = "/bulk")
-    ResponseEntity<List<ModuleResponse>> getElementsByCodesModule(@RequestBody Set<String> codesModule);
+    ResponseEntity<List<ModuleResponse>> getElementsByCodesModule(@RequestParam Set<String> codesModule);
 
     @DeleteExchange(url = "/{codeModule}")
     ResponseEntity<Void> deleteElementsByCodeModule(@PathVariable("codeModule") String codeModule);
