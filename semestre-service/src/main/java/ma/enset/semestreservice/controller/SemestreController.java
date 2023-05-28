@@ -62,7 +62,7 @@ public class SemestreController {
         return ResponseEntity.ok(service.findAllByCodeFiliere(codeFiliere));
     }
 
-    @GetMapping("/semestre/bulk")
+    @GetMapping("/filiere/bulk")
     public ResponseEntity<List<GroupedSemestresResponse>> getAllByCodeFilieres(@RequestParam Set<String> codesFiliere) {
         return ResponseEntity.ok(service.findAllByCodesFiliere(codesFiliere));
     }
