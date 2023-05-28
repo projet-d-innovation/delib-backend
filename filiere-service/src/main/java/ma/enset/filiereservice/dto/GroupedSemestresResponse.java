@@ -1,4 +1,4 @@
-package ma.enset.semestreservice.dto;
+package ma.enset.filiereservice.dto;
 
 import lombok.Builder;
 

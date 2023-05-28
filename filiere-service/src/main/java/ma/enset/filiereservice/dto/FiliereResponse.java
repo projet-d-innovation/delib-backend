@@ -20,7 +20,7 @@ public class FiliereResponse {
     private String codeRegleDeCalcul;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private List<Semestre> semestres;
+    private List<SemestreResponse> semestres;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private ChefFiliere chefFiliere;
@@ -35,13 +35,6 @@ public class FiliereResponse {
             String prenom,
             String telephone,
             String photo
-    ) {
-    }
-
-    @Builder
-    public record Semestre(
-            String codeSemestre,
-            String intituleSemestre
     ) {
     }
 }
