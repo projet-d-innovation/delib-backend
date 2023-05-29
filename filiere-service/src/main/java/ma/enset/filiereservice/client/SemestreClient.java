@@ -25,7 +25,7 @@ public interface SemestreClient {
     ResponseEntity<List<GroupedSemestresResponse>> getAllByCodeFilieres(@RequestParam("codesFiliere") Set<String> codesFiliere);
 
     @DeleteExchange(url = "/filiere/bulk")
-    ResponseEntity<Void> deleteAllByCodesFiliere(@RequestBody @NotEmpty Set<@NotBlank String> codesFiliere);
+    ResponseEntity<Void> deleteAllByCodesFiliere(@RequestBody Set<String> codesFiliere);
 
     @DeleteExchange(url = "/filiere/{codeFiliere}")
     ResponseEntity<Void> deleteAllByCodeFiliere(@PathVariable("codeFiliere") String codeFiliere);

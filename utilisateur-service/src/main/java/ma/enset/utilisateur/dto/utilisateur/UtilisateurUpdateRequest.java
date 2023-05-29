@@ -20,7 +20,6 @@ public record UtilisateurUpdateRequest(
         String pays,
         String photo,
         String codeDepartement,
-        String codeFiliere,
         Set<String> roles
 ) {
 }

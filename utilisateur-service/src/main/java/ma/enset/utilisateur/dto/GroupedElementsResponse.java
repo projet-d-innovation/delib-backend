@@ -5,7 +5,7 @@ import lombok.Builder;
 import java.util.List;
 
 @Builder
-public record ProfesseurElementsResponse(
+public record GroupedElementsResponse(
         String codeProfesseur,
         List<ElementResponse> elements
 

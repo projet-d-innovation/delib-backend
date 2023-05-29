@@ -45,32 +45,35 @@ public class DepartementController {
     public ResponseEntity<DepartementPagingResponse> getAll(@RequestParam(defaultValue = "") String search,
                                                             @RequestParam(defaultValue = "0") @Min(0) int page,
                                                             @RequestParam(defaultValue = "10") @Range(min = 1, max = 100) int size,
-                                                            @RequestParam(defaultValue = "false") boolean includeFilieres
+                                                            @RequestParam(defaultValue = "false") boolean includeFilieres,
+                                                            @RequestParam(defaultValue = "false") boolean includeChefDepartement
     ) {
         return ResponseEntity.ok(
-                departementService.findAll(page, size, search, includeFilieres)
+                departementService.findAll(page, size, search, includeFilieres, includeChefDepartement)
         );
     }
 
     @GetMapping("/{codeDepartement}")
     public ResponseEntity<DepartementResponse> get(@PathVariable("codeDepartement") String codeDepartement,
-                                                   @RequestParam(defaultValue = "false") boolean includeFilieres
+                                                   @RequestParam(defaultValue = "false") boolean includeFilieres,
+                                                   @RequestParam(defaultValue = "false") boolean includeChefDepartement
     ) {
         return ResponseEntity.ok(
-                departementService.findById(codeDepartement, includeFilieres)
+                departementService.findById(codeDepartement, includeFilieres, includeChefDepartement)
         );
     }
 
     @GetMapping("/bulk")
     public ResponseEntity<List<DepartementResponse>> getAllById(@NotEmpty @RequestParam Set<@NotBlank String> codeDepartementList,
-                                                                @RequestParam(defaultValue = "false") boolean includeFilieres
+                                                                @RequestParam(defaultValue = "false") boolean includeFilieres,
+                                                                @RequestParam(defaultValue = "false") boolean includeChefDepartement
     ) {
         return ResponseEntity.ok(
-                departementService.findAllById(codeDepartementList, includeFilieres)
+                departementService.findAllById(codeDepartementList, includeFilieres, includeChefDepartement)
         );
     }
 
-    
+
     @GetMapping("/exists")
     public ResponseEntity<Void> existsAll(@RequestParam @NotEmpty Set<@NotBlank String> codesDepartement) {
         departementService.existsAllId(codesDepartement);
@@ -103,7 +106,6 @@ public class DepartementController {
                 .noContent()
                 .build();
     }
-
 
 
 }

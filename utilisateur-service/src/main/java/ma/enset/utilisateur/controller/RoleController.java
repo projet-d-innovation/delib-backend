@@ -68,26 +68,6 @@ public class RoleController {
                 .body(service.save(request));
     }
 
-
-    // TODO (ahmed) : fix this issue :
-    // exemple :
-    //    [ {
-    //        "roleId": "striqsdqsdng",
-    //            "roleName": "string",
-    //            "permissions": [1]
-    //    },
-    //    {
-    //        "roleId": "strqsdqsdqsing",
-    //            "roleName": "string"
-    //    }]
-    // exception :
-    //    {
-    //        "code": 500,
-    //        "status": "INTERNAL_SERVER_ERROR",
-    //        "message": "The server encountered an internal error or misconfiguration and was unable to complete your request.",
-    //        "identifiers": null,
-    //        "errors": null
-    //    }
     @PostMapping("/bulk")
     public ResponseEntity<List<RoleResponse>> saveAll(
             @RequestBody @NotEmpty List<@Valid RoleCreateRequest> roleRequests

@@ -32,7 +32,11 @@ public interface FiliereService {
 
     void deleteByCodeDepartement(Set<String> codes) throws ElementNotFoundException;
 
+    boolean existsAllId(Set<String> codesFilieres) throws ElementNotFoundException;
+
     FiliereByDepartementResponse findByCodeDepartement(String codeDepartement, boolean includeSemestre, boolean includeRegleDeCalcule, boolean includeChefFiliere) throws ElementNotFoundException;
 
     List<FiliereByDepartementResponse> findAllByCodeDepartement(Set<String> codeDepartement, boolean includeSemestre, boolean includeRegleDeCalcule, boolean includeChefFiliere) throws ElementNotFoundException;
+
+    void handleUtilisateurDeletion(Set<String> codeUtilisateurs);
 }

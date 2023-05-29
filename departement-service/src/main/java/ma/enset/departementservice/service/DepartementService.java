@@ -19,11 +19,11 @@ public interface DepartementService {
 
     List<DepartementResponse> saveAll(List<DepartementCreationRequest> departements) throws ElementAlreadyExistsException;
 
-    DepartementResponse findById(String id, boolean includeFilieres) throws ElementNotFoundException;
+    DepartementResponse findById(String id, boolean includeFilieres, boolean includeChefDepartement) throws ElementNotFoundException;
 
-    List<DepartementResponse> findAllById(Set<String> ids, boolean includeFilieres) throws ElementNotFoundException;
+    List<DepartementResponse> findAllById(Set<String> ids, boolean includeFilieres, boolean includeChefDepartement) throws ElementNotFoundException;
 
-    DepartementPagingResponse findAll(int page, int size, String search, boolean includeFilieres);
+    DepartementPagingResponse findAll(int page, int size, String search, boolean includeFilieres, boolean includeChefDepartement);
 
     DepartementResponse update(String id, DepartementUpdateRequest departement) throws ElementNotFoundException;
 

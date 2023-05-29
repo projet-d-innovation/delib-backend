@@ -15,51 +15,51 @@ import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 @Configuration(proxyBeanMethods = false)
 public class WebClientConfig {
     private final String MODULE_SERVICE_NAME = "MODULE-SERVICE";
-    private final String USER_SERVICE_NAME = "USER-SERVICE";
+    private final String UTILISATEUR_SERVICE_NAME = "UTILISATEUR-SERVICE";
 
     @Bean
     @LoadBalanced
     public WebClient.Builder webClientBuilder() {
         return WebClient.builder()
-            .defaultStatusHandler(
-                HttpStatusCode::is4xxClientError,
-                clientResponse -> clientResponse
-                                    .bodyToMono(ExceptionResponse.class)
-                                    .map(ApiClientException::new)
-            )
-            .defaultStatusHandler(
-                HttpStatusCode::is5xxServerError,
-                clientResponse -> clientResponse
-                                    .createException()
-                                    .map(exception -> new InternalErrorException(
+                .defaultStatusHandler(
+                        HttpStatusCode::is4xxClientError,
+                        clientResponse -> clientResponse
+                                .bodyToMono(ExceptionResponse.class)
+                                .map(ApiClientException::new)
+                )
+                .defaultStatusHandler(
+                        HttpStatusCode::is5xxServerError,
+                        clientResponse -> clientResponse
+                                .createException()
+                                .map(exception -> new InternalErrorException(
                                         exception.getMessage(), exception.getCause()
-                                    ))
-            );
+                                ))
+                );
     }
 
     @Bean
     public ModuleClient moduleClient(WebClient.Builder builder) {
         WebClient moduleWebClient = builder
-                                        .baseUrl("http://" + MODULE_SERVICE_NAME)
-                                        .build();
+                .baseUrl("http://" + MODULE_SERVICE_NAME)
+                .build();
 
         HttpServiceProxyFactory factory = HttpServiceProxyFactory
-                                            .builder(WebClientAdapter.forClient(moduleWebClient))
-                                            .build();
+                .builder(WebClientAdapter.forClient(moduleWebClient))
+                .build();
 
         return factory.createClient(ModuleClient.class);
     }
 
     @Bean
-    public UserClient userClient(WebClient.Builder builder) {
-        WebClient userWebClient = builder
-                                    .baseUrl("http://" + USER_SERVICE_NAME)
-                                    .build();
+    public UtilisateurClient utilisateurClient(WebClient.Builder builder) {
+        WebClient utilisateurWebClient = builder
+                .baseUrl("http://" + UTILISATEUR_SERVICE_NAME)
+                .build();
 
         HttpServiceProxyFactory factory = HttpServiceProxyFactory
-                                            .builder(WebClientAdapter.forClient(userWebClient))
-                                            .build();
+                .builder(WebClientAdapter.forClient(utilisateurWebClient))
+                .build();
 
-        return factory.createClient(UserClient.class);
+        return factory.createClient(UtilisateurClient.class);
     }
 }

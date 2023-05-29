@@ -22,4 +22,6 @@ public interface UtilisateurRepository extends JpaRepository<Utilisateur, String
 
     @Query("select u from Utilisateur u join u.roles r where r.roleId in ?1")
     List<Utilisateur> findAllByRoleIdIn(Set<String> roleIds);
+
+    List<Utilisateur> findAllByCodeDepartementIn(Set<String> codesDepartement);
 }

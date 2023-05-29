@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 import ma.enset.utilisateur.dto.DepartementResponse;
 import ma.enset.utilisateur.dto.ElementResponse;
-import ma.enset.utilisateur.dto.FiliereResponse;
 import ma.enset.utilisateur.dto.permission.PermissionResponse;
 import ma.enset.utilisateur.dto.role.RoleResponse;
 
@@ -31,7 +30,6 @@ public class UtilisateurResponse {
     private String pays;
     private String photo;
     private String codeDepartement;
-    private String codeFiliere;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private List<RoleResponse> roles;
@@ -39,8 +37,6 @@ public class UtilisateurResponse {
     private List<PermissionResponse> permissions;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private DepartementResponse departement;
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private FiliereResponse filiere;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private List<ElementResponse> elements;
 

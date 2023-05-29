@@ -37,8 +37,6 @@ public class Utilisateur implements Persistable<String> {
             inverseJoinColumns = @JoinColumn(name = "roleId"))
     private List<Role> roles;
     private String codeDepartement;
-    private String codeFiliere;
-
 
     @Transient
     @Setter(AccessLevel.NONE)
