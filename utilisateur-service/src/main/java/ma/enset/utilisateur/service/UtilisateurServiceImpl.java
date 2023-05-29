@@ -2,28 +2,25 @@ package ma.enset.utilisateur.service;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import ma.enset.utilisateur.client.DepartementClient;
+import ma.enset.utilisateur.client.ElementClient;
+import ma.enset.utilisateur.client.FiliereClient;
 import ma.enset.utilisateur.constant.CoreConstants;
-import ma.enset.utilisateur.dto.IncludeParams;
-import ma.enset.utilisateur.dto.PagingResponse;
+import ma.enset.utilisateur.dto.*;
 import ma.enset.utilisateur.dto.permission.PermissionResponse;
-import ma.enset.utilisateur.dto.role.RoleResponse;
 import ma.enset.utilisateur.dto.utilisateur.UtilisateurCreateRequest;
 import ma.enset.utilisateur.dto.utilisateur.UtilisateurResponse;
 import ma.enset.utilisateur.dto.utilisateur.UtilisateurUpdateRequest;
 import ma.enset.utilisateur.exception.*;
 import ma.enset.utilisateur.mapper.UtilisateurMapper;
-import ma.enset.utilisateur.model.Permission;
 import ma.enset.utilisateur.model.Role;
 import ma.enset.utilisateur.model.Utilisateur;
 import ma.enset.utilisateur.repository.UtilisateurRepository;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -33,13 +30,16 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 @Slf4j
 public class UtilisateurServiceImpl implements UtilisateurService {
-
     private final String ELEMENT_TYPE = "Utilisateur";
     private final String ID_FIELD_NAME = "code";
     private final UtilisateurRepository utilisateurRepository;
     private final UtilisateurMapper utilisateurMapper;
 
     private final RoleService roleService;
+
+    private final ElementClient elementClient;
+    private final DepartementClient departementClient;
+    private final FiliereClient filiereClient;
 
     @Override
     public UtilisateurResponse save(UtilisateurCreateRequest request) throws ElementAlreadyExistsException {
@@ -264,13 +264,16 @@ public class UtilisateurServiceImpl implements UtilisateurService {
                     null
             );
         }
-
+        filiereClient.handleChefFiliereDeletion(Set.of(code));
+        elementClient.handleProfesseurDeletion(Set.of(code));
         utilisateurRepository.deleteById(code);
     }
 
     @Override
     public void deleteAllById(Set<String> codeList) throws ElementNotFoundException {
         this.exists(codeList);
+        filiereClient.handleChefFiliereDeletion(codeList);
+        elementClient.handleProfesseurDeletion(codeList);
         utilisateurRepository.deleteAllById(codeList);
     }
 
@@ -303,11 +306,10 @@ public class UtilisateurServiceImpl implements UtilisateurService {
                     .collect(Collectors.toSet());
             roleService.exists(roleCodes);
         }
-        if (request.getCodeFiliere() != null) {
-            // TODO (ahmed) : check filiere
-        }
         if (request.getCodeDepartement() != null) {
-            // TODO (ahmed) : check departement
+            departementClient.existsAll(
+                    Set.of(request.getCodeDepartement())
+            );
         }
     }
 
@@ -331,15 +333,12 @@ public class UtilisateurServiceImpl implements UtilisateurService {
         if (!roleCodes.isEmpty())
             roleService.exists(roleCodes);
 
-        Set<String> filiereCodes = requestList.stream()
-                .map(Utilisateur::getCodeFiliere)
-                .collect(Collectors.toSet());
-        // TODO (ahmed) : check filiere
-
         Set<String> departementCodes = requestList.stream()
                 .map(Utilisateur::getCodeDepartement)
                 .collect(Collectors.toSet());
-        // TODO (ahmed) : check departement
+        if (!departementCodes.isEmpty()) {
+            departementClient.existsAll(departementCodes);
+        }
 
     }
 
@@ -363,16 +362,16 @@ public class UtilisateurServiceImpl implements UtilisateurService {
             utilisateur.setRoles(null);
         }
 
-        if (includes.isIncludeFiliere()) {
-            // TODO (ahmed) : include filiere
-        }
-
-        if (includes.isIncludeDepartement()) {
-            // TODO (ahmed) : include departement
+        if (includes.isIncludeDepartement() && utilisateur.getCodeDepartement() != null) {
+            utilisateur.setDepartement(
+                    departementClient.get(utilisateur.getCodeDepartement()).getBody()
+            );
         }
 
         if (includes.isIncludeElements()) {
-            // TODO (ahmed) : include elements
+            utilisateur.setElements(
+                    elementClient.getAllByCodeProfesseur(utilisateur.getCode()).getBody()
+            );
         }
 
     }
@@ -404,18 +403,82 @@ public class UtilisateurServiceImpl implements UtilisateurService {
             });
         }
 
-        if (includes.isIncludeFiliere()) {
-            // TODO (ahmed) : include filiere
-        }
 
         if (includes.isIncludeDepartement()) {
-            // TODO (ahmed) : include departement
+            Set<String> codesDepartement = new HashSet<>();
+            utilisateurs.forEach(
+                    utilisateurResponse -> {
+                        if (utilisateurResponse.getCodeDepartement() != null) {
+                            codesDepartement.add(utilisateurResponse.getCodeDepartement());
+                        }
+                    }
+            );
+
+            if (!codesDepartement.isEmpty()) {
+                List<DepartementResponse> departementResponses = departementClient.getAllById(codesDepartement).getBody();
+                if (departementResponses != null) {
+                    utilisateurs.forEach(
+                            utilisateurResponse -> {
+                                utilisateurResponse.setDepartement(
+                                        departementResponses.stream()
+                                                .filter(
+                                                        departementResponse -> departementResponse.getCodeDepartement()
+                                                                .equals(
+                                                                        utilisateurResponse.getCodeDepartement()
+                                                                )
+                                                )
+                                                .findFirst()
+                                                .orElse(null)
+                                );
+                            }
+                    );
+                }
+            }
         }
 
         if (includes.isIncludeElements()) {
-            // TODO (ahmed) : include elements
+            Set<String> codes = new HashSet<>();
+            utilisateurs.forEach(
+                    utilisateurResponse -> {
+                        if (utilisateurResponse.getCode() != null) {
+                            codes.add(utilisateurResponse.getCode());
+                        }
+                    }
+            );
+            if (!codes.isEmpty()) {
+                List<GroupedElementsResponse> groupedElementsResponses = elementClient.getAllByCodesProfesseur(codes).getBody();
+                if (groupedElementsResponses != null) {
+                    utilisateurs.forEach(
+                            utilisateurResponse -> {
+                                utilisateurResponse.setElements(
+                                        groupedElementsResponses.stream()
+                                                .filter(
+                                                        groupedElementsResponse -> groupedElementsResponse.codeProfesseur().equals(utilisateurResponse.getCode())
+                                                )
+                                                .map(GroupedElementsResponse::elements)
+                                                .flatMap(List::stream)
+                                                .toList()
+                                );
+                            }
+                    );
+                }
+            }
         }
 
     }
 
+    @Override
+    public void handleKeyDepartementDeletion(Set<String> codeDepartement) {
+        List<Utilisateur> utilisateurs = utilisateurRepository.findAllByCodeDepartementIn(codeDepartement);
+        if (utilisateurs != null) {
+            utilisateurs.forEach(
+                    utilisateur -> {
+                        if (codeDepartement.contains(utilisateur.getCodeDepartement())) {
+                            utilisateur.setCodeDepartement(null);
+                        }
+                    }
+            );
+            utilisateurRepository.saveAll(utilisateurs);
+        }
+    }
 }

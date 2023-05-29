@@ -2,7 +2,7 @@ package ma.enset.element.service;
 
 import lombok.RequiredArgsConstructor;
 import ma.enset.element.client.ModuleClient;
-import ma.enset.element.client.UserClient;
+import ma.enset.element.client.UtilisateurClient;
 import ma.enset.element.constant.CoreConstants;
 import ma.enset.element.dto.*;
 import ma.enset.element.exception.ApiClientException;
@@ -30,11 +30,11 @@ public class ElementServiceImpl implements ElementService {
     private final ElementRepository repository;
     private final ElementMapper mapper;
     private final ModuleClient moduleClient;
-    private final UserClient userClient;
+    private final UtilisateurClient utilisateurClient;
 
     @Override
     public ElementResponse save(ElementCreationRequest request) throws ElementAlreadyExistsException,
-                                                                        ApiClientException {
+            ApiClientException {
 
         moduleClient.modulesExist(Set.of(request.codeModule()));
 
@@ -48,53 +48,53 @@ public class ElementServiceImpl implements ElementService {
             return mapper.toElementResponse(repository.save(element));
         } catch (DataIntegrityViolationException e) {
             throw new ElementAlreadyExistsException(
-                CoreConstants.BusinessExceptionMessage.ALREADY_EXISTS,
-                new Object[] {ELEMENT_TYPE, ID_FIELD_NAME, request.codeElement()},
-                null
+                    CoreConstants.BusinessExceptionMessage.ALREADY_EXISTS,
+                    new Object[]{ELEMENT_TYPE, ID_FIELD_NAME, request.codeElement()},
+                    null
             );
         }
     }
 
     @Override
     public List<ElementResponse> saveAll(List<ElementCreationRequest> request) throws ElementAlreadyExistsException,
-                                                                                        DuplicateEntryException,
-                                                                                        ApiClientException {
+            DuplicateEntryException,
+            ApiClientException {
         int uniqueElementsCount = (int) request.stream()
-                                                .map(ElementCreationRequest::codeElement)
-                                                .distinct().count();
+                .map(ElementCreationRequest::codeElement)
+                .distinct().count();
 
         if (uniqueElementsCount != request.size()) {
             throw new DuplicateEntryException(
-                CoreConstants.BusinessExceptionMessage.DUPLICATE_ENTRY,
-                new Object[]{ELEMENT_TYPE}
+                    CoreConstants.BusinessExceptionMessage.DUPLICATE_ENTRY,
+                    new Object[]{ELEMENT_TYPE}
             );
         }
 
         List<Element> foundElements = repository.findAllById(
-            request.stream()
-                    .map(ElementCreationRequest::codeElement)
-                    .collect(Collectors.toSet())
+                request.stream()
+                        .map(ElementCreationRequest::codeElement)
+                        .collect(Collectors.toSet())
         );
 
         if (!foundElements.isEmpty()) {
             throw new ElementAlreadyExistsException(
-                CoreConstants.BusinessExceptionMessage.MANY_ALREADY_EXISTS,
-                new Object[]{ELEMENT_TYPE},
-                foundElements.stream()
-                                .map(Element::getCodeElement)
-                                .toList()
+                    CoreConstants.BusinessExceptionMessage.MANY_ALREADY_EXISTS,
+                    new Object[]{ELEMENT_TYPE},
+                    foundElements.stream()
+                            .map(Element::getCodeElement)
+                            .toList()
             );
         }
 
         moduleClient.modulesExist(
-            request.stream()
-                    .map(ElementCreationRequest::codeModule)
-                    .collect(Collectors.toSet())
+                request.stream()
+                        .map(ElementCreationRequest::codeModule)
+                        .collect(Collectors.toSet())
         );
 
         Set<String> codesProfesseur = request.stream()
-                                            .map(ElementCreationRequest::codeProfesseur)
-                                            .collect(Collectors.toSet());
+                .map(ElementCreationRequest::codeProfesseur)
+                .collect(Collectors.toSet());
 
         if (!codesProfesseur.isEmpty()) {
             allProfsExist(codesProfesseur);
@@ -108,13 +108,13 @@ public class ElementServiceImpl implements ElementService {
     @Override
     public ElementResponse findById(String codeElement) throws ElementNotFoundException {
         return mapper.toElementResponse(
-            repository.findById(codeElement).orElseThrow(() ->
-                new ElementNotFoundException(
-                    CoreConstants.BusinessExceptionMessage.NOT_FOUND,
-                    new Object[] {ELEMENT_TYPE, ID_FIELD_NAME, codeElement},
-                    null
+                repository.findById(codeElement).orElseThrow(() ->
+                        new ElementNotFoundException(
+                                CoreConstants.BusinessExceptionMessage.NOT_FOUND,
+                                new Object[]{ELEMENT_TYPE, ID_FIELD_NAME, codeElement},
+                                null
+                        )
                 )
-            )
         );
     }
 
@@ -130,14 +130,14 @@ public class ElementServiceImpl implements ElementService {
 
         if (codesElement.size() != foundElements.size()) {
             throw new ElementNotFoundException(
-                CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
-                new Object[] {ELEMENT_TYPE},
-                codesElement.stream()
+                    CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
+                    new Object[]{ELEMENT_TYPE},
+                    codesElement.stream()
                             .filter(
-                                codeElement -> !foundElements.stream()
-                                                                .map(Element::getCodeElement)
-                                                                .toList()
-                                                                .contains(codeElement)
+                                    codeElement -> !foundElements.stream()
+                                            .map(Element::getCodeElement)
+                                            .toList()
+                                            .contains(codeElement)
                             )
                             .toList()
             );
@@ -155,16 +155,16 @@ public class ElementServiceImpl implements ElementService {
     public List<GroupedElementsResponse> findAllByCodesModule(Set<String> codesModule) {
 
         return repository.findAllByCodeModuleIn(codesModule)
-                            .stream()
-                            .collect(Collectors.groupingBy(Element::getCodeModule))
-                            .entrySet().stream()
-                                        .map(entry ->
-                                            GroupedElementsResponse.builder()
-                                                .codeModule(entry.getKey())
-                                                .elements(mapper.toElementResponseList(entry.getValue()))
-                                                .build()
-                                        )
-                                        .toList();
+                .stream()
+                .collect(Collectors.groupingBy(Element::getCodeModule))
+                .entrySet().stream()
+                .map(entry ->
+                        GroupedElementsResponse.builder()
+                                .codeModule(entry.getKey())
+                                .elements(mapper.toElementResponseList(entry.getValue()))
+                                .build()
+                )
+                .toList();
     }
 
     @Override
@@ -176,29 +176,29 @@ public class ElementServiceImpl implements ElementService {
     public List<GroupedElementsResponse> findAllByCodesProfesseur(Set<String> codesProfesseur) {
 
         return repository.findAllByCodeProfesseurIn(codesProfesseur)
-                            .stream()
-                            .collect(Collectors.groupingBy(Element::getCodeProfesseur))
-                            .entrySet().stream()
-                                        .map(entry ->
-                                            GroupedElementsResponse.builder()
-                                                .codeProfesseur(entry.getKey())
-                                                .elements(mapper.toElementResponseList(entry.getValue()))
-                                                .build()
-                                        )
-                                        .toList();
+                .stream()
+                .collect(Collectors.groupingBy(Element::getCodeProfesseur))
+                .entrySet().stream()
+                .map(entry ->
+                        GroupedElementsResponse.builder()
+                                .codeProfesseur(entry.getKey())
+                                .elements(mapper.toElementResponseList(entry.getValue()))
+                                .build()
+                )
+                .toList();
     }
 
     @Override
     public void existAllByIds(Set<String> codesElement) throws ElementNotFoundException {
 
         List<String> foundElementsCodes = repository.findAllById(codesElement)
-                                                    .stream().map(Element::getCodeElement).toList();
+                .stream().map(Element::getCodeElement).toList();
 
         if (codesElement.size() != foundElementsCodes.size()) {
             throw new ElementNotFoundException(
-                CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
-                new Object[] {ELEMENT_TYPE},
-                codesElement.stream()
+                    CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
+                    new Object[]{ELEMENT_TYPE},
+                    codesElement.stream()
                             .filter(code -> !foundElementsCodes.contains(code))
                             .toList()
             );
@@ -207,14 +207,14 @@ public class ElementServiceImpl implements ElementService {
 
     @Override
     public ElementResponse update(String codeElement, ElementUpdateRequest request) throws ElementNotFoundException,
-                                                                                            ApiClientException {
+            ApiClientException {
 
         Element element = repository.findById(codeElement).orElseThrow(() ->
-            new ElementNotFoundException(
-                CoreConstants.BusinessExceptionMessage.NOT_FOUND,
-                new Object[] {ELEMENT_TYPE, ID_FIELD_NAME, codeElement},
-                null
-            )
+                new ElementNotFoundException(
+                        CoreConstants.BusinessExceptionMessage.NOT_FOUND,
+                        new Object[]{ELEMENT_TYPE, ID_FIELD_NAME, codeElement},
+                        null
+                )
         );
 
         String oldCodeProfesseur = element.getCodeProfesseur();
@@ -222,7 +222,7 @@ public class ElementServiceImpl implements ElementService {
         mapper.updateElementFromDTO(request, element);
 
         if (!Objects.equals(oldCodeProfesseur, element.getCodeProfesseur()) &&
-                                                            element.getCodeProfesseur() != null) {
+                element.getCodeProfesseur() != null) {
             profExists(element.getCodeProfesseur());
         }
 
@@ -234,9 +234,9 @@ public class ElementServiceImpl implements ElementService {
 
         if (!repository.existsById(codeElement)) {
             throw new ElementNotFoundException(
-                CoreConstants.BusinessExceptionMessage.NOT_FOUND,
-                new Object[] {ELEMENT_TYPE, ID_FIELD_NAME, codeElement},
-                null
+                    CoreConstants.BusinessExceptionMessage.NOT_FOUND,
+                    new Object[]{ELEMENT_TYPE, ID_FIELD_NAME, codeElement},
+                    null
             );
         }
 
@@ -261,9 +261,20 @@ public class ElementServiceImpl implements ElementService {
         repository.deleteAllByCodeModuleIn(codesModule);
     }
 
+    @Override
+    public void handleProfesseurDeletion(Set<String> codesProfesseur) {
+        List<Element> elements = repository.findAllByCodeProfesseurIn(codesProfesseur);
+
+        elements.forEach(element -> {
+            element.setCodeProfesseur(null);
+        });
+
+        repository.saveAll(elements);
+    }
+
     private void profExists(String codeProfesseur) throws ApiClientException {
         try {
-            userClient.profExits(codeProfesseur);
+            utilisateurClient.profExits(codeProfesseur);
         } catch (ApiClientException e) {
             injectCustomProfMessage(e.getException());
             throw new ApiClientException(e.getException());
@@ -272,7 +283,7 @@ public class ElementServiceImpl implements ElementService {
 
     private void allProfsExist(Set<String> codesProfesseur) throws ApiClientException {
         try {
-            userClient.allProfsExit(codesProfesseur);
+            utilisateurClient.allProfsExit(codesProfesseur);
         } catch (ApiClientException e) {
             injectCustomProfMessage(e.getException());
             throw new ApiClientException(e.getException());
@@ -281,7 +292,7 @@ public class ElementServiceImpl implements ElementService {
 
     private void injectCustomProfMessage(ExceptionResponse response) {
         String customMessage = response.getMessage()
-                                        .replaceAll("(Utilisateur|User)", "Professeur");
+                .replaceAll("(Utilisateur|User)", "Professeur");
 
         response.setMessage(customMessage);
     }

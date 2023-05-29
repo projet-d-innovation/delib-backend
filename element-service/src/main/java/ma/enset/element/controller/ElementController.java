@@ -61,7 +61,7 @@ public class ElementController {
 
     @GetMapping("/module/bulk")
     public ResponseEntity<List<GroupedElementsResponse>> getAllByCodesModule(
-                                        @RequestParam @NotEmpty Set<@NotBlank String> codesModule) {
+            @RequestParam @NotEmpty Set<@NotBlank String> codesModule) {
 
         return ResponseEntity.ok(service.findAllByCodesModule(codesModule));
     }
@@ -73,7 +73,7 @@ public class ElementController {
 
     @GetMapping("/professeur/bulk")
     public ResponseEntity<List<GroupedElementsResponse>> getAllByCodesProfesseur(
-                                    @RequestParam @NotEmpty Set<@NotBlank String> codesProfesseur) {
+            @RequestParam @NotEmpty Set<@NotBlank String> codesProfesseur) {
 
         return ResponseEntity.ok(service.findAllByCodesProfesseur(codesProfesseur));
     }
@@ -112,6 +112,12 @@ public class ElementController {
     @DeleteMapping("/module/bulk")
     public ResponseEntity<Void> deleteAllByCodesModule(@RequestBody @NotEmpty Set<@NotBlank String> codesModule) {
         service.deleteAllByCodesModule(codesModule);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/professeur")
+    public ResponseEntity<Void> handleProfesseurDeletion(@RequestParam @NotEmpty Set<@NotBlank String> codesProfesseur) {
+        service.handleProfesseurDeletion(codesProfesseur);
         return ResponseEntity.noContent().build();
     }
 }

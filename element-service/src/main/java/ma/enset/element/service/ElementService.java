@@ -13,7 +13,7 @@ public interface ElementService {
     ElementResponse save(ElementCreationRequest request) throws ElementAlreadyExistsException, ApiClientException;
 
     List<ElementResponse> saveAll(List<ElementCreationRequest> request) throws ElementAlreadyExistsException,
-                                                                                DuplicateEntryException, ApiClientException;
+            DuplicateEntryException, ApiClientException;
 
     ElementResponse findById(String codeElement) throws ElementNotFoundException;
 
@@ -40,4 +40,6 @@ public interface ElementService {
     void deleteAllByCodeModule(String codeModule);
 
     void deleteAllByCodesModule(Set<String> codesModule);
+
+    void handleProfesseurDeletion(Set<String> codesProfesseur);
 }

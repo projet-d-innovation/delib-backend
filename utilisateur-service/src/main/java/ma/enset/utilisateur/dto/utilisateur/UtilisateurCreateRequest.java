@@ -22,7 +22,6 @@ public record UtilisateurCreateRequest(
         String ville,
         String photo,
         String codeDepartement,
-        String codeFiliere,
         Set<String> roles
 
 ) {

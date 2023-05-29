@@ -149,4 +149,21 @@ public class FiliereController {
                 );
     }
 
+    @GetMapping("/exists")
+    public ResponseEntity<Void> existsAll(@RequestParam @NotEmpty Set<@NotBlank String> codesFiliere) {
+        filiereService.existsAllId(codesFiliere);
+        return ResponseEntity.noContent().build();
+    }
+
+
+    @PatchMapping("/utilisateur")
+    public ResponseEntity<Void> handleChefFiliereDeletion(
+            @RequestParam @NotEmpty Set<@NotBlank String> codesUtilisateur
+    ) {
+        filiereService.handleUtilisateurDeletion(codesUtilisateur);
+        return ResponseEntity
+                .noContent()
+                .build();
+    }
+
 }

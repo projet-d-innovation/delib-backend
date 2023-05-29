@@ -3,6 +3,7 @@ package ma.enset.filiereservice.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 
+import java.util.Date;
 import java.util.List;
 
 
@@ -23,18 +24,8 @@ public class FiliereResponse {
     private List<SemestreResponse> semestres;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private ChefFiliere chefFiliere;
+    private UtilisateurResponse chefFiliere;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private RegleDeCalculResponse regleDeCalcul;
-
-    @Builder
-    public record ChefFiliere(
-            String code,
-            String nom,
-            String prenom,
-            String telephone,
-            String photo
-    ) {
-    }
 }

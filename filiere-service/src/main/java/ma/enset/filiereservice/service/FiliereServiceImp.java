@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import ma.enset.filiereservice.client.DepartementClient;
 import ma.enset.filiereservice.client.SemestreClient;
+import ma.enset.filiereservice.client.UtilisateurClient;
 import ma.enset.filiereservice.constant.CoreConstants;
 import ma.enset.filiereservice.dto.*;
 import ma.enset.filiereservice.exception.DuplicateEntryException;
@@ -33,6 +34,7 @@ public class FiliereServiceImp implements FiliereService {
     private final RegleDeCalculService regleDeCalculService;
     private final DepartementClient departementClient;
     private final SemestreClient semestreClient;
+    private final UtilisateurClient utilisateurClient;
 
     private final static ExampleMatcher FILIERE_EXAMPLE_MATCHER = ExampleMatcher.matching()
             .withIgnorePaths("codeChefFiliere", "codeRegleDeCalcul", "codeDepartement")
@@ -59,7 +61,9 @@ public class FiliereServiceImp implements FiliereService {
         }
 
         if (filiere.getCodeChefFiliere() != null) {
-            // TODO (ahmed) check if chef filiere exists
+            utilisateurClient.existsById(
+                    Set.of(filiere.getCodeChefFiliere())
+            );
         }
 
         Filiere createdFiliere = null;
@@ -120,7 +124,7 @@ public class FiliereServiceImp implements FiliereService {
 
 
         if (!codeChefFilieres.isEmpty()) {
-            // TODO (ahmed) check if chef filiere exists
+            utilisateurClient.existsById(codeChefFilieres);
         }
 
 
@@ -165,7 +169,9 @@ public class FiliereServiceImp implements FiliereService {
         }
 
         if (includeChefFiliere) {
-            // TODO (ahmed) : get chef filiere
+            filiereResponse.setChefFiliere(
+                    utilisateurClient.findById(filiereResponse.getCodeChefFiliere()).getBody()
+            );
         }
 
         return filiereResponse;
@@ -194,27 +200,27 @@ public class FiliereServiceImp implements FiliereService {
         }
 
         List<FiliereResponse> filiereResponses = filiereMapper.toFiliereResponseList(filieres);
-
         if (includeSemestre) {
-            // TODO (ahmed) : get semestres
             Set<String> codeFilieres = filiereResponses.stream()
                     .map(FiliereResponse::getCodeFiliere)
                     .collect(Collectors.toSet());
 
-            List<GroupedSemestresResponse> semestreResponses = semestreClient.getAllByCodeFilieres(codeFilieres).getBody();
+            if (!codeFilieres.isEmpty()) {
+                List<GroupedSemestresResponse> semestreResponses = semestreClient.getAllByCodeFilieres(codeFilieres).getBody();
 
-            if (semestreResponses != null) {
-                filiereResponses.forEach(filiereResponse -> filiereResponse.setSemestres(
-                        Objects.requireNonNull(semestreResponses.stream()
-                                        .filter(groupedSemestresResponse -> groupedSemestresResponse.codeFiliere()
-                                                .equals(
-                                                        filiereResponse.getCodeFiliere()
-                                                )
-                                        )
-                                        .findFirst()
-                                        .orElse(null))
-                                .semestres()
-                ));
+                if (semestreResponses != null && !semestreResponses.isEmpty()) {
+                    filiereResponses.forEach(filiereResponse -> filiereResponse.setSemestres(
+                            Objects.requireNonNull(semestreResponses.stream()
+                                            .filter(groupedSemestresResponse -> groupedSemestresResponse.codeFiliere()
+                                                    .equals(
+                                                            filiereResponse.getCodeFiliere()
+                                                    )
+                                            )
+                                            .findFirst()
+                                            .orElse(null))
+                                    .semestres()
+                    ));
+                }
             }
         }
         if (includeRegleDeCalcule) {
@@ -227,6 +233,7 @@ public class FiliereServiceImp implements FiliereService {
                             codeRegleDeCalculs.add(code);
                         }
                     });
+
             if (!codeRegleDeCalculs.isEmpty()) {
                 List<RegleDeCalculResponse> regleDeCalculResponses = regleDeCalculService.findAllById(codeRegleDeCalculs);
                 filiereResponses.forEach(filiereResponse -> filiereResponse.setRegleDeCalcul(
@@ -237,10 +244,28 @@ public class FiliereServiceImp implements FiliereService {
                 ));
             }
         }
-        if (includeChefFiliere) {
-            // TODO (ahmed) : get chef filiere
-        }
 
+        if (includeChefFiliere) {
+            Set<String> chefCodes = filiereResponses.stream()
+                    .map(FiliereResponse::getCodeChefFiliere)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            if (!chefCodes.isEmpty()) {
+                List<UtilisateurResponse> utilisateurResponses = utilisateurClient.findAllById(chefCodes).getBody();
+                if (utilisateurResponses != null && !utilisateurResponses.isEmpty()) {
+                    filiereResponses.forEach(filiereResponse -> filiereResponse.setChefFiliere(
+                            utilisateurResponses.stream()
+                                    .filter(utilisateurResponse -> utilisateurResponse.getCode()
+                                            .equals(
+                                                    filiereResponse.getCodeChefFiliere()
+                                            )
+                                    )
+                                    .findFirst()
+                                    .orElse(null)
+                    ));
+                }
+            }
+        }
         return filiereResponses;
     }
 
@@ -259,25 +284,26 @@ public class FiliereServiceImp implements FiliereService {
                         PageRequest.of(page, size)
                 )
         );
-
         if (includeSemestre) {
             Set<String> codeFilieres = filierePagingResponse.records().stream()
                     .map(FiliereResponse::getCodeFiliere)
                     .collect(Collectors.toSet());
 
-            List<GroupedSemestresResponse> semestreResponses = semestreClient.getAllByCodeFilieres(codeFilieres).getBody();
-            if (semestreResponses != null) {
-                filierePagingResponse.records().forEach(filiereResponse -> filiereResponse.setSemestres(
-                        Objects.requireNonNull(semestreResponses.stream()
-                                        .filter(groupedSemestresResponse -> groupedSemestresResponse.codeFiliere()
-                                                .equals(
-                                                        filiereResponse.getCodeFiliere()
-                                                )
-                                        )
-                                        .findFirst()
-                                        .orElse(null))
-                                .semestres()
-                ));
+            if (!codeFilieres.isEmpty()) {
+                List<GroupedSemestresResponse> semestreResponses = semestreClient.getAllByCodeFilieres(codeFilieres).getBody();
+                if (semestreResponses != null && !semestreResponses.isEmpty()) {
+                    filierePagingResponse.records().forEach(filiereResponse -> filiereResponse.setSemestres(
+                            Objects.requireNonNull(semestreResponses.stream()
+                                            .filter(groupedSemestresResponse -> groupedSemestresResponse.codeFiliere()
+                                                    .equals(
+                                                            filiereResponse.getCodeFiliere()
+                                                    )
+                                            )
+                                            .findFirst()
+                                            .orElse(null))
+                                    .semestres()
+                    ));
+                }
             }
         }
         if (includeRegleDeCalcule) {
@@ -294,19 +320,40 @@ public class FiliereServiceImp implements FiliereService {
 
             if (!codeRegleDeCalculs.isEmpty()) {
                 List<RegleDeCalculResponse> regleDeCalculResponses = regleDeCalculService.findAllById(codeRegleDeCalculs);
-                filierePagingResponse.records().forEach(
-                        filiereResponse -> filiereResponse.setRegleDeCalcul(
-                                regleDeCalculResponses.stream()
-                                        .filter(regleDeCalculResponse -> regleDeCalculResponse.codeRegleDeCalcul().equals(filiereResponse.getCodeRegleDeCalcul()))
-                                        .findFirst()
-                                        .orElse(null)
-                        )
-                );
+                if (!regleDeCalculResponses.isEmpty()) {
+                    filierePagingResponse.records().forEach(
+                            filiereResponse -> filiereResponse.setRegleDeCalcul(
+                                    regleDeCalculResponses.stream()
+                                            .filter(regleDeCalculResponse -> regleDeCalculResponse.codeRegleDeCalcul().equals(filiereResponse.getCodeRegleDeCalcul()))
+                                            .findFirst()
+                                            .orElse(null)
+                            )
+                    );
+                }
             }
         }
 
         if (includeChefFiliere) {
-            // TODO (ahmed) : get chef filiere
+            Set<String> chefCodes = filierePagingResponse.records().stream()
+                    .map(FiliereResponse::getCodeChefFiliere)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+
+            if (!chefCodes.isEmpty()) {
+                List<UtilisateurResponse> utilisateurResponses = utilisateurClient.findAllById(chefCodes).getBody();
+                if (utilisateurResponses != null) {
+                    filierePagingResponse.records().forEach(filiereResponse -> filiereResponse.setChefFiliere(
+                            utilisateurResponses.stream()
+                                    .filter(utilisateurResponse -> utilisateurResponse.getCode()
+                                            .equals(
+                                                    filiereResponse.getCodeChefFiliere()
+                                            )
+                                    )
+                                    .findFirst()
+                                    .orElse(null)
+                    ));
+                }
+            }
         }
 
         return filierePagingResponse;
@@ -328,7 +375,7 @@ public class FiliereServiceImp implements FiliereService {
         }
 
         if (filiereUpdateRequest.codeChefFiliere() != null) {
-            // TODO (ahmed) : check if chef filiere exists
+            utilisateurClient.existsById(Set.of(filiereUpdateRequest.codeChefFiliere()));
         }
 
         return filiereMapper.toFiliereResponse(filiereRepository.save(filiere));
@@ -336,6 +383,7 @@ public class FiliereServiceImp implements FiliereService {
     }
 
     @Override
+    @Transactional
     public void deleteById(String id) throws ElementNotFoundException {
         if (!filiereRepository.existsById(id)) {
             throw new ElementNotFoundException(
@@ -344,10 +392,10 @@ public class FiliereServiceImp implements FiliereService {
                     null
             );
         }
-        filiereRepository.deleteById(id);
 
-        // TODO (ahmed) : check if it works
         semestreClient.deleteAllByCodeFiliere(id);
+
+        filiereRepository.deleteById(id);
     }
 
 
@@ -356,12 +404,13 @@ public class FiliereServiceImp implements FiliereService {
     public void deleteById(Set<String> ids) throws ElementNotFoundException {
         this.findAllById(ids, false, false, false);
 
-        filiereRepository.deleteAllById(ids);
-
         semestreClient.deleteAllByCodesFiliere(ids);
+
+        filiereRepository.deleteAllById(ids);
     }
 
     @Override
+    @Transactional
     public void deleteByCodeDepartement(String codeDepartement) throws ElementNotFoundException {
 
         List<Filiere> foundFilieres = filiereRepository.findAllByCodeDepartement(codeDepartement);
@@ -376,6 +425,7 @@ public class FiliereServiceImp implements FiliereService {
     }
 
     @Override
+    @Transactional
     public void deleteByCodeDepartement(Set<String> codes) throws ElementNotFoundException {
         List<Filiere> foundFilieres = filiereRepository.findAllByCodeDepartementIn(codes);
 
@@ -428,5 +478,36 @@ public class FiliereServiceImp implements FiliereService {
             );
         }
         return filiereByDepartementResponses;
+    }
+
+
+    @Override
+    public boolean existsAllId(Set<String> codesFiliere) throws ElementNotFoundException {
+
+        List<String> foundFiliereCodes = filiereRepository.findAllById(codesFiliere)
+                .stream().map(Filiere::getCodeFiliere).toList();
+
+        if (codesFiliere.size() != foundFiliereCodes.size()) {
+            throw new ElementNotFoundException(
+                    CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
+                    new Object[]{ELEMENT_TYPE},
+                    codesFiliere.stream()
+                            .filter(code -> !foundFiliereCodes.contains(code))
+                            .toList()
+            );
+        }
+
+        return true;
+    }
+
+    @Override
+    public void handleUtilisateurDeletion(Set<String> codeUtilisateurs) {
+        List<Filiere> filieres = filiereRepository.findAllByCodeChefFiliereIn(codeUtilisateurs);
+
+        filieres.forEach(filiere -> {
+            filiere.setCodeChefFiliere(null);
+        });
+
+        filiereRepository.saveAll(filieres);
     }
 }

@@ -17,6 +17,7 @@ import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 @Configuration(proxyBeanMethods = false)
 public class WebClientConfig {
     private final String FILIERE_SERVICE_NAME = "FILIERE-SERVICE";
+    private final String UTILISATEUR_SERVICE_NAME = "UTILISATEUR-SERVICE";
 
     @Bean
     @LoadBalanced
@@ -40,15 +41,28 @@ public class WebClientConfig {
 
     @Bean
     public FiliereClient filiereClient(WebClient.Builder builder) {
-        WebClient elementWebClient = builder
+        WebClient filiereWebClient = builder
                 .baseUrl("http://" + FILIERE_SERVICE_NAME)
                 .build();
 
         HttpServiceProxyFactory factory = HttpServiceProxyFactory
-                .builder(WebClientAdapter.forClient(elementWebClient))
+                .builder(WebClientAdapter.forClient(filiereWebClient))
                 .build();
 
         return factory.createClient(FiliereClient.class);
+    }
+
+    @Bean
+    public UtilisateurClient utilisateurClient(WebClient.Builder builder) {
+        WebClient utilisateurWebClient = builder
+                .baseUrl("http://" + UTILISATEUR_SERVICE_NAME)
+                .build();
+
+        HttpServiceProxyFactory factory = HttpServiceProxyFactory
+                .builder(WebClientAdapter.forClient(utilisateurWebClient))
+                .build();
+
+        return factory.createClient(UtilisateurClient.class);
     }
 
 }

@@ -45,6 +45,7 @@ public interface UtilisateurService {
 
     void deleteAllById(Set<String> codeList) throws ElementNotFoundException;
 
-
     boolean exists(Set<String> codeList);
+
+    void handleKeyDepartementDeletion(Set<String> codeDepartement);
 }
