@@ -333,9 +333,12 @@ public class UtilisateurServiceImpl implements UtilisateurService {
         if (!roleCodes.isEmpty())
             roleService.exists(roleCodes);
 
-        Set<String> departementCodes = requestList.stream()
-                .map(Utilisateur::getCodeDepartement)
-                .collect(Collectors.toSet());
+        Set<String> departementCodes = new HashSet<>();
+        requestList.forEach(utilisateur -> {
+            if (utilisateur.getCodeDepartement() != null) {
+                departementCodes.add(utilisateur.getCodeDepartement());
+            }
+        });
         if (!departementCodes.isEmpty()) {
             departementClient.existsAll(departementCodes);
         }

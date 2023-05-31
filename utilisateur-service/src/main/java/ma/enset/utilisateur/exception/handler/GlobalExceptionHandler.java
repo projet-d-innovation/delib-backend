@@ -57,6 +57,20 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 );
     }
 
+    @ExceptionHandler(InvalidSheetException.class)
+    @ResponseStatus(HttpStatus.NOT_ACCEPTABLE)
+    public ResponseEntity<ExceptionResponse> handleInvalidSheetException(InvalidSheetException e) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_ACCEPTABLE)
+                .body(
+                        ExceptionResponse.builder()
+                                .code(HttpStatus.NOT_ACCEPTABLE.value())
+                                .status(HttpStatus.NOT_ACCEPTABLE.name())
+                                .message(getMessage(e))
+                                .build()
+                );
+    }
+
     @ExceptionHandler(ElementNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ResponseEntity<ExceptionResponse> handleElementNotFoundException(ElementNotFoundException e) {
