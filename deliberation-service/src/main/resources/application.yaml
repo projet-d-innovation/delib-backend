@@ -1,0 +1,28 @@
+server:
+  port:
+
+spring:
+  application:
+    name: deliberation-service
+
+  datasource:
+    url:
+    username:
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    generate-ddl: true
+    database-platform:
+
+  messages:
+    basename: messages.messages
+    encoding: UTF-8
+
+eureka:
+  instance:
+    prefer-ip-address: true
+  client:
+    service-url:
+      defaultZone:
