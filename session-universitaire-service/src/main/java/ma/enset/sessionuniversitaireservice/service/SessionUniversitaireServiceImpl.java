@@ -7,15 +7,18 @@ import ma.enset.sessionuniversitaireservice.dto.SessionCreationRequest;
 import ma.enset.sessionuniversitaireservice.dto.SessionPagingResponse;
 import ma.enset.sessionuniversitaireservice.dto.SessionResponse;
 import ma.enset.sessionuniversitaireservice.dto.SessionUpdateRequest;
+import ma.enset.sessionuniversitaireservice.exception.DuplicateEntryException;
 import ma.enset.sessionuniversitaireservice.exception.ElementAlreadyExistsException;
 import ma.enset.sessionuniversitaireservice.exception.ElementNotFoundException;
 import ma.enset.sessionuniversitaireservice.mapper.SessionUniversitaireMapper;
 import ma.enset.sessionuniversitaireservice.model.SessionUniversitaire;
 import ma.enset.sessionuniversitaireservice.repository.SessionUniversitaireRepository;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,50 +32,79 @@ public class SessionUniversitaireServiceImpl implements SessionUniversitaireServ
     private final SessionUniversitaireMapper mapper;
 
     @Override
-    public SessionResponse save(final SessionCreationRequest request)
-        throws ElementAlreadyExistsException {
+    public SessionResponse save(SessionCreationRequest request) throws ElementAlreadyExistsException {
 
-        if (repository.existsById(request.id())) {
+        SessionUniversitaire session = mapper.toSessionUniversitaire(request);
+
+        try {
+            return mapper.toSessionResponse(repository.save(session));
+        } catch (DataIntegrityViolationException e) {
             throw new ElementAlreadyExistsException(
                 CoreConstants.BusinessExceptionMessage.ALREADY_EXISTS,
                 new Object[] {ELEMENT_TYPE, ID_FIELD_NAME, request.id()},
                 null
             );
         }
-
-        final SessionUniversitaire session = mapper.toSessionUniversitaire(request);
-
-        return mapper.toSessionResponse(repository.save(session));
     }
 
     @Override
-    public List<SessionResponse> saveAll(final List<SessionCreationRequest> request)
-        throws ElementAlreadyExistsException{
+    public List<SessionResponse> saveAll(List<SessionCreationRequest> request) throws ElementAlreadyExistsException,
+                                                                                        DuplicateEntryException {
 
-        final List<SessionUniversitaire> foundSessions = repository.findAllById(
+        int uniqueSessionsCount = (int) request.stream()
+                                                .map(SessionCreationRequest::id)
+                                                .distinct().count();
+
+        if (uniqueSessionsCount != request.size()) {
+            throw new DuplicateEntryException(
+                CoreConstants.BusinessExceptionMessage.DUPLICATE_ENTRY,
+                new Object[]{ELEMENT_TYPE}
+            );
+        }
+
+        List<SessionUniversitaire> foundSessions = repository.findAllById(
             request.stream()
-                .map(SessionCreationRequest::id)
-                .collect(Collectors.toSet())
+                    .map(SessionCreationRequest::id)
+                    .collect(Collectors.toSet())
         );
 
         if (!foundSessions.isEmpty()) {
             throw new ElementAlreadyExistsException(
                 CoreConstants.BusinessExceptionMessage.MANY_ALREADY_EXISTS,
-                new Object[] {ELEMENT_TYPE},
+                new Object[]{ELEMENT_TYPE},
                 foundSessions.stream()
-                    .map(SessionUniversitaire::getId)
+                            .map(SessionUniversitaire::getId)
+                            .toList()
+            );
+        }
+
+        List<SessionUniversitaire> sessions = mapper.toSessionUniversitaireList(request);
+
+        return mapper.toSessionResponseList(repository.saveAll(sessions));
+    }
+
+    @Override
+    public boolean existAllByIds(Set<String> ids) throws ElementNotFoundException {
+
+        List<String> foundSessionsIds = repository.findAllById(ids).stream()
+                                                    .map(SessionUniversitaire::getId).toList();
+
+        if (ids.size() != foundSessionsIds.size()) {
+            throw new ElementNotFoundException(
+                CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
+                new Object[] {ELEMENT_TYPE},
+                ids.stream()
+                    .filter(id -> !foundSessionsIds.contains(id))
                     .toList()
             );
         }
 
-        final List<SessionUniversitaire> sessionsUniversitaire =
-            mapper.toSessionUniversitaireList(request);
-
-        return mapper.toSessionResponseList(repository.saveAll(sessionsUniversitaire));
+        return true;
     }
 
     @Override
-    public SessionResponse findById(final String id) throws ElementNotFoundException {
+    public SessionResponse findById(String id) throws ElementNotFoundException {
+
         return mapper.toSessionResponse(
             repository.findById(id).orElseThrow(() ->
                 new ElementNotFoundException(
@@ -85,15 +117,37 @@ public class SessionUniversitaireServiceImpl implements SessionUniversitaireServ
     }
 
     @Override
-    public SessionPagingResponse findAll(final int page, final int size) {
+    public List<SessionResponse> findAllByIds(Set<String> ids) throws ElementNotFoundException {
+
+        List<SessionResponse> response = mapper.toSessionResponseList(repository.findAllById(ids));
+
+        if (ids.size() != response.size()) {
+            throw new ElementNotFoundException(
+                CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
+                new Object[] {ELEMENT_TYPE},
+                ids.stream()
+                    .filter(
+                        id -> !response.stream()
+                            .map(SessionResponse::id)
+                            .toList()
+                            .contains(id)
+                    )
+                    .toList()
+            );
+        }
+
+        return response;
+    }
+
+    @Override
+    public SessionPagingResponse findAll(int page, int size) {
         return mapper.toPagingResponse(repository.findAll(PageRequest.of(page, size)));
     }
 
     @Override
-    public SessionResponse update(final String id, final SessionUpdateRequest request)
-        throws ElementNotFoundException {
+    public SessionResponse update(String id, SessionUpdateRequest request) throws ElementNotFoundException {
 
-        final SessionUniversitaire sessionUniversitaire = repository.findById(id).orElseThrow(() ->
+        SessionUniversitaire session = repository.findById(id).orElseThrow(() ->
             new ElementNotFoundException(
                 CoreConstants.BusinessExceptionMessage.NOT_FOUND,
                 new Object[] {ELEMENT_TYPE, ID_FIELD_NAME, id},
@@ -101,24 +155,29 @@ public class SessionUniversitaireServiceImpl implements SessionUniversitaireServ
             )
         );
 
-        mapper.updateSessionUniversitaireFromDTO(request, sessionUniversitaire);
+        mapper.updateSessionUniversitaireFromDTO(request, session);
 
-        return mapper.toSessionResponse(repository.save(sessionUniversitaire));
+        return mapper.toSessionResponse(repository.save(session));
     }
 
     @Override
-    public void deleteById(final String id) throws ElementNotFoundException {
+    public void deleteById(String id) throws ElementNotFoundException {
+
         if (!repository.existsById(id)) {
             throw new ElementNotFoundException(
-                CoreConstants.BusinessExceptionMessage.ALREADY_EXISTS,
+                CoreConstants.BusinessExceptionMessage.NOT_FOUND,
                 new Object[] {ELEMENT_TYPE, ID_FIELD_NAME, id},
                 null
             );
         }
 
         repository.deleteById(id);
+    }
 
-        // TODO (aymane): trigger the deletion of the `Inscription Pedagogique`
-        //                that are linked endDate the `id`
+    @Override
+    public void deleteAllByIds(Set<String> ids) throws ElementNotFoundException {
+        existAllByIds(ids);
+
+        repository.deleteAllById(ids);
     }
 }
