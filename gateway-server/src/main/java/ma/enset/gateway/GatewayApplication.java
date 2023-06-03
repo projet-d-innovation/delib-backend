@@ -79,6 +79,13 @@ public class GatewayApplication {
                                 .filters(f -> f.rewritePath("/semestre-service/docs", "/v3/api-docs"))
                                 .uri("lb://semestre-service")
                 )
+                .route(
+                        r -> r.path("/api/v1/notes/**")
+                                .or()
+                                .path("/note-service/docs")
+                                .filters(f -> f.rewritePath("/note-service/docs", "/v3/api-docs"))
+                                .uri("lb://note-service")
+                )
                 .build();
     }
 }

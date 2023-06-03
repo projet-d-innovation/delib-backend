@@ -29,6 +29,7 @@ public class NoteElement {
     @AllArgsConstructor
     @NoArgsConstructor
     @Builder
+    @Data
     public static class NoteElementId implements java.io.Serializable {
         private String codeElement;
         private String sessionId;

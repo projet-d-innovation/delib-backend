@@ -6,6 +6,7 @@ import ma.enset.noteservice.dto.noteelement.NoteElementResponse;
 import ma.enset.noteservice.dto.noteelement.NoteElementUpdateRequest;
 import ma.enset.noteservice.exception.ElementAlreadyExistsException;
 import ma.enset.noteservice.exception.ElementNotFoundException;
+import ma.enset.noteservice.model.NoteElement;
 
 import java.util.List;
 import java.util.Set;
@@ -19,7 +20,12 @@ public interface NoteElementService {
 
     List<NoteElementResponse> updateAll(Set<NoteElementUpdateRequest> noteElements) throws ElementNotFoundException;
 
-    GroupedNotesElementResponse getNotesBySession(String sessionId) throws ElementNotFoundException;
+    GroupedNotesElementResponse getNotesBySession(String sessionId, boolean includeElement) throws ElementNotFoundException;
 
-    Set<GroupedNotesElementResponse> getNotesBySessions(Set<String> sessionIdList) throws ElementNotFoundException;
+    Set<GroupedNotesElementResponse> getNotesBySessions(Set<String> sessionIdList, boolean includeElement) throws ElementNotFoundException;
+
+    void delete(NoteElement.NoteElementId noteElementId) throws ElementNotFoundException;
+    
+    void deleteAll(Set<NoteElement.NoteElementId> noteElementIdList) throws ElementNotFoundException;
+
 }

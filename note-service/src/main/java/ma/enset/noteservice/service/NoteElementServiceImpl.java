@@ -2,7 +2,9 @@ package ma.enset.noteservice.service;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import ma.enset.noteservice.client.ElementClient;
 import ma.enset.noteservice.constant.CoreConstants;
+import ma.enset.noteservice.dto.ElementResponse;
 import ma.enset.noteservice.exception.DuplicateEntryException;
 import ma.enset.noteservice.exception.ElementAlreadyExistsException;
 import ma.enset.noteservice.exception.ElementNotFoundException;
@@ -27,6 +29,9 @@ public class NoteElementServiceImpl implements NoteElementService {
     private final NoteElementMapper noteElementMapper;
     private final NoteElementRepository noteElementRepository;
 
+
+    private final ElementClient elementClient;
+
     @Override
     public NoteElementResponse save(final NoteElementCreationRequest noteElementCreationRequest) throws ElementAlreadyExistsException {
         if (noteElementRepository.existsById(
@@ -46,7 +51,10 @@ public class NoteElementServiceImpl implements NoteElementService {
 
         // TODO (ahmed): check if session exists
 
-        // TODO (ahmed): check if element exists
+        elementClient.existAll(
+                Set.of(noteElementCreationRequest.codeElement())
+        );
+
 
         NoteElement createdNoteElement = null;
 
@@ -96,7 +104,11 @@ public class NoteElementServiceImpl implements NoteElementService {
 
         // TODO (ahmed): check if sessions exists
 
-        // TODO (ahmed): check if elements exists
+        elementClient.existAll(
+                noteElementCreationRequests.stream()
+                        .map(NoteElementCreationRequest::codeElement)
+                        .collect(Collectors.toSet())
+        );
 
         final List<NoteElement> noteElements = noteElementMapper.toNoteList(noteElementCreationRequests);
 
@@ -182,35 +194,118 @@ public class NoteElementServiceImpl implements NoteElementService {
     }
 
     @Override
-    public GroupedNotesElementResponse getNotesBySession(String sessionId) throws ElementNotFoundException {
+    public GroupedNotesElementResponse getNotesBySession(String sessionId, boolean includeElement) throws ElementNotFoundException {
 
         // TODO (ahmed) : check if session exists
 
-        final List<NoteElement> noteElements = noteElementRepository.findBySessionId(sessionId);
+        final List<NoteElementResponse> noteElements = noteElementMapper.toNoteResponseList(
+                noteElementRepository.findBySessionId(sessionId)
+        );
+
+        if (includeElement && !noteElements.isEmpty()) {
+            Set<String> codeElementList = noteElements.stream()
+                    .map(NoteElementResponse::getCodeElement)
+                    .collect(Collectors.toSet());
+            if (!codeElementList.isEmpty()) {
+                final List<ElementResponse> elementResponses = elementClient.getAllByIds(codeElementList).getBody();
+
+                if (elementResponses != null && !elementResponses.isEmpty()) {
+                    noteElements.forEach(
+                            noteElementResponse -> {
+                                elementResponses.stream()
+                                        .filter(elementResponse -> elementResponse.codeElement().equals(noteElementResponse.getCodeElement()))
+                                        .findFirst()
+                                        .ifPresent(noteElementResponse::setElement);
+                            }
+                    );
+                }
+            }
+        }
 
         return GroupedNotesElementResponse.builder()
                 .sessionId(sessionId)
-                .notes(noteElementMapper.toNoteResponseList(noteElements))
+                .notes(noteElements)
                 .build();
     }
 
     @Override
-    public Set<GroupedNotesElementResponse> getNotesBySessions(Set<String> sessionIdList) throws ElementNotFoundException {
+    public Set<GroupedNotesElementResponse> getNotesBySessions(Set<String> sessionIdList, boolean includeElement) throws ElementNotFoundException {
 
         // TODO (ahmed) : check if sessions exists
 
-        final List<NoteElement> noteElements = noteElementRepository.findBySessionIdIn(sessionIdList);
+        final List<NoteElementResponse> noteElementResponses = noteElementMapper.toNoteResponseList(
+                noteElementRepository.findBySessionIdIn(sessionIdList)
+        );
 
-        final Map<String, List<NoteElement>> groupedNotes = noteElements.stream()
-                .collect(Collectors.groupingBy(NoteElement::getSessionId));
+
+        if (includeElement && !noteElementResponses.isEmpty()) {
+            Set<String> codeElementList = noteElementResponses.stream()
+                    .map(NoteElementResponse::getCodeElement)
+                    .collect(Collectors.toSet());
+            if (!codeElementList.isEmpty()) {
+                final List<ElementResponse> elementResponses = elementClient.getAllByIds(codeElementList).getBody();
+
+                if (elementResponses != null && !elementResponses.isEmpty()) {
+                    noteElementResponses.forEach(noteElementResponse -> {
+                        elementResponses.forEach(elementResponse -> {
+                            if (elementResponse.codeElement().equals(noteElementResponse.getCodeElement())) {
+                                noteElementResponse.setElement(elementResponse);
+                            }
+                        });
+                    });
+                }
+            }
+        }
+
+        final Map<String, List<NoteElementResponse>> groupedNotes =
+                noteElementResponses.stream()
+                        .collect(Collectors.groupingBy(NoteElementResponse::getSessionId));
+
 
         return groupedNotes.entrySet().stream()
                 .map(
                         entry -> GroupedNotesElementResponse.builder()
                                 .sessionId(entry.getKey())
-                                .notes(noteElementMapper.toNoteResponseList(entry.getValue()))
+                                .notes(entry.getValue())
                                 .build()
                 )
                 .collect(Collectors.toSet());
+    }
+
+    @Override
+    public void delete(NoteElement.NoteElementId noteElementId) throws ElementNotFoundException {
+
+        if (!noteElementRepository.existsById(noteElementId)) {
+            throw new ElementNotFoundException(
+                    CoreConstants.BusinessExceptionMessage.NOT_FOUND,
+                    new Object[]{ELEMENT_TYPE, ID_FIELD_NAME,
+                            "(" + noteElementId.getCodeElement() + "," + noteElementId.getSessionId() + ")"
+                    },
+                    null
+            );
+        }
+
+        noteElementRepository.deleteById(noteElementId);
+
+    }
+
+    @Override
+    public void deleteAll(Set<NoteElement.NoteElementId> noteElementIdList) throws ElementNotFoundException {
+
+        List<NoteElement> foundNoteElements = noteElementRepository.findAllById(noteElementIdList);
+
+        if (foundNoteElements.size() != noteElementIdList.size()) {
+            throw new ElementNotFoundException(
+                    CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
+                    new Object[]{ELEMENT_TYPE, ID_FIELD_NAME,
+                            noteElementIdList.stream()
+                                    .map(noteElementId -> "(" + noteElementId + ")")
+                                    .collect(Collectors.joining(","))
+                    },
+                    null
+            );
+        }
+
+        noteElementRepository.deleteAll(foundNoteElements);
     }
 }

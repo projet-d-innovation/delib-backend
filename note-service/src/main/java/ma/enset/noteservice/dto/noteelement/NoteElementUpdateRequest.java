@@ -12,7 +12,6 @@ public record NoteElementUpdateRequest(
         @NotBlank
         String sessionId,
         @DecimalMin("0") @DecimalMax("20")
-        BigDecimal note,
-        boolean redoublant
+        BigDecimal note
 ) {
 }
