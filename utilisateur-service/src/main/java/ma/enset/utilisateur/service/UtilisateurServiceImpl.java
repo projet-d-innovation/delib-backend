@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -335,7 +336,9 @@ public class UtilisateurServiceImpl implements UtilisateurService {
 
         Set<String> departementCodes = requestList.stream()
                 .map(Utilisateur::getCodeDepartement)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
+
         if (!departementCodes.isEmpty()) {
             departementClient.existsAll(departementCodes);
         }
