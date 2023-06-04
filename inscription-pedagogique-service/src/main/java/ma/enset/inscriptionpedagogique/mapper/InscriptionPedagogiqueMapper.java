@@ -20,6 +20,8 @@ public interface InscriptionPedagogiqueMapper {
 
     InscriptionPedagogique toInscriptionEntity(InscriptionCreationRequest inscriptionCreationRequest);
 
+    InscriptionPedagogique toInscriptionEntity(RequiredSearchParams searchParams);
+
     List<InscriptionPedagogique> toInscriptionEntityList(List<InscriptionCreationRequest> inscriptionCreationRequestList);
 
     @Mapping(target = "etudiant.code", source = "inscriptionEntity.codeEtudiant")
