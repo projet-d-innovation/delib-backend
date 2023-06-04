@@ -1,22 +1,24 @@
 package ma.enset.inscriptionpedagogique.dto;
 
 import lombok.Builder;
+import lombok.Data;
 
 import java.time.LocalDate;
 
 @Builder
-public record EtudiantResponse (
+@Data
+public class EtudiantResponse {
 
-    String code,
-    String cne,
-    String nom,
-    String prenom,
-    String cin,
-    String telephone,
-    String adresse,
-    LocalDate dateNaissance,
-    String ville,
-    String pays,
-    String photo
+    private final String code;
+    private String cne;
+    private String nom;
+    private String prenom;
+    private String cin;
+    private String telephone;
+    private String adresse;
+    private LocalDate dateNaissance;
+    private String ville;
+    private String pays;
+    private String photo;
     
-) { }
+}
