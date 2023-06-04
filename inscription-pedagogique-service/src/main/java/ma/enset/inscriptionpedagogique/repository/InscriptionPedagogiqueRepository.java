@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 
 @Repository
 public interface InscriptionPedagogiqueRepository extends JpaRepository<InscriptionPedagogique, Long> {
@@ -14,5 +15,8 @@ public interface InscriptionPedagogiqueRepository extends JpaRepository<Inscript
     
     @Transactional
     void deleteAllByCodeEtudiant(String codeEtudiant);
+
+    @Transactional
+    void deleteAllByCodeEtudiantIn(Set<String> codesEtudiant);
 
 }
