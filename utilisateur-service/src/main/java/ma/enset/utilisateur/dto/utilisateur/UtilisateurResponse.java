@@ -29,6 +29,8 @@ public class UtilisateurResponse {
     private String ville;
     private String pays;
     private String photo;
+
+    private String sexe;
     private String codeDepartement;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)

@@ -339,6 +339,7 @@ public class UtilisateurServiceImpl implements UtilisateurService {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
+
         if (!departementCodes.isEmpty()) {
             departementClient.existsAll(departementCodes);
         }

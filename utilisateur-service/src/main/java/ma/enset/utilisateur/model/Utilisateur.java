@@ -6,6 +6,7 @@ import ma.enset.utilisateur.dto.DepartementResponse;
 import ma.enset.utilisateur.dto.ElementResponse;
 import org.springframework.data.domain.Persistable;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -26,8 +27,10 @@ public class Utilisateur implements Persistable<String> {
     private String prenom;
     private String telephone;
     private String adresse;
+    @Column(length = 1)
+    private String sexe;
     private String photo;
-    private LocalDateTime dateNaissance;
+    private LocalDate dateNaissance;
     private String ville;
     private String pays = "Maroc";
 
