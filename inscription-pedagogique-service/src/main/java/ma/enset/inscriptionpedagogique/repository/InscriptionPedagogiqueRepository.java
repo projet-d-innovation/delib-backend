@@ -9,9 +9,6 @@ import java.util.List;
 
 @Repository
 public interface InscriptionPedagogiqueRepository extends JpaRepository<InscriptionPedagogique, Long> {
-    List<InscriptionPedagogique> findAllByCodeFiliereAndCodeSessionUniversitaireAndAnnee(
-        String codeFilier, String codeSessionUniversitaire, int annee
-    );
 
     List<InscriptionPedagogique> findAllByCodeEtudiant(String codeEtudiant);
     
