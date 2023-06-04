@@ -1,11 +1,9 @@
 package ma.enset.inscriptionpedagogique.mapper;
 
-import ma.enset.inscriptionpedagogique.dto.EtudiantResponse;
-import ma.enset.inscriptionpedagogique.dto.InscriptionCreationRequest;
-import ma.enset.inscriptionpedagogique.dto.InscriptionResponse;
-import ma.enset.inscriptionpedagogique.dto.InscriptionUpdateRequest;
+import ma.enset.inscriptionpedagogique.dto.*;
 import ma.enset.inscriptionpedagogique.model.InscriptionPedagogique;
 import org.mapstruct.*;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 import java.util.Map;
@@ -24,20 +22,22 @@ public interface InscriptionPedagogiqueMapper {
 
     List<InscriptionPedagogique> toInscriptionEntityList(List<InscriptionCreationRequest> inscriptionCreationRequestList);
 
-    InscriptionResponse toInscriptionResponse(InscriptionPedagogique inscriptionEntity, EtudiantResponse etudiant);
+    @Mapping(target = "etudiant.code", source = "inscriptionEntity.codeEtudiant")
+    InscriptionResponse toInscriptionResponse(InscriptionPedagogique inscriptionEntity);
 
-    default List<InscriptionResponse> toInscriptionResponseList(List<InscriptionPedagogique> inscriptionEntityList,
-                                                                List<EtudiantResponse> etudiantList) {
+    List<InscriptionResponse> toInscriptionResponseList(List<InscriptionPedagogique> inscriptionEntityList);
 
-        Map<String, EtudiantResponse> etudiantMap = etudiantList.stream()
-            .collect(Collectors.toMap(EtudiantResponse::code, Function.identity()));
+    void enrichEtudiantResponse(EtudiantResponse source, @MappingTarget EtudiantResponse target);
 
-        return inscriptionEntityList.stream()
-            .map(inscriptionEntity -> toInscriptionResponse(
-                inscriptionEntity,
-                etudiantMap.get(inscriptionEntity.getCodeEtudiant()))
-            )
-            .toList();
+    default void enrichEtudiantResponseList(List<EtudiantResponse> source, List<EtudiantResponse> target) {
+
+        Map<String, EtudiantResponse> sourceEtudiantMap = source.stream()
+            .collect(Collectors.toMap(EtudiantResponse::getCode, Function.identity()));
+
+        target.forEach(etudiantResponse -> enrichEtudiantResponse(
+            Objects.requireNonNull(sourceEtudiantMap.get(etudiantResponse.getCode())),
+            etudiantResponse
+        ));
     }
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
@@ -55,5 +55,12 @@ public interface InscriptionPedagogiqueMapper {
             Objects.requireNonNull(inscriptionEntityMap.get(inscriptionUpdateRequest.id()))
         ));
     }
+
+    @Mapping(target = "page", expression = "java(inscriptionPage.getNumber())")
+    @Mapping(target = "size", expression = "java(inscriptionPage.getSize())")
+    @Mapping(target = "totalPages", expression = "java(inscriptionPage.getTotalPages())")
+    @Mapping(target = "totalElements", expression = "java(inscriptionPage.getNumberOfElements())")
+    @Mapping(target = "records", expression = "java(toInscriptionResponseList(inscriptionPage.getContent()))")
+    InscriptionPagingResponse toPagingResponse(Page<InscriptionPedagogique> inscriptionPage);
 
 }
