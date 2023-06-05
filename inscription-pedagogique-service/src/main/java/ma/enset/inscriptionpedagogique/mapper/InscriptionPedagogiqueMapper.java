@@ -45,6 +45,7 @@ public interface InscriptionPedagogiqueMapper {
         ));
     }
 
+    @Mapping(target = "id", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateInscriptionEntityFromDTO(InscriptionUpdateRequest inscriptionUpdateRequest,
                                         @MappingTarget InscriptionPedagogique inscriptionEntity);
