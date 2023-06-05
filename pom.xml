@@ -24,6 +24,7 @@
         <module>session-universitaire-service</module>
         <module>deliberation-service</module>
         <module>note-service</module>
+        <module>inscription-pedagogique-service</module>
     </modules>
 
     <properties>
