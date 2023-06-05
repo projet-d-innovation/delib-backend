@@ -14,7 +14,7 @@ import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 @Configuration(proxyBeanMethods = false)
 public class WebClientConfig {
 
-    private final String UTILISATEUR_SERVICE_NAME = "USER-SERVICE";
+    private final String UTILISATEUR_SERVICE_NAME = "UTILISATEUR-SERVICE";
     private final String FILIERE_SERVICE_NAME = "FILIERE-SERVICE";
     private final String SESSION_UNIVERSITAIRE_SERVICE_NAME = "SESSION-UNIVERSITAIRE-SERVICE";
 
