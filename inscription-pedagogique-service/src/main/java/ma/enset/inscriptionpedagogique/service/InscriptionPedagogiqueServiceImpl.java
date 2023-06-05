@@ -237,6 +237,8 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
         }
 
         repository.deleteById(id);
+
+        // TODO: delete related data
     }
 
     @Override
@@ -244,6 +246,8 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
         existAllByIds(ids);
 
         repository.deleteAllById(ids);
+
+        // TODO: delete related data
     }
 
     @Override
