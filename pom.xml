@@ -23,6 +23,7 @@
         <module>semestre-service</module>
         <module>session-universitaire-service</module>
         <module>deliberation-service</module>
+        <module>note-service</module>
     </modules>
 
     <properties>
