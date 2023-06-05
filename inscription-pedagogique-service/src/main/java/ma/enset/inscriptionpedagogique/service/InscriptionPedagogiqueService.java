@@ -3,6 +3,7 @@ package ma.enset.inscriptionpedagogique.service;
 import ma.enset.inscriptionpedagogique.dto.*;
 import ma.enset.inscriptionpedagogique.exception.DuplicateEntryException;
 import ma.enset.inscriptionpedagogique.exception.ElementNotFoundException;
+import ma.enset.inscriptionpedagogique.model.InscriptionPedagogique;
 
 import java.util.List;
 import java.util.Set;
@@ -34,5 +35,7 @@ public interface InscriptionPedagogiqueService {
     void deleteAllByCodeEtudiant(String codeEtudiant);
 
     void deleteAllByCodesEtudiant(Set<String> codesEtudiant);
+
+    List<InscriptionPedagogique> findAll(RequiredSearchParams searchParams);
 
 }
