@@ -145,14 +145,12 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
     @Override
     public List<InscriptionResponse> findAllBySearchParams(RequiredSearchParams searchParams, boolean includeEtudiantInfo) {
 
-        InscriptionPedagogique inscription = mapper.toInscriptionEntity(searchParams);
+        List<InscriptionResponse> response = mapper.toInscriptionResponseList(findAll(searchParams));
 
-        List<InscriptionResponse> response = mapper.toInscriptionResponseList(
-            repository.findAll(buildQueryExample(inscription))
-        );
-
-        handleEtudiantInfoInclusion(includeEtudiantInfo, response);
-
+        if (!response.isEmpty()) {
+            handleEtudiantInfoInclusion(includeEtudiantInfo, response);
+        }
+        
         return response;
     }
 
@@ -274,6 +272,14 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
                 response
             );
         }
+    }
+
+    @Override
+    public List<InscriptionPedagogique> findAll(RequiredSearchParams searchParams) {
+
+        InscriptionPedagogique inscription = mapper.toInscriptionEntity(searchParams);
+
+        return repository.findAll(buildQueryExample(inscription));
     }
 
     private Example<InscriptionPedagogique> buildQueryExample(InscriptionPedagogique inscription) {
