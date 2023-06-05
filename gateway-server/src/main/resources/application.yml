@@ -46,6 +46,9 @@ springdoc:
       - url: /element-service/docs
         name: Element Service
         primaryName: Element Service
+      - url: /note-service/docs
+        name: Note Service
+        primaryName: Note Service
 
 
 
