@@ -6,8 +6,10 @@ import ma.enset.inscriptionpedagogique.client.SessionUniversitaireClient;
 import ma.enset.inscriptionpedagogique.client.UtilisateurClient;
 import ma.enset.inscriptionpedagogique.constant.CoreConstants;
 import ma.enset.inscriptionpedagogique.dto.*;
+import ma.enset.inscriptionpedagogique.exception.ApiClientException;
 import ma.enset.inscriptionpedagogique.exception.DuplicateEntryException;
 import ma.enset.inscriptionpedagogique.exception.ElementNotFoundException;
+import ma.enset.inscriptionpedagogique.exception.handler.dto.ExceptionResponse;
 import ma.enset.inscriptionpedagogique.mapper.InscriptionPedagogiqueMapper;
 import ma.enset.inscriptionpedagogique.model.InscriptionPedagogique;
 import ma.enset.inscriptionpedagogique.repository.InscriptionPedagogiqueRepository;
@@ -36,7 +38,7 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
     @Override
     public InscriptionResponse save(InscriptionCreationRequest request) {
 
-        utilisateurClient.allEtudiantsExist(Set.of(request.codeEtudiant()));
+        allEtudiantsExist(Set.of(request.codeEtudiant()));
 
         filiereClient.allFilieresExist(Set.of(request.codeFiliere()));
 
@@ -50,7 +52,7 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
     @Override
     public List<InscriptionResponse> saveAll(List<InscriptionCreationRequest> request) {
 
-        utilisateurClient.allEtudiantsExist(
+        allEtudiantsExist(
             request.stream()
                 .map(InscriptionCreationRequest::codeEtudiant)
                 .collect(Collectors.toSet())
@@ -292,5 +294,21 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
             .withIgnorePaths("note");
 
         return Example.of(inscription, matcher);
+    }
+
+    private void allEtudiantsExist(Set<String> codesEtudiant) throws ApiClientException {
+        try {
+            utilisateurClient.allEtudiantsExist(codesEtudiant);
+        } catch (ApiClientException e) {
+            injectCustomEtudiantMessage(e.getException());
+            throw new ApiClientException(e.getException());
+        }
+    }
+
+    private void injectCustomEtudiantMessage(ExceptionResponse response) {
+        String customMessage = response.getMessage()
+            .replaceAll("(Utilisateur|User)", "Etudiant");
+
+        response.setMessage(customMessage);
     }
 }
