@@ -29,6 +29,7 @@ public interface InscriptionPedagogiqueMapper {
 
     List<InscriptionResponse> toInscriptionResponseList(List<InscriptionPedagogique> inscriptionEntityList);
 
+    @Mapping(target = "code", ignore = true)
     void fillStudentInfo(EtudiantResponse source, @MappingTarget EtudiantResponse target);
 
     default void fillInscriptionResponseListStudentInfo(List<EtudiantResponse> etudiantResponseList,
