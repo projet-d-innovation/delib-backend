@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port:
 
 spring:
   application:
@@ -27,31 +27,31 @@ springdoc:
     urls:
       - url: /v3/api-docs
         name: API Gateway Service
-        primaryName: API Gateway Service
+        displayName: API Gateway Service
       - url: /utilisateur-service/docs
         name: Utilisateur Service
-        primaryName: Utilisateur Service
+        displayName: Utilisateur Service
       - url: /departement-service/docs
         name: Departement Service
-        primaryName: Departement Service
+        displayName: Departement Service
       - url: /filiere-service/docs
         name: Filiere Service
-        primaryName: Filiere Service
+        displayName: Filiere Service
       - url: /semestre-service/docs
         name: Semestre Service
-        primaryName: Semestre Service
+        displayName: Semestre Service
       - url: /module-service/docs
         name: Module Service
-        primaryName: Module Service
+        displayName: Module Service
       - url: /element-service/docs
         name: Element Service
-        primaryName: Element Service
+        displayName: Element Service
       - url: /deliberation-service/docs
         name: Deliberation Service
-        primaryName: Deliberation Service
+        displayName: Deliberation Service
       - url: /note-service/docs
         name: Note Service
-        primaryName: Note Service
+        displayName: Note Service
 
 
 
