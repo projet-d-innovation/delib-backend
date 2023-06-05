@@ -1,74 +1,77 @@
 server:
-  port:
+    port:
 
 spring:
-  application:
-    name: gateway-server
-  cloud:
-    gateway:
-      discovery:
-        locator:
-          enabled: true
-      globals:
-        corsConfigurations:
-          '[/**]':
-            allowedOrigins: "*"
-            allowedMethods: "*"
-            allowedHeaders: "*"
+    application:
+        name: gateway-server
+    cloud:
+        gateway:
+            discovery:
+                locator:
+                    enabled: true
+            globals:
+                corsConfigurations:
+                    '[/**]':
+                        allowedOrigins: "*"
+                        allowedMethods: "*"
+                        allowedHeaders: "*"
 
 springdoc:
-  enable-native-support: true
-  api-docs:
-    enabled: true
-  swagger-ui:
-    enabled: true
-    path: /swagger-ui.html
-    config-url: /v3/api-docs/swagger-config
-    urls:
-      - url: /v3/api-docs
-        name: API Gateway Service
-        displayName: API Gateway Service
-      - url: /utilisateur-service/docs
-        name: Utilisateur Service
-        displayName: Utilisateur Service
-      - url: /departement-service/docs
-        name: Departement Service
-        displayName: Departement Service
-      - url: /filiere-service/docs
-        name: Filiere Service
-        displayName: Filiere Service
-      - url: /semestre-service/docs
-        name: Semestre Service
-        displayName: Semestre Service
-      - url: /module-service/docs
-        name: Module Service
-        displayName: Module Service
-      - url: /element-service/docs
-        name: Element Service
-        displayName: Element Service
-      - url: /deliberation-service/docs
-        name: Deliberation Service
-        displayName: Deliberation Service
-      - url: /note-service/docs
-        name: Note Service
-        displayName: Note Service
+    enable-native-support: true
+    api-docs:
+        enabled: true
+    swagger-ui:
+        enabled: true
+        path: /swagger-ui.html
+        config-url: /v3/api-docs/swagger-config
+        urls:
+            - url: /v3/api-docs
+              name: API Gateway Service
+              displayName: API Gateway Service
+            - url: /utilisateur-service/docs
+              name: Utilisateur Service
+              displayName: Utilisateur Service
+            - url: /departement-service/docs
+              name: Departement Service
+              displayName: Departement Service
+            - url: /filiere-service/docs
+              name: Filiere Service
+              displayName: Filiere Service
+            - url: /semestre-service/docs
+              name: Semestre Service
+              displayName: Semestre Service
+            - url: /module-service/docs
+              name: Module Service
+              displayName: Module Service
+            - url: /element-service/docs
+              name: Element Service
+              displayName: Element Service
+            - url: /deliberation-service/docs
+              name: Deliberation Service
+              displayName: Deliberation Service
+            - url: /note-service/docs
+              name: Note Service
+              displayName: Note Service
+            -   url: /inscription-pedagogique-service/docs
+                name: Inscription Pedagogique Service
+                displayName: Inscription Pedagogique Service
 
 
 
 
 logging:
-  level:
-    org.springframework.cloud.gateway: TRACE
-    org:
-      springframework:
-        cloud:
-          gateway:
-            route:
-              RouteDefinitionRouteLocator: TRACE
+    level:
+        org.springframework.cloud.gateway: TRACE
+        org:
+            springframework:
+                cloud:
+                    gateway:
+                        route:
+                            RouteDefinitionRouteLocator: TRACE
 
 eureka:
-  instance:
-    prefer-ip-address: true
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka
+    instance:
+        prefer-ip-address: true
+    client:
+        service-url:
+            defaultZone: http://localhost:8761/eureka
