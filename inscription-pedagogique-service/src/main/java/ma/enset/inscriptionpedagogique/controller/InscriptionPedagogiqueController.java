@@ -6,10 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
-import ma.enset.inscriptionpedagogique.dto.InscriptionCreationRequest;
-import ma.enset.inscriptionpedagogique.dto.InscriptionPagingResponse;
-import ma.enset.inscriptionpedagogique.dto.InscriptionResponse;
-import ma.enset.inscriptionpedagogique.dto.InscriptionUpdateRequest;
+import ma.enset.inscriptionpedagogique.dto.*;
 import ma.enset.inscriptionpedagogique.service.InscriptionPedagogiqueService;
 import ma.enset.inscriptionpedagogique.validationgroups.OnBulkUpdate;
 import org.hibernate.validator.constraints.Range;
@@ -61,6 +58,13 @@ public class InscriptionPedagogiqueController {
                                                                  @RequestParam(defaultValue = "false") boolean includeEtudiantInfo) {
 
         return ResponseEntity.ok(service.findAllByIds(ids, includeEtudiantInfo));
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<InscriptionResponse>> getAllBySearchParams(@Valid RequiredSearchParams searchParams,
+                                                                          @RequestParam(defaultValue = "true") boolean includeEtudiantInfo) {
+
+        return ResponseEntity.ok(service.findAllBySearchParams(searchParams, includeEtudiantInfo));
     }
 
     @GetMapping
