@@ -14,23 +14,23 @@ public interface InscriptionPedagogiqueService {
 
     List<InscriptionResponse> saveAll(List<InscriptionCreationRequest> request);
 
-    boolean existAllByIds(Set<Long> ids) throws ElementNotFoundException;
+    boolean existAllByIds(Set<String> ids) throws ElementNotFoundException;
 
-    InscriptionResponse findById(Long id, boolean includeEtudiantInfo) throws ElementNotFoundException;
+    InscriptionResponse findById(String id, boolean includeEtudiantInfo) throws ElementNotFoundException;
 
-    List<InscriptionResponse> findAllByIds(Set<Long> ids, boolean includeEtudiantInfo) throws ElementNotFoundException;
+    List<InscriptionResponse> findAllByIds(Set<String> ids, boolean includeEtudiantInfo) throws ElementNotFoundException;
 
     List<InscriptionResponse> findAllBySearchParams(RequiredSearchParams searchParams, boolean includeEtudiantInfo);
 
     InscriptionPagingResponse findAll(int page, int size, boolean includeEtudiantInfo);
 
-    InscriptionResponse update(Long id, InscriptionUpdateRequest request) throws ElementNotFoundException;
+    InscriptionResponse update(String id, InscriptionUpdateRequest request) throws ElementNotFoundException;
 
     List<InscriptionResponse> updateAll(List<InscriptionUpdateRequest> request) throws ElementNotFoundException, DuplicateEntryException;
 
-    void deleteById(Long id) throws ElementNotFoundException;
+    void deleteById(String id) throws ElementNotFoundException;
 
-    void deleteAllByIds(Set<Long> ids) throws ElementNotFoundException;
+    void deleteAllByIds(Set<String> ids) throws ElementNotFoundException;
 
     void deleteAllByCodeEtudiant(String codeEtudiant);
 

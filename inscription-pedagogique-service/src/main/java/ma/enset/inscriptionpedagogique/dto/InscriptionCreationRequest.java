@@ -29,4 +29,10 @@ public record InscriptionCreationRequest (
     @PositiveOrZero
     float note
 
-) { }
+) {
+
+    public String id() {
+        return codeEtudiant + '-' + codeFiliere + '-' + codeSessionUniversitaire + '-' + annee;
+    }
+
+}

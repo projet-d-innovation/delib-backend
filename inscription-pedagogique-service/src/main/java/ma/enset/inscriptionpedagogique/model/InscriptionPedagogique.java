@@ -7,12 +7,11 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-@ToString
-public class InscriptionPedagogique extends AbstractEntity<Long> {
+public class InscriptionPedagogique extends AbstractEntity<String> {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Setter(AccessLevel.NONE)
-    private Long id;
+    @Column(updatable = false)
+    private String id;
 
     @Column(nullable = false, updatable = false)
     private String codeEtudiant;

@@ -4,7 +4,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import ma.enset.inscriptionpedagogique.dto.*;
 import ma.enset.inscriptionpedagogique.service.InscriptionPedagogiqueService;
@@ -41,20 +40,20 @@ public class InscriptionPedagogiqueController {
     }
 
     @GetMapping("/exists")
-    public ResponseEntity<Void> existAllByIds(@RequestParam @NotEmpty Set<@NotBlank Long> ids) {
+    public ResponseEntity<Void> existAllByIds(@RequestParam @NotEmpty Set<@NotBlank String> ids) {
         service.existAllByIds(ids);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<InscriptionResponse> getById(@PathVariable long id,
+    public ResponseEntity<InscriptionResponse> getById(@PathVariable String id,
                                                        @RequestParam(defaultValue = "false") boolean includeEtudiantInfo) {
 
         return ResponseEntity.ok(service.findById(id, includeEtudiantInfo));
     }
 
     @GetMapping("/bulk")
-    public ResponseEntity<List<InscriptionResponse>> getAllByIds(@RequestParam Set<Long> ids,
+    public ResponseEntity<List<InscriptionResponse>> getAllByIds(@RequestParam @NotEmpty Set<@NotBlank String> ids,
                                                                  @RequestParam(defaultValue = "false") boolean includeEtudiantInfo) {
 
         return ResponseEntity.ok(service.findAllByIds(ids, includeEtudiantInfo));
@@ -76,7 +75,7 @@ public class InscriptionPedagogiqueController {
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<InscriptionResponse> update(@PathVariable long id,
+    public ResponseEntity<InscriptionResponse> update(@PathVariable String id,
                                                       @Valid @RequestBody InscriptionUpdateRequest request) {
 
         return ResponseEntity.ok(service.update(id, request));
@@ -89,13 +88,13 @@ public class InscriptionPedagogiqueController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteById(@PathVariable long id) {
+    public ResponseEntity<Void> deleteById(@PathVariable String id) {
         service.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/bulk")
-    public ResponseEntity<Void> deleteAllByIds(@RequestBody @NotEmpty Set<@NotNull Long> ids) {
+    public ResponseEntity<Void> deleteAllByIds(@RequestBody @NotEmpty Set<@NotBlank String> ids) {
         service.deleteAllByIds(ids);
         return ResponseEntity.noContent().build();
     }

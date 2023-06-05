@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Set;
 
 @Repository
-public interface InscriptionPedagogiqueRepository extends JpaRepository<InscriptionPedagogique, Long> {
+public interface InscriptionPedagogiqueRepository extends JpaRepository<InscriptionPedagogique, String> {
 
     List<InscriptionPedagogique> findAllByCodeEtudiant(String codeEtudiant);
     

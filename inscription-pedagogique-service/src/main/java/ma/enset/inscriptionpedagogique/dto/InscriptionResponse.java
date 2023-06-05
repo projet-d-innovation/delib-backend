@@ -7,7 +7,7 @@ import ma.enset.inscriptionpedagogique.model.EtatInscriptionPedagogique;
 @Builder
 public record InscriptionResponse (
 
-    long id,
+    String id,
     EtudiantResponse etudiant,
     String codeFiliere,
     String codeSessionUniversitaire,

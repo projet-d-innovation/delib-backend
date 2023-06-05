@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 )
 public interface InscriptionPedagogiqueMapper {
 
+    @Mapping(target = "id", expression = "java(inscriptionCreationRequest.id())")
     InscriptionPedagogique toInscriptionEntity(InscriptionCreationRequest inscriptionCreationRequest);
 
     InscriptionPedagogique toInscriptionEntity(RequiredSearchParams searchParams);
@@ -51,7 +52,7 @@ public interface InscriptionPedagogiqueMapper {
     default void updateInscriptionEntityListFromDTOList(List<InscriptionUpdateRequest> inscriptionUpdateRequestList,
                                                         List<InscriptionPedagogique> inscriptionEntityList) {
 
-        Map<Long, InscriptionPedagogique> inscriptionEntityMap = inscriptionEntityList.stream()
+        Map<String, InscriptionPedagogique> inscriptionEntityMap = inscriptionEntityList.stream()
             .collect(Collectors.toMap(InscriptionPedagogique::getId, Function.identity()));
 
         inscriptionUpdateRequestList.forEach(inscriptionUpdateRequest -> updateInscriptionEntityFromDTO(

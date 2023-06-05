@@ -76,9 +76,9 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
     }
 
     @Override
-    public boolean existAllByIds(Set<Long> ids) throws ElementNotFoundException {
+    public boolean existAllByIds(Set<String> ids) throws ElementNotFoundException {
 
-        List<Long> foundInscriptions = repository.findAllById(ids)
+        List<String> foundInscriptions = repository.findAllById(ids)
             .stream().map(InscriptionPedagogique::getId).toList();
 
         if (ids.size() != foundInscriptions.size()) {
@@ -87,7 +87,6 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
                 new Object[] {ELEMENT_TYPE},
                 ids.stream()
                     .filter(id -> !foundInscriptions.contains(id))
-                    .map(String::valueOf)
                     .toList()
             );
         }
@@ -96,7 +95,7 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
     }
 
     @Override
-    public InscriptionResponse findById(Long id, boolean includeEtudiantInfo) throws ElementNotFoundException {
+    public InscriptionResponse findById(String id, boolean includeEtudiantInfo) throws ElementNotFoundException {
 
         InscriptionResponse response = mapper.toInscriptionResponse(
             repository.findById(id).orElseThrow(() ->
@@ -119,7 +118,7 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
     }
 
     @Override
-    public List<InscriptionResponse> findAllByIds(Set<Long> ids, boolean includeEtudiantInfo) throws ElementNotFoundException {
+    public List<InscriptionResponse> findAllByIds(Set<String> ids, boolean includeEtudiantInfo) throws ElementNotFoundException {
 
         List<InscriptionResponse> response = mapper.toInscriptionResponseList(repository.findAllById(ids));
 
@@ -134,7 +133,6 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
                                         .toList()
                                         .contains(id)
                     )
-                    .map(String::valueOf)
                     .toList()
             );
         }
@@ -176,7 +174,7 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
     }
 
     @Override
-    public InscriptionResponse update(Long id, InscriptionUpdateRequest request) throws ElementNotFoundException {
+    public InscriptionResponse update(String id, InscriptionUpdateRequest request) throws ElementNotFoundException {
 
         InscriptionPedagogique inscription = repository.findById(id).orElseThrow(() ->
             new ElementNotFoundException(
@@ -194,7 +192,7 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
     @Override
     public List<InscriptionResponse> updateAll(List<InscriptionUpdateRequest> request) throws ElementNotFoundException, DuplicateEntryException {
 
-        Set<Long> inscriptionIds = request.stream()
+        Set<String> inscriptionIds = request.stream()
             .map(InscriptionUpdateRequest::id).collect(Collectors.toSet());
 
         if (inscriptionIds.size() != request.size()) {
@@ -217,7 +215,6 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
                                             .toList()
                                             .contains(id)
                     )
-                    .map(String::valueOf)
                     .toList()
             );
         }
@@ -228,7 +225,7 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
     }
 
     @Override
-    public void deleteById(Long id) throws ElementNotFoundException {
+    public void deleteById(String id) throws ElementNotFoundException {
 
         if (!repository.existsById(id)) {
             throw new ElementNotFoundException(
@@ -244,7 +241,7 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
     }
 
     @Override
-    public void deleteAllByIds(Set<Long> ids) throws ElementNotFoundException {
+    public void deleteAllByIds(Set<String> ids) throws ElementNotFoundException {
         existAllByIds(ids);
 
         repository.deleteAllById(ids);

@@ -11,7 +11,7 @@ import ma.enset.inscriptionpedagogique.validationgroups.OnBulkUpdate;
 public record InscriptionUpdateRequest (
 
     @NotNull(groups = OnBulkUpdate.class)
-    Long id,
+    String id,
 
     EtatInscriptionPedagogique etat,
 
