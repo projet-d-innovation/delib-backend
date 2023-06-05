@@ -29,14 +29,14 @@ public interface InscriptionPedagogiqueMapper {
 
     List<InscriptionResponse> toInscriptionResponseList(List<InscriptionPedagogique> inscriptionEntityList);
 
-    void enrichEtudiantResponse(EtudiantResponse source, @MappingTarget EtudiantResponse target);
+    void fillStudentInfo(EtudiantResponse source, @MappingTarget EtudiantResponse target);
 
-    default void enrichEtudiantResponseList(List<EtudiantResponse> source, List<EtudiantResponse> target) {
+    default void fillStudentListInfo(List<EtudiantResponse> source, List<EtudiantResponse> target) {
 
         Map<String, EtudiantResponse> sourceEtudiantMap = source.stream()
             .collect(Collectors.toMap(EtudiantResponse::getCode, Function.identity()));
 
-        target.forEach(etudiantResponse -> enrichEtudiantResponse(
+        target.forEach(etudiantResponse -> fillStudentInfo(
             Objects.requireNonNull(sourceEtudiantMap.get(etudiantResponse.getCode())),
             etudiantResponse
         ));
