@@ -1,6 +1,7 @@
 package ma.enset.inscriptionpedagogique.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.Builder;
 
@@ -13,7 +14,8 @@ public record RequiredSearchParams(
     @NotBlank
     String codeSessionUniversitaire,
 
+    @NotNull
     @Positive
-    int annee
+    Integer annee
 
 ) { }
