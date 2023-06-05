@@ -2,6 +2,7 @@ package ma.enset.inscriptionpedagogique.service;
 
 import ma.enset.inscriptionpedagogique.dto.*;
 import ma.enset.inscriptionpedagogique.exception.DuplicateEntryException;
+import ma.enset.inscriptionpedagogique.exception.ElementAlreadyExistsException;
 import ma.enset.inscriptionpedagogique.exception.ElementNotFoundException;
 import ma.enset.inscriptionpedagogique.model.InscriptionPedagogique;
 
@@ -10,9 +11,9 @@ import java.util.Set;
 
 public interface InscriptionPedagogiqueService {
 
-    InscriptionResponse save(InscriptionCreationRequest request);
+    InscriptionResponse save(InscriptionCreationRequest request) throws ElementAlreadyExistsException;
 
-    List<InscriptionResponse> saveAll(List<InscriptionCreationRequest> request);
+    List<InscriptionResponse> saveAll(List<InscriptionCreationRequest> request) throws ElementAlreadyExistsException, DuplicateEntryException;
 
     boolean existAllByIds(Set<String> ids) throws ElementNotFoundException;
 

@@ -8,6 +8,7 @@ import ma.enset.inscriptionpedagogique.constant.CoreConstants;
 import ma.enset.inscriptionpedagogique.dto.*;
 import ma.enset.inscriptionpedagogique.exception.ApiClientException;
 import ma.enset.inscriptionpedagogique.exception.DuplicateEntryException;
+import ma.enset.inscriptionpedagogique.exception.ElementAlreadyExistsException;
 import ma.enset.inscriptionpedagogique.exception.ElementNotFoundException;
 import ma.enset.inscriptionpedagogique.exception.handler.dto.ExceptionResponse;
 import ma.enset.inscriptionpedagogique.mapper.InscriptionPedagogiqueMapper;
@@ -36,7 +37,15 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
     private final InscriptionPedagogiqueRepository repository;
 
     @Override
-    public InscriptionResponse save(InscriptionCreationRequest request) {
+    public InscriptionResponse save(InscriptionCreationRequest request) throws ElementAlreadyExistsException {
+
+        if (repository.existsById(request.id())) {
+            throw new ElementAlreadyExistsException(
+                CoreConstants.BusinessExceptionMessage.ALREADY_EXISTS,
+                new Object[] {ELEMENT_TYPE, ID_FIELD_NAME, request.id()},
+                null
+            );
+        }
 
         allEtudiantsExist(Set.of(request.codeEtudiant()));
 
@@ -50,7 +59,29 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
     }
 
     @Override
-    public List<InscriptionResponse> saveAll(List<InscriptionCreationRequest> request) {
+    public List<InscriptionResponse> saveAll(List<InscriptionCreationRequest> request) throws ElementAlreadyExistsException, DuplicateEntryException {
+
+        Set<String> inscriptionIds = request.stream()
+            .map(InscriptionCreationRequest::id).collect(Collectors.toSet());
+
+        if (inscriptionIds.size() != request.size()) {
+            throw new DuplicateEntryException(
+                CoreConstants.BusinessExceptionMessage.DUPLICATE_ENTRY,
+                new Object[]{ELEMENT_TYPE}
+            );
+        }
+
+        List<InscriptionPedagogique> foundInscriptions = repository.findAllById(inscriptionIds);
+
+        if (!foundInscriptions.isEmpty()) {
+            throw new ElementAlreadyExistsException(
+                CoreConstants.BusinessExceptionMessage.MANY_ALREADY_EXISTS,
+                new Object[] {ELEMENT_TYPE},
+                foundInscriptions.stream()
+                    .map(InscriptionPedagogique::getId)
+                    .toList()
+            );
+        }
 
         allEtudiantsExist(
             request.stream()
