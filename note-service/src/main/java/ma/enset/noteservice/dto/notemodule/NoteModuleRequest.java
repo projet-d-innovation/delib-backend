@@ -9,7 +9,7 @@ import lombok.Builder;
 import java.math.BigDecimal;
 
 @Builder
-public record NoteModuleCreationRequest(
+public record NoteModuleRequest(
         @NotBlank
         String codeModule,
         @NotBlank

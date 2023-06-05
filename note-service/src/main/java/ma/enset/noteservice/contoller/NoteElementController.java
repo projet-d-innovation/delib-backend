@@ -21,7 +21,7 @@ import java.util.Set;
 @RestController
 @Validated
 @AllArgsConstructor
-@RequestMapping("/api/v1/notes/element")
+@RequestMapping("/api/v1/notes/note-element")
 public class NoteElementController {
     private final NoteElementService noteService;
 

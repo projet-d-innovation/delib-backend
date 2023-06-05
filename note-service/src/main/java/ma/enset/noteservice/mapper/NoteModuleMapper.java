@@ -1,7 +1,7 @@
 package ma.enset.noteservice.mapper;
 
 
-import ma.enset.noteservice.dto.notemodule.NoteModuleCreationRequest;
+import ma.enset.noteservice.dto.notemodule.NoteModuleRequest;
 import ma.enset.noteservice.dto.notemodule.NoteModuleResponse;
 import ma.enset.noteservice.model.NoteModule;
 import org.mapstruct.*;
@@ -15,9 +15,9 @@ import java.util.List;
 public interface NoteModuleMapper {
     @Mapping(
             target = "note",
-            expression = "java(noteCreationRequest.note().setScale(3, java.math.RoundingMode.DOWN).floatValue())"
+            expression = "java(noteRequest.note().setScale(3, java.math.RoundingMode.DOWN).floatValue())"
     )
-    NoteModule toNote(NoteModuleCreationRequest noteCreationRequest);
+    NoteModule toNote(NoteModuleRequest noteRequest);
 
     @Mapping(
             target = "note",
@@ -25,7 +25,7 @@ public interface NoteModuleMapper {
     )
     NoteModuleResponse toNoteResponse(NoteModule note);
 
-    List<NoteModule> toNoteList(List<NoteModuleCreationRequest> noteCreationRequestList);
+    List<NoteModule> toNoteList(List<NoteModuleRequest> noteRequestList);
 
     List<NoteModuleResponse> toNoteResponseList(List<NoteModule> notelist);
 

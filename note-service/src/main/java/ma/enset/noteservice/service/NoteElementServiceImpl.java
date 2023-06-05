@@ -6,7 +6,7 @@ import ma.enset.noteservice.client.ElementClient;
 import ma.enset.noteservice.constant.CoreConstants;
 import ma.enset.noteservice.dto.ElementResponse;
 import ma.enset.noteservice.dto.GroupedElementsResponse;
-import ma.enset.noteservice.dto.notemodule.NoteModuleCreationRequest;
+import ma.enset.noteservice.dto.notemodule.NoteModuleRequest;
 import ma.enset.noteservice.exception.DuplicateEntryException;
 import ma.enset.noteservice.exception.ElementAlreadyExistsException;
 import ma.enset.noteservice.exception.ElementNotFoundException;
@@ -169,6 +169,10 @@ public class NoteElementServiceImpl implements NoteElementService {
                                 null
                         ));
 
+        if (noteElement.isRedoublant()) {
+            // TODO (ahmed): throw exception redoublant can't be updated
+        }
+
         noteElementMapper.updateNote(noteElementUpdateRequest, noteElement);
 
         NoteElementResponse updatedElementNote = noteElementMapper.toNoteResponse(
@@ -184,6 +188,7 @@ public class NoteElementServiceImpl implements NoteElementService {
         return updatedElementNote;
     }
 
+    @Transactional
     @Override
     public List<NoteElementResponse> updateAll(Set<NoteElementUpdateRequest> noteElements) throws ElementNotFoundException {
 
@@ -208,6 +213,13 @@ public class NoteElementServiceImpl implements NoteElementService {
                     },
                     null
             );
+        }
+
+        boolean redoublant = foundNoteElements.stream()
+                .anyMatch(NoteElement::isRedoublant);
+
+        if (redoublant) {
+            // TODO (ahmed): throw exception redoublant can't be updated
         }
 
         noteElementMapper.updateNoteList(
@@ -324,88 +336,55 @@ public class NoteElementServiceImpl implements NoteElementService {
     @Override
     public void deleteBySessionAndElement(String sessionId, String codeElement) throws ElementNotFoundException {
 
-        if (!noteElementRepository.existsById(
-                NoteElement.NoteElementId.builder()
-                        .sessionId(sessionId)
-                        .codeElement(codeElement)
-                        .build()
-        )) {
-            throw new ElementNotFoundException(
-                    CoreConstants.BusinessExceptionMessage.NOT_FOUND,
-                    new Object[]{ELEMENT_TYPE, ID_FIELD_NAME,
-                            "(" + codeElement + "," + sessionId + ")"
-                    },
-                    null
-            );
+        // TODO (ahmed) : check if session exists
+
+        ElementResponse elementResponse = elementClient.get(codeElement).getBody();
+
+        if (elementResponse != null) {
+            noteModuleService.deleteBySessionAndModule(sessionId, elementResponse.codeModule());
         }
 
         noteElementRepository.deleteBySessionIdAndCodeElement(sessionId, codeElement);
 
-        // TODO (ahmed) : delete note module
     }
 
     @Override
     public void deleteAllBySessionAndElement(String sessionId, Set<String> codeElementList) throws ElementNotFoundException {
 
-        final List<NoteElement> foundNoteElements = noteElementRepository.findBySessionIdAndCodeElementIn(sessionId, codeElementList);
+        // TODO (ahmed) : check if session exists
 
-        if (foundNoteElements.size() != codeElementList.size()) {
-            throw new ElementNotFoundException(
-                    CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
-                    new Object[]{ELEMENT_TYPE, ID_FIELD_NAME},
-                    codeElementList.stream()
-                            .map(noteElementId -> "(" + noteElementId + "," + sessionId + ")")
-                            .toList()
+        List<ElementResponse> elementResponses = elementClient.getAllByIds(codeElementList).getBody();
 
-            );
+        if (elementResponses != null && !elementResponses.isEmpty()) {
+            noteModuleService.deleteAllBySessionAndModule(
+                    sessionId,
+                    elementResponses.stream()
+                            .map(ElementResponse::codeModule)
+                            .collect(Collectors.toSet()));
         }
 
         noteElementRepository.deleteBySessionIdAndCodeElementIn(sessionId, codeElementList);
-
-        // TODO (ahmed) : delete note module
-
     }
 
     @Override
     public void deleteBySession(String sessionId) throws ElementNotFoundException {
 
-        List<NoteElement> foundNoteElements = noteElementRepository.findBySessionId(sessionId);
-
-        if (foundNoteElements == null || foundNoteElements.isEmpty()) {
-            throw new ElementNotFoundException(
-                    CoreConstants.BusinessExceptionMessage.NOT_FOUND,
-                    new Object[]{ELEMENT_TYPE, ID_FIELD_NAME,
-                            "(x," + sessionId + ")"
-                    },
-                    null
-            );
-        }
+        // TODO (ahmed) : check if session exists
 
         noteElementRepository.deleteBySessionId(sessionId);
 
-        // TODO (ahmed) : delete note module
+        noteModuleService.deleteBySession(sessionId);
 
     }
 
     @Override
     public void deleteAllBySession(Set<String> sessionIdList) throws ElementNotFoundException {
 
-        List<NoteElement> foundNoteElements = noteElementRepository.findBySessionIdIn(sessionIdList);
-
-        if (foundNoteElements.size() != sessionIdList.size()) {
-            throw new ElementNotFoundException(
-                    CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
-                    new Object[]{ELEMENT_TYPE, ID_FIELD_NAME},
-                    sessionIdList.stream()
-                            .map(sessionId -> "(x," + sessionId + ")")
-                            .toList()
-
-            );
-        }
+        // TODO (ahmed) : check if session exists
 
         noteElementRepository.deleteBySessionIdIn(sessionIdList);
 
-        // TODO (ahmed) : delete note module
+        noteModuleService.deleteAllBySession(sessionIdList);
 
     }
 
@@ -457,7 +436,7 @@ public class NoteElementServiceImpl implements NoteElementService {
 
 
         noteModuleService.saveOrUpdate(
-                NoteModuleCreationRequest.builder()
+                NoteModuleRequest.builder()
                         .sessionId(createdNoteElement.getSessionId())
                         .codeModule(createdNoteElement.getElement().codeModule())
                         .note(noteModule)
@@ -484,18 +463,10 @@ public class NoteElementServiceImpl implements NoteElementService {
                         .collect(Collectors.toSet())
         );
 
-//        if (noteElements == null || noteElements.isEmpty() || noteElements.size() != otherElements.size()) {
-//            return;
-//        }
+        if (noteElements == null || noteElements.isEmpty()) {
+            return;
+        }
 
-        if (noteElements == null) {
-            System.out.println("noteElements == null");
-            return;
-        }
-        if (noteElements.isEmpty()) {
-            System.out.println("noteElements.isEmpty()");
-            return;
-        }
 
         noteElements.forEach(
                 noteElement -> {
@@ -534,7 +505,7 @@ public class NoteElementServiceImpl implements NoteElementService {
                 }
         );
 
-        List<NoteModuleCreationRequest> noteModuleCreationRequests = new ArrayList<>();
+        List<NoteModuleRequest> noteModuleRequests = new ArrayList<>();
 
         groupedNoteElementsByModule.forEach(
                 (codeModule, noteElementResponseList) -> {
@@ -549,8 +520,8 @@ public class NoteElementServiceImpl implements NoteElementService {
                             .reduce(BigDecimal.ZERO, BigDecimal::add)
                             .setScale(3, RoundingMode.DOWN);
 
-                    noteModuleCreationRequests.add(
-                            NoteModuleCreationRequest.builder()
+                    noteModuleRequests.add(
+                            NoteModuleRequest.builder()
                                     .sessionId(createdNoteElements.get(0).getSessionId())
                                     .codeModule(codeModule)
                                     .note(noteModule)
@@ -559,7 +530,7 @@ public class NoteElementServiceImpl implements NoteElementService {
                 }
         );
 
-        noteModuleService.saveOrUpdateAll(noteModuleCreationRequests);
+        noteModuleService.saveOrUpdateAll(noteModuleRequests);
 
     }
 
