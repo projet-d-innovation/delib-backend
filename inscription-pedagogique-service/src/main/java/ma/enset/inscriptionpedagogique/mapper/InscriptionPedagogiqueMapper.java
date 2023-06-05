@@ -31,14 +31,15 @@ public interface InscriptionPedagogiqueMapper {
 
     void fillStudentInfo(EtudiantResponse source, @MappingTarget EtudiantResponse target);
 
-    default void fillStudentListInfo(List<EtudiantResponse> source, List<EtudiantResponse> target) {
+    default void fillInscriptionResponseListStudentInfo(List<EtudiantResponse> etudiantResponseList,
+                                                        List<InscriptionResponse> inscriptionResponseList) {
 
-        Map<String, EtudiantResponse> sourceEtudiantMap = source.stream()
+        Map<String, EtudiantResponse> etudiantResponseMap = etudiantResponseList.stream()
             .collect(Collectors.toMap(EtudiantResponse::getCode, Function.identity()));
 
-        target.forEach(etudiantResponse -> fillStudentInfo(
-            Objects.requireNonNull(sourceEtudiantMap.get(etudiantResponse.getCode())),
-            etudiantResponse
+        inscriptionResponseList.forEach(inscriptionResponse -> fillStudentInfo(
+            Objects.requireNonNull(etudiantResponseMap.get(inscriptionResponse.etudiant().getCode())),
+            inscriptionResponse.etudiant()
         ));
     }
 
