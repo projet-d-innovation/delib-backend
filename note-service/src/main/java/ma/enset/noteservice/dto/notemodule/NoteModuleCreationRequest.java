@@ -1,17 +1,20 @@
-package ma.enset.noteservice.dto.noteelement;
+package ma.enset.noteservice.dto.notemodule;
 
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.Builder;
 
 import java.math.BigDecimal;
 
-public record NoteElementUpdateRequest(
+@Builder
+public record NoteModuleCreationRequest(
         @NotBlank
-        String codeElement,
+        String codeModule,
         @NotBlank
         String sessionId,
-        @DecimalMin("0") @DecimalMax("20")
+        @NotNull @DecimalMin("0") @DecimalMax("20")
         BigDecimal note,
         boolean redoublant
 ) {

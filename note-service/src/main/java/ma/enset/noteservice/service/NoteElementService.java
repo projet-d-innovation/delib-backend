@@ -24,8 +24,11 @@ public interface NoteElementService {
 
     Set<GroupedNotesElementResponse> getNotesBySessions(Set<String> sessionIdList, boolean includeElement) throws ElementNotFoundException;
 
-    void delete(NoteElement.NoteElementId noteElementId) throws ElementNotFoundException;
-    
-    void deleteAll(Set<NoteElement.NoteElementId> noteElementIdList) throws ElementNotFoundException;
+    void deleteBySessionAndElement(String sessionId, String codeElement) throws ElementNotFoundException;
 
+    void deleteAllBySessionAndElement(String sessionId, Set<String> codeElements) throws ElementNotFoundException;
+
+    void deleteBySession(String sessionId) throws ElementNotFoundException;
+
+    void deleteAllBySession(Set<String> sessionIdList) throws ElementNotFoundException;
 }

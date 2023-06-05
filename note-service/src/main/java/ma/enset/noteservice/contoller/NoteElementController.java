@@ -9,7 +9,6 @@ import ma.enset.noteservice.dto.noteelement.GroupedNotesElementResponse;
 import ma.enset.noteservice.dto.noteelement.NoteElementCreationRequest;
 import ma.enset.noteservice.dto.noteelement.NoteElementResponse;
 import ma.enset.noteservice.dto.noteelement.NoteElementUpdateRequest;
-import ma.enset.noteservice.model.NoteElement;
 import ma.enset.noteservice.service.NoteElementService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -79,19 +78,37 @@ public class NoteElementController {
     }
 
 
-    @DeleteMapping
+    @DeleteMapping("/session/{sessionId}")
     public ResponseEntity<Void> delete(
-            @RequestParam NoteElement.@NotNull NoteElementId noteElementId
+            @PathVariable @NotBlank String sessionId
     ) {
-        noteService.delete(noteElementId);
+        noteService.deleteBySession(sessionId);
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/bulk")
+    @DeleteMapping("/session/bulk")
     public ResponseEntity<Void> delete(
-            @RequestParam @NotEmpty Set<NoteElement.@NotNull NoteElementId> noteElementIdList
+            @RequestParam @NotEmpty Set<@NotBlank String> sessionIdList
     ) {
-        noteService.deleteAll(noteElementIdList);
+        noteService.deleteAllBySession(sessionIdList);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/session/{sessionId}/element/{codeElement}")
+    public ResponseEntity<Void> delete(
+            @PathVariable @NotBlank String sessionId,
+            @PathVariable @NotBlank String codeElement
+    ) {
+        noteService.deleteBySessionAndElement(sessionId, codeElement);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/session/{sessionId}/element/bulk")
+    public ResponseEntity<Void> delete(
+            @PathVariable @NotBlank String sessionId,
+            @RequestParam @NotEmpty Set<@NotBlank String> codeElementList
+    ) {
+        noteService.deleteAllBySessionAndElement(sessionId, codeElementList);
         return ResponseEntity.noContent().build();
     }
 

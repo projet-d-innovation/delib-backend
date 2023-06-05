@@ -1,8 +1,7 @@
 package ma.enset.noteservice.client;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import ma.enset.noteservice.dto.ElementResponse;
+import ma.enset.noteservice.dto.GroupedElementsResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -20,11 +19,20 @@ public interface ElementClient {
 
     @GetExchange(url = "/bulk")
     ResponseEntity<List<ElementResponse>> getAllByIds(
-            @RequestParam("codesElement") @NotEmpty Set<@NotBlank String> codesElement
+            @RequestParam("codesElement") Set<String> codesElement
     );
 
     @GetExchange(url = "/exist")
     ResponseEntity<Void> existAll(
-            @RequestParam("codesElement") @NotEmpty Set<@NotBlank String> codesElement
+            @RequestParam("codesElement") Set<String> codesElement
     );
+
+    @GetExchange(url = "/module/{codeModule}")
+    ResponseEntity<List<ElementResponse>> getAllByCodeModule(@PathVariable("codeModule") String codeModule);
+
+    @GetExchange(url = "/module/bulk")
+    ResponseEntity<List<GroupedElementsResponse>> getAllByCodesModule(
+            @RequestParam("codesModule") Set<String> codesModule
+    );
+
 }
