@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
+import java.util.Date;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -20,7 +20,7 @@ public class EtudiantResponse {
     private String cin;
     private String telephone;
     private String adresse;
-    private LocalDate dateNaissance;
+    private Date dateNaissance;
     private String ville;
     private String pays;
     private String photo;
