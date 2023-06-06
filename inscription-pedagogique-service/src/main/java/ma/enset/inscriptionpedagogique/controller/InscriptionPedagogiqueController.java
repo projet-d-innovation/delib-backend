@@ -47,14 +47,14 @@ public class InscriptionPedagogiqueController {
 
     @GetMapping("/{id}")
     public ResponseEntity<InscriptionResponse> getById(@PathVariable String id,
-                                                       @RequestParam(defaultValue = "false") boolean includeEtudiantInfo) {
+                                                       @RequestParam(defaultValue = "true") boolean includeEtudiantInfo) {
 
         return ResponseEntity.ok(service.findById(id, includeEtudiantInfo));
     }
 
     @GetMapping("/bulk")
     public ResponseEntity<List<InscriptionResponse>> getAllByIds(@RequestParam @NotEmpty Set<@NotBlank String> ids,
-                                                                 @RequestParam(defaultValue = "false") boolean includeEtudiantInfo) {
+                                                                 @RequestParam(defaultValue = "true") boolean includeEtudiantInfo) {
 
         return ResponseEntity.ok(service.findAllByIds(ids, includeEtudiantInfo));
     }
@@ -69,7 +69,7 @@ public class InscriptionPedagogiqueController {
     @GetMapping
     public ResponseEntity<InscriptionPagingResponse> getAll(@RequestParam(defaultValue = "0") @Min(0) int page,
                                                             @RequestParam(defaultValue = "10") @Range(min = 1, max = 100) int size,
-                                                            @RequestParam(defaultValue = "false") boolean includeEtudiantInfo) {
+                                                            @RequestParam(defaultValue = "true") boolean includeEtudiantInfo) {
 
         return ResponseEntity.ok(service.findAll(page, size, includeEtudiantInfo));
     }
