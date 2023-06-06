@@ -31,11 +31,18 @@ public interface UtilisateurMapper {
     @Mapping(target = "roles", source = "roles", qualifiedByName = "mapRoleIdsToRoles")
     List<Utilisateur> toUtilisateurList(List<UtilisateurCreateRequest> utilisateurCreateRequests);
 
-    Role mapRoleIdToRole(String roleId);
+    default Role mapRoleIdToRole(String roleId) {
+        if (roleId == null || roleId.isBlank()) {
+            return null;
+        }
+        return Role.builder()
+                .roleId(roleId.toUpperCase())
+                .build();
+    }
 
     @Named("mapRoleIdsToRoles")
     default List<Role> mapRoleIdsToRoles(Set<String> roleIds) {
-        if (roleIds == null) {
+        if (roleIds == null || roleIds.isEmpty()) {
             return null;
         }
         return roleIds.stream()
