@@ -134,6 +134,12 @@ public class DepartementServiceImpl implements DepartementService {
                 departement.setFilieres(filiereByDepartementResponse.filieres());
         }
 
+        if (includeChefDepartement && departement.getCodeChefDepartement() != null) {
+            departement.setChefDepartement(
+                    utilisateurClient.findById(departement.getCodeChefDepartement()).getBody()
+            );
+        }
+
         return departement;
     }
 
@@ -175,6 +181,28 @@ public class DepartementServiceImpl implements DepartementService {
             );
         }
 
+        if (includeChefDepartement) {
+
+            Set<String> codeChefDepartements = departementResponses.stream()
+                    .map(DepartementResponse::getCodeChefDepartement)
+                    .collect(Collectors.toSet());
+
+            if (!codeChefDepartements.isEmpty()) {
+                List<UtilisateurResponse> chefDepartements = utilisateurClient.findAllById(codeChefDepartements).getBody();
+                if (chefDepartements != null && !chefDepartements.isEmpty()) {
+                    departementResponses.forEach(
+                            departement -> departement.setChefDepartement(
+                                    chefDepartements.stream()
+                                            .filter(chefDepartement -> chefDepartement.getCode().equals(departement.getCodeChefDepartement()))
+                                            .findFirst()
+                                            .orElse(null)
+                            )
+                    );
+                }
+            }
+
+        }
+
         return departementResponses;
     }
 
@@ -209,6 +237,28 @@ public class DepartementServiceImpl implements DepartementService {
                     );
                 }
             }
+        }
+
+        if (includeChefDepartement) {
+
+            Set<String> codeChefDepartements = departementPagingResponse.records().stream()
+                    .map(DepartementResponse::getCodeChefDepartement)
+                    .collect(Collectors.toSet());
+
+            if (!codeChefDepartements.isEmpty()) {
+                List<UtilisateurResponse> chefDepartements = utilisateurClient.findAllById(codeChefDepartements).getBody();
+                if (chefDepartements != null && !chefDepartements.isEmpty()) {
+                    departementPagingResponse.records().forEach(
+                            departement -> departement.setChefDepartement(
+                                    chefDepartements.stream()
+                                            .filter(chefDepartement -> chefDepartement.getCode().equals(departement.getCodeChefDepartement()))
+                                            .findFirst()
+                                            .orElse(null)
+                            )
+                    );
+                }
+            }
+
         }
 
         return departementPagingResponse;

@@ -1,29 +1,28 @@
-package ma.enset.filiereservice.dto;
+package ma.enset.deliberationservice.dto;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Date;
-
 
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Setter
-@Getter
 @Data
-public class UtilisateurResponse {
+public class EtudiantResponse {
+
     private String code;
-    private String cin;
     private String cne;
     private String nom;
     private String prenom;
+    private String cin;
     private String telephone;
     private String adresse;
     private Date dateNaissance;
     private String ville;
     private String pays;
     private String photo;
-    private String sexe;
-    private String codeDepartement;
-    private String codeFiliere;
+    
 }

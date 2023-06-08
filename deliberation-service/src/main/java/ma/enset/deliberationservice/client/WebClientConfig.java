@@ -10,10 +10,16 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.support.WebClientAdapter;
+import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 
 @Slf4j
 @Configuration(proxyBeanMethods = false)
 public class WebClientConfig {
+
+    private final String INSCRIPTION_PEDAGOGIQUE_SERVICE_NAME = "INSCRIPTION-PEDAGOGIQUE-SERVICE";
+    private final String SEMESTRE_SERVICE_NAME = "SEMESTRE-SERVICE";
+    private final String NOTE_SERVICE_NAME = "NOTE-SERVICE";
 
     @Bean
     @LoadBalanced
@@ -35,4 +41,43 @@ public class WebClientConfig {
                 );
     }
 
+    @Bean
+    public InscriptionClient inscriptionClient(WebClient.Builder builder) {
+        WebClient inscriptionWebClient = builder
+                .baseUrl("http://" + INSCRIPTION_PEDAGOGIQUE_SERVICE_NAME)
+                .build();
+
+        HttpServiceProxyFactory factory = HttpServiceProxyFactory
+                .builder(WebClientAdapter.forClient(inscriptionWebClient))
+                .build();
+
+        return factory.createClient(InscriptionClient.class);
+    }
+
+    @Bean
+    public SemestreClient semestreClient(WebClient.Builder builder) {
+        WebClient semestreWebClient = builder
+                .baseUrl("http://" + SEMESTRE_SERVICE_NAME)
+                .build();
+
+        HttpServiceProxyFactory factory = HttpServiceProxyFactory
+                .builder(WebClientAdapter.forClient(semestreWebClient))
+                .build();
+
+        return factory.createClient(SemestreClient.class);
+    }
+
+
+    @Bean
+    public NoteClient noteClient(WebClient.Builder builder) {
+        WebClient noteWebClient = builder
+                .baseUrl("http://" + NOTE_SERVICE_NAME)
+                .build();
+
+        HttpServiceProxyFactory factory = HttpServiceProxyFactory
+                .builder(WebClientAdapter.forClient(noteWebClient))
+                .build();
+
+        return factory.createClient(NoteClient.class);
+    }
 }

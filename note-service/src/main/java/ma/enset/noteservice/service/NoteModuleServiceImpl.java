@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import ma.enset.noteservice.client.ElementClient;
 import ma.enset.noteservice.client.ModuleClient;
+import ma.enset.noteservice.client.SessionClient;
 import ma.enset.noteservice.dto.ElementResponse;
 import ma.enset.noteservice.dto.ModuleResponse;
 import ma.enset.noteservice.dto.noteelement.NoteElementResponse;
@@ -35,6 +36,7 @@ public class NoteModuleServiceImpl implements NoteModuleService {
     private final NoteElementMapper noteElementMapper;
     private final ModuleClient moduleClient;
     private final ElementClient elementClient;
+    private final SessionClient sessionClient;
 
     @Override
     public NoteModuleResponse saveOrUpdate(final NoteModuleRequest noteModuleRequest) throws ElementAlreadyExistsException {
@@ -134,18 +136,74 @@ public class NoteModuleServiceImpl implements NoteModuleService {
     @Override
     public GroupedNotesModuleResponse getNotesBySession(String sessionId, boolean includeModule, boolean includeNoteElement) throws ElementNotFoundException {
 
-        // TODO (ahmed) : check if session exists
+        sessionClient.existsAll(
+                Set.of(sessionId)
+        );
 
-        final List<NoteModuleResponse> noteModules = noteModuleMapper.toNoteResponseList(
+        List<NoteModuleResponse> noteModules = noteModuleMapper.toNoteResponseList(
                 noteModuleRepository.findBySessionId(sessionId)
         );
 
+        handleIncludes(Set.of(sessionId), noteModules, includeModule, includeNoteElement);
+
+        return GroupedNotesModuleResponse.builder()
+                .sessionId(sessionId)
+                .notes(noteModules)
+                .build();
+    }
+
+    @Override
+    public Set<GroupedNotesModuleResponse> getNotesBySessions(Set<String> sessionIdList, boolean includeModule, boolean includeNoteElement) throws ElementNotFoundException {
+
+        sessionClient.existsAll(sessionIdList);
+
+        final List<NoteModuleResponse> noteModules = noteModuleMapper.toNoteResponseList(
+                noteModuleRepository.findBySessionIdIn(sessionIdList)
+        );
+
+        handleIncludes(sessionIdList, noteModules, includeModule, includeNoteElement);
+
+        return noteModules.stream().collect(
+                Collectors.groupingBy(
+                        NoteModuleResponse::getSessionId
+                )
+        ).entrySet().stream().map(
+                entry -> GroupedNotesModuleResponse.builder()
+                        .sessionId(entry.getKey())
+                        .notes(entry.getValue())
+                        .build()
+        ).collect(Collectors.toSet());
+    }
+
+    @Override
+    public void deleteBySessionAndModule(String sessionId, String codeModule) throws ElementNotFoundException {
+        noteModuleRepository.deleteBySessionIdAndCodeModule(sessionId, codeModule);
+    }
+
+    @Override
+    public void deleteAllBySessionAndModule(String sessionId, Set<String> codeModules) throws ElementNotFoundException {
+        noteModuleRepository.deleteBySessionIdAndCodeModuleIn(sessionId, codeModules);
+    }
+
+    @Override
+    public void deleteBySession(String sessionId) throws ElementNotFoundException {
+        noteModuleRepository.deleteBySessionId(sessionId);
+    }
+
+    @Override
+    public void deleteAllBySession(Set<String> sessionIdList) throws ElementNotFoundException {
+        noteModuleRepository.deleteBySessionIdIn(sessionIdList);
+    }
+
+
+    private void handleIncludes(Set<String> sessionIds, List<NoteModuleResponse> noteModules, boolean includeModule, boolean includeNoteElement) {
         if (includeModule) {
             Set<String> moduleCodes = noteModules.stream().map(
                             NoteModuleResponse::getCodeModule
                     )
                     .filter(Objects::nonNull)
                     .collect(Collectors.toSet());
+
             if (!moduleCodes.isEmpty()) {
                 List<ModuleResponse> moduleResponses = moduleClient.getAllByIds(
                         moduleCodes,
@@ -167,7 +225,9 @@ public class NoteModuleServiceImpl implements NoteModuleService {
         if (includeNoteElement) {
 
             final List<NoteElementResponse> noteElements = noteElementMapper.toNoteResponseList(
-                    noteElementRepository.findBySessionId(sessionId)
+                    noteElementRepository.findBySessionIdIn(
+                            sessionIds
+                    )
             );
 
             if (noteElements != null && !noteElements.isEmpty()) {
@@ -203,51 +263,5 @@ public class NoteModuleServiceImpl implements NoteModuleService {
             }
 
         }
-
-        return GroupedNotesModuleResponse.builder()
-                .sessionId(sessionId)
-                .notes(noteModules)
-                .build();
-    }
-
-    @Override
-    public Set<GroupedNotesModuleResponse> getNotesBySessions(Set<String> sessionIdList, boolean includeModule, boolean includeNoteElement) throws ElementNotFoundException {
-
-        // TODO (ahmed) : check if sessions exist
-
-        final List<NoteModuleResponse> noteModules = noteModuleMapper.toNoteResponseList(
-                noteModuleRepository.findBySessionIdIn(sessionIdList)
-        );
-
-        if (includeModule) {
-
-        }
-
-        if (includeNoteElement) {
-
-
-        }
-
-        return null;
-    }
-
-    @Override
-    public void deleteBySessionAndModule(String sessionId, String codeModule) throws ElementNotFoundException {
-        noteModuleRepository.deleteBySessionIdAndCodeModule(sessionId, codeModule);
-    }
-
-    @Override
-    public void deleteAllBySessionAndModule(String sessionId, Set<String> codeModules) throws ElementNotFoundException {
-        noteModuleRepository.deleteBySessionIdAndCodeModuleIn(sessionId, codeModules);
-    }
-
-    @Override
-    public void deleteBySession(String sessionId) throws ElementNotFoundException {
-        noteModuleRepository.deleteBySessionId(sessionId);
-    }
-
-    @Override
-    public void deleteAllBySession(Set<String> sessionIdList) throws ElementNotFoundException {
-        noteModuleRepository.deleteBySessionIdIn(sessionIdList);
     }
 }

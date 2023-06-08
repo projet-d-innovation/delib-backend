@@ -3,6 +3,7 @@ package ma.enset.noteservice.service;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import ma.enset.noteservice.client.ElementClient;
+import ma.enset.noteservice.client.SessionClient;
 import ma.enset.noteservice.constant.CoreConstants;
 import ma.enset.noteservice.dto.ElementResponse;
 import ma.enset.noteservice.dto.GroupedElementsResponse;
@@ -35,6 +36,8 @@ public class NoteElementServiceImpl implements NoteElementService {
     private final ElementClient elementClient;
     private final NoteModuleService noteModuleService;
 
+    private final SessionClient sessionClient;
+
     @Override
     public NoteElementResponse save(final NoteElementCreationRequest noteElementCreationRequest) throws ElementAlreadyExistsException {
         if (noteElementRepository.existsById(
@@ -52,7 +55,9 @@ public class NoteElementServiceImpl implements NoteElementService {
             );
         }
 
-        // TODO (ahmed): check if session exists
+        sessionClient.existsAll(
+                Set.of(noteElementCreationRequest.sessionId())
+        );
 
         ElementResponse elementResponse = elementClient.get(noteElementCreationRequest.codeElement()).getBody();
 
@@ -108,7 +113,11 @@ public class NoteElementServiceImpl implements NoteElementService {
         }
 
 
-        // TODO (ahmed): check if sessions exists
+        sessionClient.existsAll(
+                noteElementCreationRequests.stream()
+                        .map(NoteElementCreationRequest::sessionId)
+                        .collect(Collectors.toSet())
+        );
 
         List<ElementResponse> elementResponses = elementClient.getAllByIds(
                 noteElementCreationRequests.stream()
@@ -135,17 +144,18 @@ public class NoteElementServiceImpl implements NoteElementService {
                 )
         );
 
-        noteElementResponses.forEach(
-                noteElementResponse -> noteElementResponse.setElement(
-                        elementResponses.stream()
-                                .filter(
-                                        elementResponse -> elementResponse.codeElement().equals(noteElementResponse.getCodeElement())
-                                )
-                                .findFirst()
-                                .orElse(null)
-                )
-        );
-
+        if (elementResponses != null && !elementResponses.isEmpty()) {
+            noteElementResponses.forEach(
+                    noteElementResponse -> noteElementResponse.setElement(
+                            elementResponses.stream()
+                                    .filter(
+                                            elementResponse -> elementResponse.codeElement().equals(noteElementResponse.getCodeElement())
+                                    )
+                                    .findFirst()
+                                    .orElse(null)
+                    )
+            );
+        }
         saveOrUpdateNoteModule(noteElementResponses);
 
         return noteElementResponses;
@@ -237,16 +247,18 @@ public class NoteElementServiceImpl implements NoteElementService {
                         .collect(Collectors.toSet())
         ).getBody();
 
-        updatedNoteElements.forEach(
-                noteElement -> noteElement.setElement(
-                        elementResponses.stream()
-                                .filter(
-                                        elementResponse -> elementResponse.codeElement().equals(noteElement.getCodeElement())
-                                )
-                                .findFirst()
-                                .orElse(null)
-                )
-        );
+        if (elementResponses != null && !elementResponses.isEmpty()) {
+            updatedNoteElements.forEach(
+                    noteElement -> noteElement.setElement(
+                            elementResponses.stream()
+                                    .filter(
+                                            elementResponse -> elementResponse.codeElement().equals(noteElement.getCodeElement())
+                                    )
+                                    .findFirst()
+                                    .orElse(null)
+                    )
+            );
+        }
 
         saveOrUpdateNoteModule(updatedNoteElements);
 
@@ -257,7 +269,9 @@ public class NoteElementServiceImpl implements NoteElementService {
     @Override
     public GroupedNotesElementResponse getNotesBySession(String sessionId, boolean includeElement) throws ElementNotFoundException {
 
-        // TODO (ahmed) : check if session exists
+        sessionClient.existsAll(
+                Set.of(sessionId)
+        );
 
         final List<NoteElementResponse> noteElements = noteElementMapper.toNoteResponseList(
                 noteElementRepository.findBySessionId(sessionId)
@@ -292,7 +306,7 @@ public class NoteElementServiceImpl implements NoteElementService {
     @Override
     public Set<GroupedNotesElementResponse> getNotesBySessions(Set<String> sessionIdList, boolean includeElement) throws ElementNotFoundException {
 
-        // TODO (ahmed) : check if sessions exists
+        sessionClient.existsAll(sessionIdList);
 
         final List<NoteElementResponse> noteElementResponses = noteElementMapper.toNoteResponseList(
                 noteElementRepository.findBySessionIdIn(sessionIdList)
@@ -336,7 +350,9 @@ public class NoteElementServiceImpl implements NoteElementService {
     @Override
     public void deleteBySessionAndElement(String sessionId, String codeElement) throws ElementNotFoundException {
 
-        // TODO (ahmed) : check if session exists
+        sessionClient.existsAll(
+                Set.of(sessionId)
+        );
 
         ElementResponse elementResponse = elementClient.get(codeElement).getBody();
 
@@ -351,7 +367,9 @@ public class NoteElementServiceImpl implements NoteElementService {
     @Override
     public void deleteAllBySessionAndElement(String sessionId, Set<String> codeElementList) throws ElementNotFoundException {
 
-        // TODO (ahmed) : check if session exists
+        sessionClient.existsAll(
+                Set.of(sessionId)
+        );
 
         List<ElementResponse> elementResponses = elementClient.getAllByIds(codeElementList).getBody();
 
@@ -369,7 +387,9 @@ public class NoteElementServiceImpl implements NoteElementService {
     @Override
     public void deleteBySession(String sessionId) throws ElementNotFoundException {
 
-        // TODO (ahmed) : check if session exists
+        sessionClient.existsAll(
+                Set.of(sessionId)
+        );
 
         noteElementRepository.deleteBySessionId(sessionId);
 
@@ -380,7 +400,7 @@ public class NoteElementServiceImpl implements NoteElementService {
     @Override
     public void deleteAllBySession(Set<String> sessionIdList) throws ElementNotFoundException {
 
-        // TODO (ahmed) : check if session exists
+        sessionClient.existsAll(sessionIdList);
 
         noteElementRepository.deleteBySessionIdIn(sessionIdList);
 

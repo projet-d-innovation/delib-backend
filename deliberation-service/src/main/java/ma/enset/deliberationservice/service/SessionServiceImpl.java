@@ -1,8 +1,17 @@
 package ma.enset.deliberationservice.service;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import ma.enset.deliberationservice.client.InscriptionClient;
+import ma.enset.deliberationservice.client.NoteClient;
+import ma.enset.deliberationservice.client.SemestreClient;
 import ma.enset.deliberationservice.constant.CoreConstants;
+import ma.enset.deliberationservice.dto.GroupedNotesModuleResponse;
+import ma.enset.deliberationservice.dto.InscriptionResponse;
+import ma.enset.deliberationservice.dto.RequiredSearchParams;
 import ma.enset.deliberationservice.dto.session.SessionCreationRequest;
 import ma.enset.deliberationservice.dto.session.SessionPagingResponse;
 import ma.enset.deliberationservice.dto.session.SessionResponse;
@@ -11,6 +20,7 @@ import ma.enset.deliberationservice.exception.DuplicateEntryException;
 import ma.enset.deliberationservice.exception.ElementNotFoundException;
 import ma.enset.deliberationservice.mapper.SessionMapper;
 import ma.enset.deliberationservice.model.Session;
+import ma.enset.deliberationservice.model.SessionType;
 import ma.enset.deliberationservice.repository.SessionRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
@@ -18,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -27,22 +38,76 @@ public class SessionServiceImpl implements SessionService {
     private final String ID_FIELD_NAME = "idSession";
     private final SessionMapper sessionMapper;
     private final SessionRepository sessionRepository;
+    private final InscriptionClient inscriptionClient;
+    private final SemestreClient semestreClient;
+    private final NoteClient noteClient;
 
     @Override
     public SessionResponse save(final SessionCreationRequest sessionCreationRequest) {
-        SessionResponse sessionResponse = sessionMapper.toSessionResponse(
+
+        inscriptionClient.existAllByIds(
+                Set.of(sessionCreationRequest.idInscription())
+        );
+
+        semestreClient.exists(
+                Set.of(sessionCreationRequest.codeSemestre())
+        );
+
+        if (sessionCreationRequest.previousSessionId() != null) {
+            if (!sessionRepository.existsById(
+                    sessionCreationRequest.previousSessionId()
+            )) {
+                throw new ElementNotFoundException(
+                        CoreConstants.BusinessExceptionMessage.NOT_FOUND,
+                        new Object[]{ELEMENT_TYPE, ID_FIELD_NAME, sessionCreationRequest.previousSessionId()},
+                        null
+                );
+            }
+        }
+
+        return sessionMapper.toSessionResponse(
                 sessionRepository.save(
                         sessionMapper.toSession(sessionCreationRequest)
                 )
         );
-        return sessionResponse;
     }
 
     @Override
     @Transactional
-    public List<SessionResponse> saveAll(List<SessionCreationRequest> sessionResponseList) {
+    public List<SessionResponse> saveAll(List<SessionCreationRequest> sessionCreateRequest) {
 
-        List<Session> sessions = sessionMapper.toSessionList(sessionResponseList);
+        inscriptionClient.existAllByIds(
+                sessionCreateRequest.stream()
+                        .map(SessionCreationRequest::idInscription)
+                        .collect(Collectors.toSet())
+        );
+
+        semestreClient.exists(
+                sessionCreateRequest.stream()
+                        .map(SessionCreationRequest::codeSemestre)
+                        .collect(Collectors.toSet())
+        );
+
+        List<String> previousSessions = sessionCreateRequest.stream()
+                .map(SessionCreationRequest::previousSessionId)
+                .filter(Objects::nonNull)
+                .toList();
+
+        if (!previousSessions.isEmpty()) {
+            List<Session> sessionsExists = sessionRepository.findAllById(
+                    previousSessions
+            );
+            if (sessionsExists.size() != previousSessions.size()) {
+                throw new ElementNotFoundException(
+                        CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
+                        new Object[]{ELEMENT_TYPE, ID_FIELD_NAME},
+                        previousSessions
+                );
+            }
+        }
+
+
+        List<Session> sessions = sessionMapper.toSessionList(sessionCreateRequest);
 
         List<Session> createdSessions;
         try {
@@ -65,6 +130,14 @@ public class SessionServiceImpl implements SessionService {
                         new Object[]{ELEMENT_TYPE, ID_FIELD_NAME, id},
                         null
                 ));
+        GroupedNotesModuleResponse notes = noteClient.getNotesBySession(
+                sessionResponse.getIdSession(), true, true
+        ).getBody();
+
+        if (notes != null) {
+            sessionResponse.setNotes(notes.notes());
+        }
+
         return sessionResponse;
     }
 
@@ -89,9 +162,13 @@ public class SessionServiceImpl implements SessionService {
 
         List<SessionResponse> sessionResponses = sessionMapper.toSessionResponseList(sessions);
 
+        includeNotes(sessionResponses);
+
         return sessionResponses;
     }
 
+
+    // TODO (ahmed) : findAll should be removed | it's just for debugging
     @Override
     public SessionPagingResponse findAll(int page, int size) {
 
@@ -103,6 +180,68 @@ public class SessionServiceImpl implements SessionService {
 
         return sessionPagingResponse;
     }
+
+    @Override
+    public List<SessionResponse> search(
+            String codeFiliere,
+            String codeSemestre,
+            String codeSessionUniversitaire,
+            Integer annee,
+            SessionType type
+    ) {
+
+        List<InscriptionResponse> inscriptions = inscriptionClient.getAllBySearchParams(
+                codeFiliere,
+                codeSessionUniversitaire,
+                annee,
+                true
+        ).getBody();
+
+        List<SessionResponse> sessionResponses = new ArrayList<>();
+
+        if (inscriptions != null && !inscriptions.isEmpty()) {
+            sessionResponses = sessionMapper.toSessionResponseList(
+                    sessionRepository.findAllByIdInscriptionIn(
+                            inscriptions.stream()
+                                    .map(InscriptionResponse::id)
+                                    .toList()
+                    )
+
+            );
+
+            if (codeSemestre != null) {
+                sessionResponses = sessionResponses.stream()
+                        .filter(sessionResponse -> sessionResponse.getCodeSemestre().equals(codeSemestre))
+                        .toList();
+            }
+
+
+            if (type != null) {
+                sessionResponses = sessionResponses.stream()
+                        .filter(sessionResponse -> sessionResponse.getSessionType().equals(type))
+                        .toList();
+            }
+
+            includeNotes(sessionResponses);
+        }
+
+        if (!sessionResponses.isEmpty()) {
+            sessionResponses.forEach(
+                    sessionResponse -> {
+                        sessionResponse.setInscription(
+                                inscriptions.stream()
+                                        .filter(inscriptionResponse -> inscriptionResponse.id().equals(sessionResponse.getIdInscription()))
+                                        .findFirst()
+                                        .orElse(null)
+                        );
+                    }
+            );
+        }
+
+
+        return sessionResponses;
+    }
+
 
     @Override
     public SessionResponse update(String id, SessionUpdateRequest sessionUpdateRequest) throws ElementNotFoundException {
@@ -129,7 +268,6 @@ public class SessionServiceImpl implements SessionService {
                     null
             );
         }
-
         sessionRepository.deleteById(id);
     }
 
@@ -159,6 +297,32 @@ public class SessionServiceImpl implements SessionService {
         }
 
         return true;
+    }
+
+    private void includeNotes(List<SessionResponse> sessionResponses) {
+        Set<String> sessionIds = sessionResponses.stream()
+                .map(SessionResponse::getIdSession)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        if (!sessionIds.isEmpty()) {
+            Set<GroupedNotesModuleResponse> notes = noteClient.getNotesBySessions(
+                    sessionIds,
+                    true,
+                    true
+            ).getBody();
+
+            if (notes != null && !notes.isEmpty()) {
+                sessionResponses.forEach(
+                        sessionResponse -> {
+                            Optional<GroupedNotesModuleResponse> optionalGroupedNotesModuleResponse = notes.stream()
+                                    .filter(groupedNotesModuleResponse -> groupedNotesModuleResponse.sessionId().equals(sessionResponse.getIdSession()))
+                                    .findFirst();
+                            optionalGroupedNotesModuleResponse.ifPresent(groupedNotesModuleResponse -> sessionResponse.setNotes(groupedNotesModuleResponse.notes()));
+                        }
+                );
+            }
+        }
     }
 
 }
