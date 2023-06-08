@@ -4,17 +4,19 @@ server:
 spring:
   application:
     name: gateway-server
+
   cloud:
     gateway:
       discovery:
         locator:
           enabled: true
-      globals:
-        corsConfigurations:
+
+      globalcors:
+        cors-configurations:
           '[/**]':
             allowedOrigins: "*"
             allowedMethods: "*"
-            allowedHeaders: "*"
+            allowed-headers: "*"
 
 springdoc:
   enable-native-support: true
