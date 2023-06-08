@@ -12,6 +12,7 @@ public record SessionCreationRequest(
         @NotBlank()
         String codeSemestre,
         @NotNull()
-        SessionType sessionType
+        SessionType sessionType,
+        String previousSessionId
 ) {
 }

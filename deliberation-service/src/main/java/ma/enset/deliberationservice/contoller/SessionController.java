@@ -1,14 +1,14 @@
 package ma.enset.deliberationservice.contoller;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.*;
 import lombok.RequiredArgsConstructor;
+import ma.enset.deliberationservice.dto.RequiredSearchParams;
 import ma.enset.deliberationservice.dto.session.SessionCreationRequest;
 import ma.enset.deliberationservice.dto.session.SessionPagingResponse;
 import ma.enset.deliberationservice.dto.session.SessionResponse;
 import ma.enset.deliberationservice.dto.session.SessionUpdateRequest;
+import ma.enset.deliberationservice.model.SessionType;
 import ma.enset.deliberationservice.service.SessionService;
 import org.hibernate.validator.constraints.Range;
 import org.springframework.http.HttpStatus;
@@ -63,6 +63,17 @@ public class SessionController {
         return ResponseEntity
                 .ok()
                 .body(service.findAll(page, size));
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<SessionResponse>> search(@RequestParam @NotBlank String codeFiliere,
+                                                        @RequestParam(required = false) String codeSemester,
+                                                        @RequestParam @NotBlank String codeSessionUniversitaire,
+                                                        @RequestParam @PositiveOrZero @NotNull Integer annee,
+                                                        @RequestParam(required = false) SessionType type) {
+        return ResponseEntity
+                .ok()
+                .body(service.search(codeFiliere, codeSemester, codeSessionUniversitaire, annee, type));
     }
 
     @PatchMapping("/{idSession}")

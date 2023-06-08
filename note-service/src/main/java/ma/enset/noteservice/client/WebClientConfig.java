@@ -19,6 +19,10 @@ public class WebClientConfig {
     private final String ELEMENT_SERVICE_NAME = "ELEMENT-SERVICE";
     private final String MODULE_SERVICE_NAME = "MODULE-SERVICE";
 
+    private final String SESSION_SERVICE_NAME = "DELIBERATION-SERVICE";
+
+//    deliberation-service
+
     @Bean
     @LoadBalanced
     public WebClient.Builder webClientBuilder() {
@@ -64,6 +68,19 @@ public class WebClientConfig {
                 .build();
 
         return factory.createClient(ModuleClient.class);
+    }
+
+    @Bean
+    public SessionClient sessionClient(WebClient.Builder builder) {
+        WebClient sessionWebClient = builder
+                .baseUrl("http://" + SESSION_SERVICE_NAME)
+                .build();
+
+        HttpServiceProxyFactory factory = HttpServiceProxyFactory
+                .builder(WebClientAdapter.forClient(sessionWebClient))
+                .build();
+
+        return factory.createClient(SessionClient.class);
     }
 
 }

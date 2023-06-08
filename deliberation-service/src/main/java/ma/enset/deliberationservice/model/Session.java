@@ -25,4 +25,6 @@ public class Session {
 
     @Enumerated(EnumType.STRING)
     private SessionResult sessionResult = SessionResult.EN_COURS;
+
+    private String previousSessionId;
 }
