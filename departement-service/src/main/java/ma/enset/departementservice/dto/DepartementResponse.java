@@ -20,15 +20,6 @@ public class DepartementResponse {
     private List<FiliereResponse> filieres;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private ChefDepartement chefDepartement;
+    private UtilisateurResponse chefDepartement;
 
-    @Builder
-    public record ChefDepartement(
-            String code,
-            String nom,
-            String prenom,
-            String telephone,
-            String photo
-    ) {
-    }
 }
