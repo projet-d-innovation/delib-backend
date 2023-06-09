@@ -201,25 +201,27 @@ public class FiliereServiceImp implements FiliereService {
 
         List<FiliereResponse> filiereResponses = filiereMapper.toFiliereResponseList(filieres);
         if (includeSemestre) {
-            Set<String> codeFilieres = filiereResponses.stream()
-                    .map(FiliereResponse::getCodeFiliere)
-                    .collect(Collectors.toSet());
+            Set<String> codeFilieres = new HashSet<>();
+
+            filiereResponses.forEach(filiereResponse -> {
+                if (filiereResponse.getCodeFiliere() != null) {
+                    codeFilieres.add(filiereResponse.getCodeFiliere());
+                }
+            });
 
             if (!codeFilieres.isEmpty()) {
                 List<GroupedSemestresResponse> semestreResponses = semestreClient.getAllByCodeFilieres(codeFilieres).getBody();
-
                 if (semestreResponses != null && !semestreResponses.isEmpty()) {
-                    filiereResponses.forEach(filiereResponse -> filiereResponse.setSemestres(
-                            Objects.requireNonNull(semestreResponses.stream()
-                                            .filter(groupedSemestresResponse -> groupedSemestresResponse.codeFiliere()
-                                                    .equals(
-                                                            filiereResponse.getCodeFiliere()
-                                                    )
-                                            )
-                                            .findFirst()
-                                            .orElse(null))
-                                    .semestres()
-                    ));
+                    filiereResponses.forEach(filiereResponse -> {
+                                semestreResponses.stream()
+                                        .filter(groupedSemestresResponse -> groupedSemestresResponse.codeFiliere()
+                                                .equals(
+                                                        filiereResponse.getCodeFiliere()
+                                                )
+                                        )
+                                        .findFirst().ifPresent(semestres -> filiereResponse.setSemestres(semestres.semestres()));
+                            }
+                    );
                 }
             }
         }
@@ -285,24 +287,27 @@ public class FiliereServiceImp implements FiliereService {
                 )
         );
         if (includeSemestre) {
-            Set<String> codeFilieres = filierePagingResponse.records().stream()
-                    .map(FiliereResponse::getCodeFiliere)
-                    .collect(Collectors.toSet());
+            Set<String> codeFilieres = new HashSet<>();
+
+            filierePagingResponse.records().forEach(filiereResponse -> {
+                if (filiereResponse.getCodeFiliere() != null) {
+                    codeFilieres.add(filiereResponse.getCodeFiliere());
+                }
+            });
 
             if (!codeFilieres.isEmpty()) {
                 List<GroupedSemestresResponse> semestreResponses = semestreClient.getAllByCodeFilieres(codeFilieres).getBody();
                 if (semestreResponses != null && !semestreResponses.isEmpty()) {
-                    filierePagingResponse.records().forEach(filiereResponse -> filiereResponse.setSemestres(
-                            Objects.requireNonNull(semestreResponses.stream()
-                                            .filter(groupedSemestresResponse -> groupedSemestresResponse.codeFiliere()
-                                                    .equals(
-                                                            filiereResponse.getCodeFiliere()
-                                                    )
-                                            )
-                                            .findFirst()
-                                            .orElse(null))
-                                    .semestres()
-                    ));
+                    filierePagingResponse.records().forEach(filiereResponse -> {
+                                semestreResponses.stream()
+                                        .filter(groupedSemestresResponse -> groupedSemestresResponse.codeFiliere()
+                                                .equals(
+                                                        filiereResponse.getCodeFiliere()
+                                                )
+                                        )
+                                        .findFirst().ifPresent(semestres -> filiereResponse.setSemestres(semestres.semestres()));
+                            }
+                    );
                 }
             }
         }

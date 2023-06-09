@@ -166,19 +166,24 @@ public class DepartementServiceImpl implements DepartementService {
         List<DepartementResponse> departementResponses = departementMapper.toDepartementResponseList(departements);
 
         if (includeFilieres) {
-            List<FiliereByDepartementResponse> filiereByDepartementResponse = filiereClient.getFilieresByCodesDepartement(ids, true, true, true).getBody();
-            departementResponses.forEach(
-                    departement -> {
-                        if (filiereByDepartementResponse != null)
-                            departement.setFilieres(
-                                    Objects.requireNonNull(filiereByDepartementResponse.stream()
-                                                    .filter(filiereByDepartementResponse1 -> filiereByDepartementResponse1.codeDepartement().equals(departement.getCodeDepartement()))
-                                                    .findFirst()
-                                                    .orElse(null))
-                                            .filieres()
-                            );
-                    }
-            );
+
+            if (!departementIds.isEmpty()) {
+                List<FiliereByDepartementResponse> filiereByDepartementResponse = filiereClient.getFilieresByCodesDepartement(
+                        new HashSet<>(departementIds),
+                        true,
+                        true,
+                        true
+                ).getBody();
+                if (filiereByDepartementResponse != null && !filiereByDepartementResponse.isEmpty()) {
+                    departementResponses.forEach(
+                            departement ->
+                                    filiereByDepartementResponse.stream()
+                                            .filter(filiereByDepartementResponse1 -> filiereByDepartementResponse1.codeDepartement().equals(departement.getCodeDepartement()))
+                                            .findFirst()
+                                            .ifPresent(filiere -> departement.setFilieres(filiere.filieres()))
+                    );
+                }
+            }
         }
 
         if (includeChefDepartement) {
@@ -224,16 +229,13 @@ public class DepartementServiceImpl implements DepartementService {
                         true,
                         true
                 ).getBody();
-                System.out.println("filiereByDepartementResponse.size(): " + filiereByDepartementResponse.size());
-                if (!filiereByDepartementResponse.isEmpty()) {
+                if (filiereByDepartementResponse != null && !filiereByDepartementResponse.isEmpty()) {
                     departementPagingResponse.records().forEach(
-                            departement -> departement.setFilieres(
-                                    Objects.requireNonNull(filiereByDepartementResponse.stream()
-                                                    .filter(filiereByDepartementResponse1 -> filiereByDepartementResponse1.codeDepartement().equals(departement.getCodeDepartement()))
-                                                    .findFirst()
-                                                    .orElse(null))
-                                            .filieres()
-                            )
+                            departement ->
+                                    filiereByDepartementResponse.stream()
+                                            .filter(filiereByDepartementResponse1 -> filiereByDepartementResponse1.codeDepartement().equals(departement.getCodeDepartement()))
+                                            .findFirst()
+                                            .ifPresent(filiere -> departement.setFilieres(filiere.filieres()))
                     );
                 }
             }
