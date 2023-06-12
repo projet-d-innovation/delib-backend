@@ -16,11 +16,11 @@ public interface FiliereService {
 
     List<FiliereResponse> saveAll(List<FiliereCreationRequest> filieres) throws ElementAlreadyExistsException;
 
-    FiliereResponse findById(String id, boolean includeSemestre, boolean includeRegleDeCalcule, boolean includeChefFiliere) throws ElementNotFoundException;
+    FiliereResponse findById(String id, boolean includeDepartement, boolean includeSemestre, boolean includeRegleDeCalcule, boolean includeChefFiliere) throws ElementNotFoundException;
 
-    List<FiliereResponse> findAllById(Set<String> ids, boolean includeSemestre, boolean includeRegleDeCalcule, boolean includeChefFiliere) throws ElementNotFoundException;
+    List<FiliereResponse> findAllById(Set<String> ids, boolean includeDepartement, boolean includeSemestre, boolean includeRegleDeCalcule, boolean includeChefFiliere) throws ElementNotFoundException;
 
-    FilierePagingResponse findAll(int page, int size, String search, boolean includeSemestre, boolean includeRegleDeCalcule, boolean includeChefFiliere);
+    FilierePagingResponse findAll(int page, int size, String search, boolean includeDepartement, boolean includeSemestre, boolean includeRegleDeCalcule, boolean includeChefFiliere);
 
     FiliereResponse update(String id, FiliereUpdateRequest filiere) throws ElementNotFoundException;
 

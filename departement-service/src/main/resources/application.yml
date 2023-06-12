@@ -1,27 +1,30 @@
 server:
-    port:
+  port:
+
 
 spring:
-    application:
-        name: departement-service
+  application:
+    name: departement-service
+
 
     datasource:
-        url:
-        username:
-        password:
+      url:
+      username:
+      password:
 
     jpa:
-        hibernate:
-            ddl-auto: update
-        generate-ddl: true
-        database-platform:
+      hibernate:
+        ddl-auto: update
+      generate-ddl: true
+      database-platform:
 
     messages:
-        basename: messages.messages
+      basename: messages.messages
+      encoding: UTF-8
 
 eureka:
-    instance:
-        prefer-ip-address: true
-    client:
-        service-url:
-            defaultZone:
+  instance:
+    prefer-ip-address: true
+  client:
+    service-url:
+      defaultZone:

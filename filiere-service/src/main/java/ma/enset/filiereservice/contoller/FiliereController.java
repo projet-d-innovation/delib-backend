@@ -40,28 +40,31 @@ public class FiliereController {
 
     @GetMapping("/{codeFiliere}")
     public ResponseEntity<FiliereResponse> getById(@PathVariable("codeFiliere") String codeFiliere,
+                                                   @RequestParam(defaultValue = "false") boolean includeDepartement,
                                                    @RequestParam(defaultValue = "false") boolean includeSemestre,
                                                    @RequestParam(defaultValue = "false") boolean includeRegleDeCalcule,
                                                    @RequestParam(defaultValue = "false") boolean includeChefFiliere) {
         return ResponseEntity
                 .ok()
-                .body(filiereService.findById(codeFiliere, includeSemestre, includeRegleDeCalcule, includeChefFiliere));
+                .body(filiereService.findById(codeFiliere, includeDepartement, includeSemestre, includeRegleDeCalcule, includeChefFiliere));
     }
 
     @GetMapping("/bulk")
     public ResponseEntity<List<FiliereResponse>> getAllById(@RequestParam @NotEmpty Set<@NotBlank String> codeFiliere,
+                                                            @RequestParam(defaultValue = "false") boolean includeDepartement,
                                                             @RequestParam(defaultValue = "false") boolean includeSemestre,
                                                             @RequestParam(defaultValue = "false") boolean includeRegleDeCalcule,
                                                             @RequestParam(defaultValue = "false") boolean includeChefFiliere) {
         return ResponseEntity
                 .ok()
-                .body(filiereService.findAllById(codeFiliere, includeSemestre, includeRegleDeCalcule, includeChefFiliere));
+                .body(filiereService.findAllById(codeFiliere, includeDepartement, includeSemestre, includeRegleDeCalcule, includeChefFiliere));
     }
 
     @GetMapping
     public ResponseEntity<FilierePagingResponse> getAll(@RequestParam(defaultValue = "0") @Min(0) int page,
                                                         @RequestParam(defaultValue = "10") @Range(min = 1, max = 10) int size,
                                                         @RequestParam(defaultValue = "") String searchByIntitute,
+                                                        @RequestParam(defaultValue = "false") boolean includeDepartement,
                                                         @RequestParam(defaultValue = "false") boolean includeSemestre,
                                                         @RequestParam(defaultValue = "false") boolean includeRegleDeCalcule,
                                                         @RequestParam(defaultValue = "false") boolean includeChefFiliere
@@ -69,7 +72,7 @@ public class FiliereController {
     ) {
         return ResponseEntity
                 .ok()
-                .body(filiereService.findAll(page, size, searchByIntitute, includeSemestre, includeRegleDeCalcule, includeChefFiliere));
+                .body(filiereService.findAll(page, size, searchByIntitute, includeDepartement, includeSemestre, includeRegleDeCalcule, includeChefFiliere));
     }
 
     @PatchMapping("/{codeFiliere}")

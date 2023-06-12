@@ -62,7 +62,7 @@ public class GatewayApplication {
                 )
                 .route(
                         r -> r.path("/api/v1/filieres/**")
-                                .and()
+                                .or()
                                 .path("/api/v1/regledecalcul/**")
                                 .or()
                                 .path("/filiere-service/docs")
@@ -92,7 +92,7 @@ public class GatewayApplication {
                 )
                 .route(
                         r -> r.path("/api/v1/inscriptions-pedagogique/**")
-                                .and()
+                                .or()
                                 .path("/api/v1/etudiants/**")
                                 .or()
                                 .path("/inscription-pedagogique-service/docs")

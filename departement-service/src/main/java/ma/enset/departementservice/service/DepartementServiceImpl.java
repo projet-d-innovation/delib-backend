@@ -190,6 +190,7 @@ public class DepartementServiceImpl implements DepartementService {
 
             Set<String> codeChefDepartements = departementResponses.stream()
                     .map(DepartementResponse::getCodeChefDepartement)
+                    .filter(Objects::nonNull)
                     .collect(Collectors.toSet());
 
             if (!codeChefDepartements.isEmpty()) {
@@ -217,9 +218,10 @@ public class DepartementServiceImpl implements DepartementService {
                 departementRepository.findAllByIntituleDepartementContainsIgnoreCase(search, PageRequest.of(page, size))
         );
 
-        if (includeFilieres) {
+        if (includeFilieres && departementPagingResponse.records() != null && !departementPagingResponse.records().isEmpty()) {
             Set<String> departementIds = departementPagingResponse.records().stream()
                     .map(DepartementResponse::getCodeDepartement)
+                    .filter(Objects::nonNull)
                     .collect(Collectors.toSet());
 
             if (!departementIds.isEmpty()) {
@@ -241,10 +243,11 @@ public class DepartementServiceImpl implements DepartementService {
             }
         }
 
-        if (includeChefDepartement) {
+        if (includeChefDepartement && departementPagingResponse.records() != null && !departementPagingResponse.records().isEmpty()) {
 
             Set<String> codeChefDepartements = departementPagingResponse.records().stream()
                     .map(DepartementResponse::getCodeChefDepartement)
+                    .filter(Objects::nonNull)
                     .collect(Collectors.toSet());
 
             if (!codeChefDepartements.isEmpty()) {
@@ -279,11 +282,16 @@ public class DepartementServiceImpl implements DepartementService {
 
         departementMapper.updateDepartementFromDTO(departementUpdateRequest, departement);
 
-        if (departement.getCodeChefDepartement() != null) {
-            utilisateurClient.existsById(
-                    Set.of(departement.getCodeChefDepartement())
-            );
+        if (departement.getCodeChefDepartement() != null && departementUpdateRequest.codeChefDepartement() != null) {
+            if (departementUpdateRequest.codeChefDepartement().equals("")) {
+                departement.setCodeChefDepartement(null);
+            } else {
+                utilisateurClient.existsById(
+                        Set.of(departement.getCodeChefDepartement())
+                );
+            }
         }
+
 
         Departement updatedDepartement = null;
 
@@ -331,8 +339,10 @@ public class DepartementServiceImpl implements DepartementService {
             Set<String> codesFiliere = filiereByDepartementResponse.stream()
                     .flatMap(filiereByDepartementResponse1 -> filiereByDepartementResponse1.filieres().stream())
                     .map(FiliereResponse::getCodeFiliere)
+                    .filter(Objects::nonNull)
                     .collect(Collectors.toSet());
-            filiereClient.deleteAll(codesFiliere);
+            if (!codesFiliere.isEmpty())
+                filiereClient.deleteAll(codesFiliere);
         }
 
         utilisateurClient.handleKeyDepartementDeletion(ids);

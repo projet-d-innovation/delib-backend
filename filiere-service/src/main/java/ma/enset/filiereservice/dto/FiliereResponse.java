@@ -28,4 +28,7 @@ public class FiliereResponse {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private RegleDeCalculResponse regleDeCalcul;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private DepartementResponse departement;
 }

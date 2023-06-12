@@ -146,6 +146,7 @@ public class FiliereServiceImp implements FiliereService {
 
     @Override
     public FiliereResponse findById(String id,
+                                    boolean includeDepartement,
                                     boolean includeSemestre,
                                     boolean includeRegleDeCalcule,
                                     boolean includeChefFiliere) throws ElementNotFoundException {
@@ -156,6 +157,13 @@ public class FiliereServiceImp implements FiliereService {
                         new Object[]{ELEMENT_TYPE, ID_FIELD_NAME, id},
                         null
                 ));
+
+        if (includeDepartement) {
+            filiereResponse.setDepartement(
+                    departementClient.get(
+                            filiereResponse.getCodeDepartement(), false, true).getBody()
+            );
+        }
 
         if (includeSemestre) {
             List<SemestreResponse> semestreResponses = semestreClient.getAllByCodeFiliere(
@@ -179,6 +187,7 @@ public class FiliereServiceImp implements FiliereService {
 
     @Override
     public List<FiliereResponse> findAllById(Set<String> ids,
+                                             boolean includeDepartement,
                                              boolean includeSemestre,
                                              boolean includeRegleDeCalcule,
                                              boolean includeChefFiliere) throws ElementNotFoundException {
@@ -200,6 +209,32 @@ public class FiliereServiceImp implements FiliereService {
         }
 
         List<FiliereResponse> filiereResponses = filiereMapper.toFiliereResponseList(filieres);
+
+
+        if (includeDepartement) {
+            Set<String> codeDepartements = filiereResponses.stream()
+                    .map(FiliereResponse::getCodeDepartement)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+
+            if (!codeDepartements.isEmpty()) {
+                List<DepartementResponse> departementResponses = departementClient.getAllById(codeDepartements, false, true).getBody();
+                if (departementResponses != null && !departementResponses.isEmpty()) {
+                    filiereResponses.forEach(filiereResponse -> {
+                                departementResponses.stream()
+                                        .filter(departementResponse -> departementResponse.getCodeDepartement()
+                                                .equals(
+                                                        filiereResponse.getCodeDepartement()
+                                                )
+                                        )
+                                        .findFirst().ifPresent(filiereResponse::setDepartement);
+                            }
+                    );
+                }
+            }
+        }
+
+
         if (includeSemestre) {
             Set<String> codeFilieres = new HashSet<>();
 
@@ -273,6 +308,7 @@ public class FiliereServiceImp implements FiliereService {
 
     @Override
     public FilierePagingResponse findAll(int page, int size, String search,
+                                         boolean includeDepartement,
                                          boolean includeSemestre,
                                          boolean includeRegleDeCalcule,
                                          boolean includeChefFiliere) {
@@ -286,6 +322,31 @@ public class FiliereServiceImp implements FiliereService {
                         PageRequest.of(page, size)
                 )
         );
+
+        if (includeDepartement) {
+            Set<String> codeDepartements = filierePagingResponse.records().stream()
+                    .map(FiliereResponse::getCodeDepartement)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+
+            if (!codeDepartements.isEmpty()) {
+                List<DepartementResponse> departementResponses = departementClient.getAllById(codeDepartements, false, true).getBody();
+                if (departementResponses != null && !departementResponses.isEmpty()) {
+                    filierePagingResponse.records().forEach(filiereResponse -> {
+                                departementResponses.stream()
+                                        .filter(departementResponse -> departementResponse.getCodeDepartement()
+                                                .equals(
+                                                        filiereResponse.getCodeDepartement()
+                                                )
+                                        )
+                                        .findFirst().ifPresent(filiereResponse::setDepartement);
+                            }
+                    );
+                }
+            }
+        }
+
+
         if (includeSemestre) {
             Set<String> codeFilieres = new HashSet<>();
 
@@ -407,7 +468,7 @@ public class FiliereServiceImp implements FiliereService {
     @Override
     @Transactional
     public void deleteById(Set<String> ids) throws ElementNotFoundException {
-        this.findAllById(ids, false, false, false);
+        this.findAllById(ids, false, false, false, false);
 
         semestreClient.deleteAllByCodesFiliere(ids);
 
@@ -455,7 +516,7 @@ public class FiliereServiceImp implements FiliereService {
 
         return FiliereByDepartementResponse.builder()
                 .codeDepartement(codeDepartement)
-                .filieres(this.findAllById(codeFilieres, includeSemestre, includeRegleDeCalcule, includeChefFiliere))
+                .filieres(this.findAllById(codeFilieres, false, includeSemestre, includeRegleDeCalcule, includeChefFiliere))
                 .build();
     }
 
@@ -466,7 +527,7 @@ public class FiliereServiceImp implements FiliereService {
                 .map(Filiere::getCodeFiliere)
                 .collect(Collectors.toSet());
 
-        List<FiliereResponse> filiereResponses = this.findAllById(codeFilieres, includeSemestre, includeRegleDeCalcule, includeChefFiliere);
+        List<FiliereResponse> filiereResponses = this.findAllById(codeFilieres, false, includeSemestre, includeRegleDeCalcule, includeChefFiliere);
 
         List<FiliereByDepartementResponse> filiereByDepartementResponses = new ArrayList<>();
 

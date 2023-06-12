@@ -24,8 +24,3 @@ eureka:
   client:
     service-url:
       defaultZone:
-info:
-  app:
-    name: filiere-service
-    version: 1.0.2
-    description: Filiere & Regle De calcul Service
