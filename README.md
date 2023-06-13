@@ -2,8 +2,8 @@
 
 ### Class diagram
 
-![Class diagram]("docs/class-white.png")
+![Class diagram](docs/class-white.png)
 
 ### Architecture
 
-![Architecture]("docs/architecture-white.png")
+![Architecture](docs/architecture-white.png)
