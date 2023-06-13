@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -33,7 +34,7 @@ public class SemestreServiceImpl implements SemestreService {
     @Override
     public SemestreResponse save(SemestreCreationRequest request) throws ElementAlreadyExistsException {
 
-        filiereClient.getFiliereById(request.codeFiliere());
+        filiereClient.existsAll(Set.of(request.codeFiliere()));
 
         Semestre semestre = mapper.toSemestre(request);
 
@@ -78,7 +79,7 @@ public class SemestreServiceImpl implements SemestreService {
             );
         }
 
-        filiereClient.getAllFilieresByIds(
+        filiereClient.existsAll(
                 request.stream()
                         .map(SemestreCreationRequest::codeFiliere)
                         .collect(Collectors.toSet())
@@ -110,7 +111,7 @@ public class SemestreServiceImpl implements SemestreService {
     }
 
     @Override
-    public SemestreResponse findById(String codeSemestre, boolean includeModules) throws ElementNotFoundException {
+    public SemestreResponse findById(String codeSemestre, boolean includeFiliere, boolean includeModules) throws ElementNotFoundException {
 
         SemestreResponse response = mapper.toSemestreResponse(
                 repository.findById(codeSemestre).orElseThrow(() ->
@@ -126,11 +127,23 @@ public class SemestreServiceImpl implements SemestreService {
             response.setModules(moduleClient.getModulesByCodeSemestre(codeSemestre).getBody());
         }
 
+        if (includeFiliere) {
+            response.setFiliere(
+                    filiereClient.getFiliereById(
+                            response.getCodeFiliere(),
+                            false,
+                            false,
+                            false,
+                            true
+                    ).getBody()
+            );
+        }
+
         return response;
     }
 
     @Override
-    public List<SemestreResponse> findAllByIds(Set<String> codesSemestre, boolean includeModules) throws ElementNotFoundException {
+    public List<SemestreResponse> findAllByIds(Set<String> codesSemestre, boolean includeFiliere, boolean includeModules) throws ElementNotFoundException {
 
         List<SemestreResponse> response = mapper.toSemestreResponseList(repository.findAllById(codesSemestre));
 
@@ -155,12 +168,40 @@ public class SemestreServiceImpl implements SemestreService {
                     moduleClient.getModulesByCodesSemestre(codesSemestre).getBody()
             );
         }
+        if (includeFiliere && !codesSemestre.isEmpty()) {
+            Set<String> filiereCodes = response.stream()
+                    .map(SemestreResponse::getCodeFiliere)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            if (!filiereCodes.isEmpty()) {
+                List<FiliereResponse> filieres = filiereClient.getAllFilieresByIds(
+                        filiereCodes,
+                        false,
+                        false,
+                        false,
+                        true
+                ).getBody();
+                if (filieres != null && !filieres.isEmpty()) {
+                    response.forEach(semestreResponse -> {
+                        if (semestreResponse.getCodeFiliere() != null) {
+                            semestreResponse.setFiliere(
+                                    filieres.stream()
+                                            .filter(filiereResponse -> filiereResponse.getCodeFiliere().equals(semestreResponse.getCodeFiliere()))
+                                            .findFirst()
+                                            .orElse(null)
+                            );
+                        }
+                    });
+                }
+            }
+        }
+
 
         return response;
     }
 
     @Override
-    public SemestrePagingResponse findAll(int page, int size, boolean includeModules) {
+    public SemestrePagingResponse findAll(int page, int size, boolean includeFiliere, boolean includeModules) {
 
         SemestrePagingResponse response = mapper.toPagingResponse(repository.findAll(PageRequest.of(page, size)));
 
@@ -173,6 +214,34 @@ public class SemestreServiceImpl implements SemestreService {
                     response.records(),
                     moduleClient.getModulesByCodesSemestre(codesSemestre).getBody()
             );
+        }
+
+        if (includeFiliere && !response.records().isEmpty()) {
+            Set<String> filiereCodes = response.records().stream()
+                    .map(SemestreResponse::getCodeFiliere)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            if (!filiereCodes.isEmpty()) {
+                List<FiliereResponse> filieres = filiereClient.getAllFilieresByIds(
+                        filiereCodes,
+                        false,
+                        false,
+                        false,
+                        true
+                ).getBody();
+                if (filieres != null && !filieres.isEmpty()) {
+                    response.records().forEach(semestreResponse -> {
+                        if (semestreResponse.getCodeFiliere() != null) {
+                            semestreResponse.setFiliere(
+                                    filieres.stream()
+                                            .filter(filiereResponse -> filiereResponse.getCodeFiliere().equals(semestreResponse.getCodeFiliere()))
+                                            .findFirst()
+                                            .orElse(null)
+                            );
+                        }
+                    });
+                }
+            }
         }
 
         return response;
@@ -199,7 +268,8 @@ public class SemestreServiceImpl implements SemestreService {
     }
 
     @Override
-    public SemestreResponse update(String codeSemestre, SemestreUpdateRequest request) throws ElementNotFoundException {
+    public SemestreResponse update(String codeSemestre, SemestreUpdateRequest request) throws
+            ElementNotFoundException {
 
         Semestre semestre = repository.findById(codeSemestre).orElseThrow(() ->
                 new ElementNotFoundException(

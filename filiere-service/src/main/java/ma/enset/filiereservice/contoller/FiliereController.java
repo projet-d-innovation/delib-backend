@@ -62,7 +62,7 @@ public class FiliereController {
 
     @GetMapping
     public ResponseEntity<FilierePagingResponse> getAll(@RequestParam(defaultValue = "0") @Min(0) int page,
-                                                        @RequestParam(defaultValue = "10") @Range(min = 1, max = 10) int size,
+                                                        @RequestParam(defaultValue = "10") @Range(min = 1, max = 100) int size,
                                                         @RequestParam(defaultValue = "") String searchByIntitute,
                                                         @RequestParam(defaultValue = "false") boolean includeDepartement,
                                                         @RequestParam(defaultValue = "false") boolean includeSemestre,

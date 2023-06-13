@@ -15,11 +15,11 @@ public interface SemestreService {
 
     boolean existAllByIds(Set<String> codesSemestre) throws ElementNotFoundException;
 
-    SemestreResponse findById(String codeSemestre, boolean includeModules) throws ElementNotFoundException;
+    SemestreResponse findById(String codeSemestre, boolean includeFiliere, boolean includeModules) throws ElementNotFoundException;
 
-    List<SemestreResponse> findAllByIds(Set<String> codesSemestre, boolean includeModules) throws ElementNotFoundException;
+    List<SemestreResponse> findAllByIds(Set<String> codesSemestre, boolean includeFiliere, boolean includeModules) throws ElementNotFoundException;
 
-    SemestrePagingResponse findAll(int page, int size, boolean includeModules);
+    SemestrePagingResponse findAll(int page, int size, boolean includeFiliere, boolean includeModules);
 
     List<SemestreResponse> findAllByCodeFiliere(String codeFiliere);
 
