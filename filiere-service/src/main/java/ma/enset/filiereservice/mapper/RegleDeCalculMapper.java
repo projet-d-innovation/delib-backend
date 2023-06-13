@@ -47,7 +47,7 @@ public interface RegleDeCalculMapper {
     @Mapping(target = "page", expression = "java(regleDeCalculPage.getNumber())")
     @Mapping(target = "size", expression = "java(regleDeCalculPage.getSize())")
     @Mapping(target = "totalPages", expression = "java(regleDeCalculPage.getTotalPages())")
-    @Mapping(target = "totalElements", expression = "java(regleDeCalculPage.getNumberOfElements())")
+    @Mapping(target = "totalElements", expression = "java(regleDeCalculPage.getTotalElements())")
     @Mapping(target = "records", expression = "java(toRegleDeCalculResponseList(regleDeCalculPage.getContent()))")
     RegleDeCalculPagingResponse toPagingResponse(Page<RegleDeCalcul> regleDeCalculPage);
 }

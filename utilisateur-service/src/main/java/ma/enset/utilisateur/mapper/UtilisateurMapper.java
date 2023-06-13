@@ -68,7 +68,7 @@ public interface UtilisateurMapper {
     @Mapping(target = "page", expression = "java(utilisateurPage.getNumber())")
     @Mapping(target = "size", expression = "java(utilisateurPage.getSize())")
     @Mapping(target = "totalPages", expression = "java(utilisateurPage.getTotalPages())")
-    @Mapping(target = "totalElements", expression = "java(utilisateurPage.getNumberOfElements())")
+    @Mapping(target = "totalElements", expression = "java(utilisateurPage.getTotalElements())")
     @Mapping(target = "records", expression = "java(toUtilisateurResponseList(utilisateurPage.getContent()))")
     PagingResponse<UtilisateurResponse> toPagingResponse(Page<Utilisateur> utilisateurPage);
 }

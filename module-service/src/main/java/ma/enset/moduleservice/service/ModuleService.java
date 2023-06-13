@@ -15,11 +15,11 @@ public interface ModuleService {
 
     boolean existAllByIds(Set<String> codesModule) throws ElementNotFoundException;
 
-    ModuleResponse findById(String codeModule, boolean includeElements) throws ElementNotFoundException;
+    ModuleResponse findById(String codeModule, boolean includeSemestre, boolean includeElements) throws ElementNotFoundException;
 
-    List<ModuleResponse> findAllByIds(Set<String> codesModule, boolean includeElements) throws ElementNotFoundException;
+    List<ModuleResponse> findAllByIds(Set<String> codesModule, boolean includeSemestre, boolean includeElements) throws ElementNotFoundException;
 
-    ModulePagingResponse findAll(int page, int size, boolean includeElements);
+    ModulePagingResponse findAll(int page, int size, boolean includeSemestre, boolean includeElements);
 
     List<ModuleResponse> findAllByCodeSemestre(String codeSemestre);
 

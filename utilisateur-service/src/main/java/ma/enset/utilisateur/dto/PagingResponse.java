@@ -10,7 +10,7 @@ public record PagingResponse<T> (
     int page,
     int size,
     int totalPages,
-    int totalElements,
+    long totalElements,
     List<T> records
 
 ){}

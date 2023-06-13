@@ -34,7 +34,7 @@ public interface ModuleMapper {
     @Mapping(target = "page", expression = "java(modulePage.getNumber())")
     @Mapping(target = "size", expression = "java(modulePage.getSize())")
     @Mapping(target = "totalPages", expression = "java(modulePage.getTotalPages())")
-    @Mapping(target = "totalElements", expression = "java(modulePage.getNumberOfElements())")
+    @Mapping(target = "totalElements", expression = "java(modulePage.getTotalElements())")
     @Mapping(target = "records", expression = "java(toModuleResponseList(modulePage.getContent()))")
     ModulePagingResponse toPagingResponse(Page<Module> modulePage);
 

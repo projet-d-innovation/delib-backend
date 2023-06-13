@@ -32,7 +32,7 @@ public interface SessionMapper {
     @Mapping(target = "page", expression = "java(sessionPage.getNumber())")
     @Mapping(target = "size", expression = "java(sessionPage.getSize())")
     @Mapping(target = "totalPages", expression = "java(sessionPage.getTotalPages())")
-    @Mapping(target = "totalElements", expression = "java(sessionPage.getNumberOfElements())")
+    @Mapping(target = "totalElements", expression = "java(sessionPage.getTotalElements())")
     @Mapping(target = "records", expression = "java(toSessionResponseList(sessionPage.getContent()))")
     SessionPagingResponse toPagingResponse(Page<Session> sessionPage);
 

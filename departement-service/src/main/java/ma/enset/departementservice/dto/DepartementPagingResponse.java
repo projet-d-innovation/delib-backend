@@ -9,6 +9,6 @@ public record DepartementPagingResponse(
     int page,
     int size,
     int totalPages,
-    int totalElements,
+    long totalElements,
     List<DepartementResponse> records
 ) { }

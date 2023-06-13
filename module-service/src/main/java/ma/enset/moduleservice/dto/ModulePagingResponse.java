@@ -6,9 +6,10 @@ import java.util.List;
 
 @Builder
 public record ModulePagingResponse(
-    int page,
-    int size,
-    int totalPages,
-    int totalElements,
-    List<ModuleResponse> records
-) { }
+        int page,
+        int size,
+        int totalPages,
+        long totalElements,
+        List<ModuleResponse> records
+) {
+}

@@ -52,7 +52,7 @@ public class SemestreController {
     }
 
     @GetMapping("/bulk")
-    public ResponseEntity<List<SemestreResponse>> getAllByIds(@RequestParam Set<String> codesSemestre,
+    public ResponseEntity<List<SemestreResponse>> getAllByIds(@RequestParam @NotEmpty Set<@NotBlank String> codesSemestre,
                                                               @RequestParam(defaultValue = "false") boolean includeFiliere,
                                                               @RequestParam(defaultValue = "false") boolean includeModules) {
 
@@ -65,7 +65,7 @@ public class SemestreController {
     }
 
     @GetMapping("/filiere/bulk")
-    public ResponseEntity<List<GroupedSemestresResponse>> getAllByCodeFilieres(@RequestParam Set<String> codesFiliere) {
+    public ResponseEntity<List<GroupedSemestresResponse>> getAllByCodeFilieres(@RequestParam Set<@NotBlank String> codesFiliere) {
         return ResponseEntity.ok(service.findAllByCodesFiliere(codesFiliere));
     }
 

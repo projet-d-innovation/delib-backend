@@ -47,7 +47,7 @@ public interface RoleMapper {
     @Mapping(target = "page", expression = "java(rolePage.getNumber())")
     @Mapping(target = "size", expression = "java(rolePage.getSize())")
     @Mapping(target = "totalPages", expression = "java(rolePage.getTotalPages())")
-    @Mapping(target = "totalElements", expression = "java(rolePage.getNumberOfElements())")
+    @Mapping(target = "totalElements", expression = "java(rolePage.getTotalElements())")
     @Mapping(target = "records", expression = "java(toRoleResponseList(rolePage.getContent()))")
     PagingResponse<RoleResponse> toPagingResponse(Page<Role> rolePage);
 

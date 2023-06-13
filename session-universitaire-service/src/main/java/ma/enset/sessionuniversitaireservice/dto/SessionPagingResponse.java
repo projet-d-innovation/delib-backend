@@ -9,6 +9,6 @@ public record SessionPagingResponse(
     int page,
     int size,
     int totalPages,
-    int totalElements,
+    long totalElements,
     List<SessionResponse> records
 ) { }

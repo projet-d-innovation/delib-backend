@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -41,47 +42,47 @@ public class ModuleServiceImpl implements ModuleService {
             return mapper.toModuleResponse(repository.save(module));
         } catch (DataIntegrityViolationException e) {
             throw new ElementAlreadyExistsException(
-                CoreConstants.BusinessExceptionMessage.ALREADY_EXISTS,
-                new Object[] {ELEMENT_TYPE, ID_FIELD_NAME, request.codeModule()},
-                null
+                    CoreConstants.BusinessExceptionMessage.ALREADY_EXISTS,
+                    new Object[]{ELEMENT_TYPE, ID_FIELD_NAME, request.codeModule()},
+                    null
             );
         }
     }
 
     @Override
     public List<ModuleResponse> saveAll(List<ModuleCreationRequest> request) throws ElementAlreadyExistsException,
-                                                                                    DuplicateEntryException {
+            DuplicateEntryException {
         int uniqueModulesCount = (int) request.stream()
-                                                .map(ModuleCreationRequest::codeModule)
-                                                .distinct().count();
+                .map(ModuleCreationRequest::codeModule)
+                .distinct().count();
 
         if (uniqueModulesCount != request.size()) {
             throw new DuplicateEntryException(
-                CoreConstants.BusinessExceptionMessage.DUPLICATE_ENTRY,
-                new Object[]{ELEMENT_TYPE}
+                    CoreConstants.BusinessExceptionMessage.DUPLICATE_ENTRY,
+                    new Object[]{ELEMENT_TYPE}
             );
         }
 
         List<Module> foundModules = repository.findAllById(
-            request.stream()
-                    .map(ModuleCreationRequest::codeModule)
-                    .collect(Collectors.toSet())
+                request.stream()
+                        .map(ModuleCreationRequest::codeModule)
+                        .collect(Collectors.toSet())
         );
 
         if (!foundModules.isEmpty()) {
             throw new ElementAlreadyExistsException(
-                CoreConstants.BusinessExceptionMessage.MANY_ALREADY_EXISTS,
-                new Object[]{ELEMENT_TYPE},
-                foundModules.stream()
-                    .map(Module::getCodeModule)
-                    .toList()
+                    CoreConstants.BusinessExceptionMessage.MANY_ALREADY_EXISTS,
+                    new Object[]{ELEMENT_TYPE},
+                    foundModules.stream()
+                            .map(Module::getCodeModule)
+                            .toList()
             );
         }
 
         semestreClient.semestresExist(
-            request.stream()
-                .map(ModuleCreationRequest::codeSemestre)
-                .collect(Collectors.toSet())
+                request.stream()
+                        .map(ModuleCreationRequest::codeSemestre)
+                        .collect(Collectors.toSet())
         );
 
         List<Module> modules = mapper.toModuleList(request);
@@ -93,13 +94,13 @@ public class ModuleServiceImpl implements ModuleService {
     public boolean existAllByIds(Set<String> codesModule) throws ElementNotFoundException {
 
         List<String> foundModulesCodes = repository.findAllById(codesModule)
-                                                    .stream().map(Module::getCodeModule).toList();
+                .stream().map(Module::getCodeModule).toList();
 
         if (codesModule.size() != foundModulesCodes.size()) {
             throw new ElementNotFoundException(
-                CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
-                new Object[] {ELEMENT_TYPE},
-                codesModule.stream()
+                    CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
+                    new Object[]{ELEMENT_TYPE},
+                    codesModule.stream()
                             .filter(code -> !foundModulesCodes.contains(code))
                             .toList()
             );
@@ -109,69 +110,127 @@ public class ModuleServiceImpl implements ModuleService {
     }
 
     @Override
-    public ModuleResponse findById(String codeModule, boolean includeElements) throws ElementNotFoundException {
+    public ModuleResponse findById(String codeModule, boolean includeSemestre, boolean includeElements) throws ElementNotFoundException {
 
         ModuleResponse response = mapper.toModuleResponse(
-            repository.findById(codeModule).orElseThrow(() ->
-                new ElementNotFoundException(
-                    CoreConstants.BusinessExceptionMessage.NOT_FOUND,
-                    new Object[] {ELEMENT_TYPE, ID_FIELD_NAME, codeModule},
-                    null
+                repository.findById(codeModule).orElseThrow(() ->
+                        new ElementNotFoundException(
+                                CoreConstants.BusinessExceptionMessage.NOT_FOUND,
+                                new Object[]{ELEMENT_TYPE, ID_FIELD_NAME, codeModule},
+                                null
+                        )
                 )
-            )
         );
 
         if (includeElements) {
             response.setElements(elementClient.getElementsByCodeModule(codeModule).getBody());
         }
 
+        if (includeSemestre && response.getCodeSemestre() != null) {
+            response.setSemestre(
+                    semestreClient.getById(
+                                    response.getCodeSemestre(),
+                                    true,
+                                    false
+                            )
+                            .getBody()
+            );
+        }
+
         return response;
     }
 
     @Override
-    public List<ModuleResponse> findAllByIds(Set<String> codesModule, boolean includeElements) throws ElementNotFoundException {
+    public List<ModuleResponse> findAllByIds(Set<String> codesModule, boolean includeSemestre, boolean includeElements) throws ElementNotFoundException {
 
         List<ModuleResponse> response = mapper.toModuleResponseList(repository.findAllById(codesModule));
 
         if (codesModule.size() != response.size()) {
             throw new ElementNotFoundException(
-                CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
-                new Object[] {ELEMENT_TYPE},
-                codesModule.stream()
-                    .filter(
-                        codeModule -> !response.stream()
-                                                .map(ModuleResponse::getCodeModule)
-                                                .toList()
-                                                .contains(codeModule)
-                    )
-                    .toList()
+                    CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
+                    new Object[]{ELEMENT_TYPE},
+                    codesModule.stream()
+                            .filter(
+                                    codeModule -> !response.stream()
+                                            .map(ModuleResponse::getCodeModule)
+                                            .toList()
+                                            .contains(codeModule)
+                            )
+                            .toList()
             );
         }
 
         if (includeElements) {
             mapper.enrichModuleResponseListWithElements(
-                response,
-                elementClient.getElementsByCodesModule(codesModule).getBody()
+                    response,
+                    elementClient.getElementsByCodesModule(codesModule).getBody()
             );
+        }
+        if (includeSemestre && !response.isEmpty()) {
+            Set<String> semestreCodes = response.stream()
+                    .map(ModuleResponse::getCodeSemestre)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            if (!semestreCodes.isEmpty()) {
+                List<SemestreResponse> semestres = semestreClient.getAllByIds(
+                        semestreCodes,
+                        true,
+                        false
+                ).getBody();
+                if (semestres != null && !semestres.isEmpty()) {
+                    response.forEach(moduleResponse -> {
+                        if (moduleResponse.getCodeSemestre() != null) {
+                            moduleResponse.setSemestre(semestres.stream()
+                                    .filter(semestreResponse -> semestreResponse.getCodeSemestre().equals(moduleResponse.getCodeSemestre()))
+                                    .findFirst().orElse(null));
+                        }
+                    });
+                }
+            }
+
         }
 
         return response;
     }
 
     @Override
-    public ModulePagingResponse findAll(int page, int size, boolean includeElements) {
+    public ModulePagingResponse findAll(int page, int size, boolean includeSemestre, boolean includeElements) {
 
         ModulePagingResponse response = mapper.toPagingResponse(repository.findAll(PageRequest.of(page, size)));
 
         if (includeElements && !response.records().isEmpty()) {
             Set<String> codesModule = response.records().stream()
-                                                        .map(ModuleResponse::getCodeModule)
-                                                        .collect(Collectors.toSet());
+                    .map(ModuleResponse::getCodeModule)
+                    .collect(Collectors.toSet());
 
             mapper.enrichModuleResponseListWithElements(
-                response.records(),
-                elementClient.getElementsByCodesModule(codesModule).getBody()
+                    response.records(),
+                    elementClient.getElementsByCodesModule(codesModule).getBody()
             );
+        }
+        if (includeSemestre && !response.records().isEmpty()) {
+            Set<String> codesSemestre = response.records().stream()
+                    .map(ModuleResponse::getCodeSemestre)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            if (!codesSemestre.isEmpty()) {
+                List<SemestreResponse> semestres = semestreClient.getAllByIds(
+                        codesSemestre,
+                        true,
+                        false
+                ).getBody();
+                if (semestres != null && !semestres.isEmpty()) {
+                    response.records().forEach(moduleResponse -> {
+                        moduleResponse.setSemestre(
+                                semestres.stream()
+                                        .filter(
+                                                semestreResponse -> semestreResponse.getCodeSemestre()
+                                                        .equals(moduleResponse.getCodeSemestre())
+                                        ).findFirst()
+                                        .orElse(null));
+                    });
+                }
+            }
         }
 
         return response;
@@ -185,27 +244,27 @@ public class ModuleServiceImpl implements ModuleService {
     @Override
     public List<GroupedModulesResponse> findAllByCodesSemestre(Set<String> codesSemestre) {
         return repository.findAllByCodeSemestreIn(codesSemestre)
-                            .stream()
-                            .collect(Collectors.groupingBy(Module::getCodeSemestre))
-                            .entrySet().stream()
-                            .map(entry ->
-                                GroupedModulesResponse.builder()
-                                    .codeSemestre(entry.getKey())
-                                    .modules(mapper.toModuleResponseList(entry.getValue()))
-                                    .build()
-                            )
-                            .toList();
+                .stream()
+                .collect(Collectors.groupingBy(Module::getCodeSemestre))
+                .entrySet().stream()
+                .map(entry ->
+                        GroupedModulesResponse.builder()
+                                .codeSemestre(entry.getKey())
+                                .modules(mapper.toModuleResponseList(entry.getValue()))
+                                .build()
+                )
+                .toList();
     }
 
     @Override
     public ModuleResponse update(String codeModule, ModuleUpdateRequest request) throws ElementNotFoundException {
 
         Module module = repository.findById(codeModule).orElseThrow(() ->
-            new ElementNotFoundException(
-                CoreConstants.BusinessExceptionMessage.NOT_FOUND,
-                new Object[] {ELEMENT_TYPE, ID_FIELD_NAME, codeModule},
-                null
-            )
+                new ElementNotFoundException(
+                        CoreConstants.BusinessExceptionMessage.NOT_FOUND,
+                        new Object[]{ELEMENT_TYPE, ID_FIELD_NAME, codeModule},
+                        null
+                )
         );
 
         mapper.updateModuleFromDTO(request, module);
@@ -219,9 +278,9 @@ public class ModuleServiceImpl implements ModuleService {
 
         if (!repository.existsById(codeModule)) {
             throw new ElementNotFoundException(
-                CoreConstants.BusinessExceptionMessage.NOT_FOUND,
-                new Object[] {ELEMENT_TYPE, ID_FIELD_NAME, codeModule},
-                null
+                    CoreConstants.BusinessExceptionMessage.NOT_FOUND,
+                    new Object[]{ELEMENT_TYPE, ID_FIELD_NAME, codeModule},
+                    null
             );
         }
 
@@ -245,11 +304,11 @@ public class ModuleServiceImpl implements ModuleService {
     public void deleteAllByCodeSemestre(String codeSemestre) {
 
         Set<String> modulesToDeleteCodes = repository.findAllByCodeSemestre(codeSemestre)
-                                                        .stream()
-                                                        .map(Module::getCodeModule)
-                                                        .collect(Collectors.toSet());
+                .stream()
+                .map(Module::getCodeModule)
+                .collect(Collectors.toSet());
 
-        if(modulesToDeleteCodes.isEmpty()) {
+        if (modulesToDeleteCodes.isEmpty()) {
             return;
         }
 
@@ -263,9 +322,9 @@ public class ModuleServiceImpl implements ModuleService {
     public void deleteAllByCodesSemestre(Set<String> codesSemestre) {
 
         Set<String> modulesToDeleteCodes = repository.findAllByCodeSemestreIn(codesSemestre)
-                                                        .stream()
-                                                        .map(Module::getCodeModule)
-                                                        .collect(Collectors.toSet());
+                .stream()
+                .map(Module::getCodeModule)
+                .collect(Collectors.toSet());
 
         if (modulesToDeleteCodes.isEmpty()) {
             return;

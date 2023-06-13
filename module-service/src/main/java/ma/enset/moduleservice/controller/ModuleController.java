@@ -26,15 +26,15 @@ public class ModuleController {
     @PostMapping
     public ResponseEntity<ModuleResponse> save(@Valid @RequestBody ModuleCreationRequest request) {
         return ResponseEntity
-            .status(HttpStatus.CREATED)
-            .body(service.save(request));
+                .status(HttpStatus.CREATED)
+                .body(service.save(request));
     }
 
     @PostMapping("/bulk")
     public ResponseEntity<List<ModuleResponse>> saveAll(@RequestBody @NotEmpty List<@Valid ModuleCreationRequest> request) {
         return ResponseEntity
-            .status(HttpStatus.CREATED)
-            .body(service.saveAll(request));
+                .status(HttpStatus.CREATED)
+                .body(service.saveAll(request));
     }
 
     @GetMapping("/exists")
@@ -45,16 +45,18 @@ public class ModuleController {
 
     @GetMapping("/{codeModule}")
     public ResponseEntity<ModuleResponse> getById(@PathVariable String codeModule,
+                                                  @RequestParam(defaultValue = "false") boolean includeSemestre,
                                                   @RequestParam(defaultValue = "false") boolean includeElements) {
 
-        return ResponseEntity.ok(service.findById(codeModule, includeElements));
+        return ResponseEntity.ok(service.findById(codeModule, includeSemestre, includeElements));
     }
 
     @GetMapping("/bulk")
     public ResponseEntity<List<ModuleResponse>> getAllByIds(@RequestParam Set<String> codesModule,
+                                                            @RequestParam(defaultValue = "false") boolean includeSemestre,
                                                             @RequestParam(defaultValue = "false") boolean includeElements) {
 
-        return ResponseEntity.ok(service.findAllByIds(codesModule, includeElements));
+        return ResponseEntity.ok(service.findAllByIds(codesModule, includeSemestre, includeElements));
     }
 
     @GetMapping("/semestre/{codeSemestre}")
@@ -70,9 +72,10 @@ public class ModuleController {
     @GetMapping
     public ResponseEntity<ModulePagingResponse> getAll(@RequestParam(defaultValue = "0") @Min(0) int page,
                                                        @RequestParam(defaultValue = "10") @Range(min = 1, max = 100) int size,
+                                                       @RequestParam(defaultValue = "false") boolean includeSemestre,
                                                        @RequestParam(defaultValue = "false") boolean includeElements) {
 
-        return ResponseEntity.ok(service.findAll(page, size, includeElements));
+        return ResponseEntity.ok(service.findAll(page, size, includeSemestre, includeElements));
     }
 
     @PatchMapping("/{codeModule}")
