@@ -65,7 +65,7 @@ public interface InscriptionPedagogiqueMapper {
     @Mapping(target = "page", expression = "java(inscriptionPage.getNumber())")
     @Mapping(target = "size", expression = "java(inscriptionPage.getSize())")
     @Mapping(target = "totalPages", expression = "java(inscriptionPage.getTotalPages())")
-    @Mapping(target = "totalElements", expression = "java(inscriptionPage.getNumberOfElements())")
+    @Mapping(target = "totalElements", expression = "java(inscriptionPage.getTotalElements())")
     @Mapping(target = "records", expression = "java(toInscriptionResponseList(inscriptionPage.getContent()))")
     InscriptionPagingResponse toPagingResponse(Page<InscriptionPedagogique> inscriptionPage);
 

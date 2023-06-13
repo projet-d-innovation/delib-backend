@@ -20,13 +20,15 @@ public class ModuleResponse {
     private String codeSemestre;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private List<Element> elements;
-
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private SemestreResponse semestre;
 
     @Builder
-    public record Element (
-        String codeElement,
-        String intituleElement,
-        float coefficientElement,
-        String codeProfesseur
-    ) {}
+    public record Element(
+            String codeElement,
+            String intituleElement,
+            float coefficientElement,
+            String codeProfesseur
+    ) {
+    }
 }

@@ -9,6 +9,6 @@ public record ElementPagingResponse(
         int page,
         int size,
         int totalPages,
-        int totalElements,
+        long totalElements,
         List<ElementResponse> records
 ) { }

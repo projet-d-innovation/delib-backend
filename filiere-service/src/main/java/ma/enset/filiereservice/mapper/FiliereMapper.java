@@ -33,7 +33,7 @@ public interface FiliereMapper {
     @Mapping(target = "page", expression = "java(filierePage.getNumber())")
     @Mapping(target = "size", expression = "java(filierePage.getSize())")
     @Mapping(target = "totalPages", expression = "java(filierePage.getTotalPages())")
-    @Mapping(target = "totalElements", expression = "java(filierePage.getNumberOfElements())")
+    @Mapping(target = "totalElements", expression = "java(filierePage.getTotalElements())")
     @Mapping(target = "records", expression = "java(toFiliereResponseList(filierePage.getContent()))")
     FilierePagingResponse toPagingResponse(Page<Filiere> filierePage);
 

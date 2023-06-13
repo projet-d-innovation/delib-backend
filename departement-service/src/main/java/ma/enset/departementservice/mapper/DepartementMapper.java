@@ -28,7 +28,7 @@ public interface DepartementMapper {
     @Mapping(target = "page", expression = "java(departementPage.getNumber())")
     @Mapping(target = "size", expression = "java(departementPage.getSize())")
     @Mapping(target = "totalPages", expression = "java(departementPage.getTotalPages())")
-    @Mapping(target = "totalElements", expression = "java(departementPage.getNumberOfElements())")
+    @Mapping(target = "totalElements", expression = "java(departementPage.getTotalElements())")
     @Mapping(source = "content", target = "records")
     DepartementPagingResponse toPagingResponse(Page<Departement> departementPage);
 

@@ -10,7 +10,7 @@ public record InscriptionPagingResponse(
     int page,
     int size,
     int totalPages,
-    int totalElements,
+    long totalElements,
     List<InscriptionResponse> records
 
 ) { }

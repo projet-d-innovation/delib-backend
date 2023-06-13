@@ -6,9 +6,10 @@ import java.util.List;
 
 @Builder
 public record FilierePagingResponse(
-    int page,
-    int size,
-    int totalPages,
-    int totalElements,
-    List<FiliereResponse> records
-) { }
+        int page,
+        int size,
+        int totalPages,
+        long totalElements,
+        List<FiliereResponse> records
+) {
+}

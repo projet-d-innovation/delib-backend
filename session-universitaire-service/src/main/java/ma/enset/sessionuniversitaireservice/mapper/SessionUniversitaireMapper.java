@@ -26,7 +26,7 @@ public interface SessionUniversitaireMapper {
     @Mapping(target = "page", expression = "java(sessionUniversitairePage.getNumber())")
     @Mapping(target = "size", expression = "java(sessionUniversitairePage.getSize())")
     @Mapping(target = "totalPages", expression = "java(sessionUniversitairePage.getTotalPages())")
-    @Mapping(target = "totalElements", expression = "java(sessionUniversitairePage.getNumberOfElements())")
+    @Mapping(target = "totalElements", expression = "java(sessionUniversitairePage.getTotalElements())")
     @Mapping(target = "records", expression = "java(toSessionResponseList(sessionUniversitairePage.getContent()))")
     SessionPagingResponse toPagingResponse(Page<SessionUniversitaire> sessionUniversitairePage);
 }

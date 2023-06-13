@@ -9,7 +9,7 @@ public record RegleDeCalculPagingResponse(
         int page,
         int size,
         int totalPages,
-        int totalElements,
+        long totalElements,
         List<RegleDeCalculResponse> records
 ) {
 }

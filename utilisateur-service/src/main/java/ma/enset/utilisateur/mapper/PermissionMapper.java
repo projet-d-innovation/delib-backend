@@ -57,7 +57,7 @@ public interface PermissionMapper {
     @Mapping(target = "page", expression = "java(permissionPage.getNumber())")
     @Mapping(target = "size", expression = "java(permissionPage.getSize())")
     @Mapping(target = "totalPages", expression = "java(permissionPage.getTotalPages())")
-    @Mapping(target = "totalElements", expression = "java(permissionPage.getNumberOfElements())")
+    @Mapping(target = "totalElements", expression = "java(permissionPage.getTotalElements())")
     @Mapping(target = "records", expression = "java(toPermissionResponseList(permissionPage.getContent()))")
     PagingResponse<PermissionResponse> toPagingResponse(Page<Permission> permissionPage);
 

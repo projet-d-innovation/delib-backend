@@ -35,7 +35,7 @@ public interface ElementMapper {
     @Mapping(target = "page", expression = "java(elementPage.getNumber())")
     @Mapping(target = "size", expression = "java(elementPage.getSize())")
     @Mapping(target = "totalPages", expression = "java(elementPage.getTotalPages())")
-    @Mapping(target = "totalElements", expression = "java(elementPage.getNumberOfElements())")
+    @Mapping(target = "totalElements", expression = "java(elementPage.getTotalElements())")
     @Mapping(target = "records", expression = "java(toElementResponseList(elementPage.getContent()))")
     ElementPagingResponse toPagingResponse(Page<Element> elementPage);
 }

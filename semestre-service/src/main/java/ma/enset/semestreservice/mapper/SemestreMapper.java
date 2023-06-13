@@ -30,7 +30,7 @@ public interface SemestreMapper {
     @Mapping(target = "page", expression = "java(semestrePage.getNumber())")
     @Mapping(target = "size", expression = "java(semestrePage.getSize())")
     @Mapping(target = "totalPages", expression = "java(semestrePage.getTotalPages())")
-    @Mapping(target = "totalElements", expression = "java(semestrePage.getNumberOfElements())")
+    @Mapping(target = "totalElements", expression = "java(semestrePage.getTotalElements())")
     @Mapping(target = "records", expression = "java(toSemestreResponseList(semestrePage.getContent()))")
     SemestrePagingResponse toPagingResponse(Page<Semestre> semestrePage);
 
