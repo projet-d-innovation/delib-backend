@@ -1,10 +1,7 @@
 package ma.enset.semestreservice.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -20,13 +17,17 @@ public class SemestreResponse {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private List<Module> modules;
-
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private FiliereResponse filiere;
 
     @Builder
-    public record Module (
-        String codeModule,
-        String intituleModule,
-        BigDecimal coefficientModule,
-        String codeSemestre
-    ) {}
+    public record Module(
+            String codeModule,
+            String intituleModule,
+            BigDecimal coefficientModule,
+            String codeSemestre
+    ) {
+    }
+
+
 }

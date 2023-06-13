@@ -45,16 +45,18 @@ public class SemestreController {
 
     @GetMapping("/{codeSemestre}")
     public ResponseEntity<SemestreResponse> getById(@PathVariable String codeSemestre,
+                                                    @RequestParam(defaultValue = "false") boolean includeFiliere,
                                                     @RequestParam(defaultValue = "false") boolean includeModules) {
 
-        return ResponseEntity.ok(service.findById(codeSemestre, includeModules));
+        return ResponseEntity.ok(service.findById(codeSemestre, includeFiliere, includeModules));
     }
 
     @GetMapping("/bulk")
     public ResponseEntity<List<SemestreResponse>> getAllByIds(@RequestParam Set<String> codesSemestre,
+                                                              @RequestParam(defaultValue = "false") boolean includeFiliere,
                                                               @RequestParam(defaultValue = "false") boolean includeModules) {
 
-        return ResponseEntity.ok(service.findAllByIds(codesSemestre, includeModules));
+        return ResponseEntity.ok(service.findAllByIds(codesSemestre, includeFiliere, includeModules));
     }
 
     @GetMapping("/filiere/{codeFiliere}")
@@ -70,9 +72,10 @@ public class SemestreController {
     @GetMapping
     public ResponseEntity<SemestrePagingResponse> getAll(@RequestParam(defaultValue = "0") @Min(0) int page,
                                                          @RequestParam(defaultValue = "10") @Range(min = 1, max = 100) int size,
+                                                         @RequestParam(defaultValue = "false") boolean includeFiliere,
                                                          @RequestParam(defaultValue = "false") boolean includeModules) {
 
-        return ResponseEntity.ok(service.findAll(page, size, includeModules));
+        return ResponseEntity.ok(service.findAll(page, size, includeFiliere, includeModules));
     }
 
     @PatchMapping("/{codeSemestre}")
@@ -89,7 +92,7 @@ public class SemestreController {
     }
 
     @DeleteMapping("/bulk")
-    public ResponseEntity<Void> deleteAllByIds(@RequestBody @NotEmpty Set<@NotBlank String> codesSemestre) {
+    public ResponseEntity<Void> deleteAllByIds(@RequestParam @NotEmpty Set<@NotBlank String> codesSemestre) {
         service.deleteAllByIds(codesSemestre);
         return ResponseEntity.noContent().build();
     }
