@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -241,27 +242,32 @@ public class NoteModuleServiceImpl implements NoteModuleService {
                     noteElements.forEach(
                             noteElementResponse -> noteElementResponse.setElement(
                                     elementResponses.stream().filter(
-                                            elementResponse -> elementResponse.codeElement().equals(noteElementResponse.getCodeElement())
+                                            elementResponse -> elementResponse.codeElement()
+                                                    .equals(noteElementResponse.getCodeElement()
+                                                    )
                                     ).findFirst().orElse(null)
                             )
                     );
                 }
             }
 
-            Map<String, List<NoteElementResponse>> groupedNoteElements = noteElements.stream().collect(
-                    Collectors.groupingBy(
-                            noteElementResponse -> noteElementResponse.getElement().codeModule()
-                    )
-            );
+            if (noteElements != null && !noteElements.isEmpty()) {
 
-            if (!groupedNoteElements.isEmpty()) {
-                noteModules.forEach(
-                        noteModuleResponse -> noteModuleResponse.setNotesElement(
-                                groupedNoteElements.get(noteModuleResponse.getCodeModule())
+
+                Map<String, List<NoteElementResponse>> groupedNoteElements = noteElements.stream().collect(
+                        Collectors.groupingBy(
+                                noteElement -> noteElement.getSessionId() + noteElement.getElement().codeModule()
                         )
                 );
-            }
 
+                if (!groupedNoteElements.isEmpty()) {
+                    noteModules.forEach(
+                            noteModuleResponse -> noteModuleResponse.setNotesElement(
+                                    groupedNoteElements.get(noteModuleResponse.getSessionId() + noteModuleResponse.getCodeModule())
+                            )
+                    );
+                }
+            }
         }
     }
 }
