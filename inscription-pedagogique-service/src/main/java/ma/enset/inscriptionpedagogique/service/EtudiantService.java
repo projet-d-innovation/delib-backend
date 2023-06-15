@@ -8,4 +8,5 @@ import java.util.List;
 public interface EtudiantService {
     List<EtudiantResponse> findAllBySearchParams(RequiredSearchParams searchParams);
 
+    EtudiantResponse findByCode(String code);
 }

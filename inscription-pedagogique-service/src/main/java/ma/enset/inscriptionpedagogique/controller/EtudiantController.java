@@ -8,6 +8,7 @@ import ma.enset.inscriptionpedagogique.service.EtudiantService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -25,6 +26,13 @@ public class EtudiantController {
     public ResponseEntity<List<EtudiantResponse>> getAllBySearchParams(@Valid RequiredSearchParams searchParams) {
 
         return ResponseEntity.ok(service.findAllBySearchParams(searchParams));
+    }
+
+    @GetMapping("/{codeEtudiant}")
+    public ResponseEntity<EtudiantResponse> getByCode(
+            @PathVariable("codeEtudiant") String codeEtudiant
+    ) {
+        return ResponseEntity.ok(service.findByCode(codeEtudiant));
     }
 
 }
