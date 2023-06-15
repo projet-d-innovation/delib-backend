@@ -39,4 +39,5 @@ public interface InscriptionPedagogiqueService {
 
     List<InscriptionPedagogique> findAll(RequiredSearchParams searchParams);
 
+    List<InscriptionResponse> findAllByCodeEtudiant(String codeEtudiant);
 }

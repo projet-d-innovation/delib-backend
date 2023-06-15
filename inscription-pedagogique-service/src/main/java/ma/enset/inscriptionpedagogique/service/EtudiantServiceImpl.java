@@ -26,14 +26,25 @@ public class EtudiantServiceImpl implements EtudiantService {
         List<EtudiantResponse> response = new ArrayList<>();
 
         Set<String> codesEtudiant = inscriptionPedagogiqueService.findAll(searchParams).stream()
-            .map(InscriptionPedagogique::getCodeEtudiant)
-            .filter(Objects::nonNull)
-            .collect(Collectors.toSet());
+                .map(InscriptionPedagogique::getCodeEtudiant)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
 
         if (!codesEtudiant.isEmpty()) {
             response.addAll(utilisateurClient.getAllEtudiantsByIds(codesEtudiant).getBody());
         }
 
+        return response;
+    }
+
+    @Override
+    public EtudiantResponse findByCode(String code) {
+        EtudiantResponse response = utilisateurClient.getEtudiantById(code).getBody();
+        if (response != null) {
+            response.setInscriptions(
+                    inscriptionPedagogiqueService.findAllByCodeEtudiant(code)
+            );
+        }
         return response;
     }
 }
