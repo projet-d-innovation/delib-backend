@@ -247,19 +247,20 @@ public class NoteModuleServiceImpl implements NoteModuleService {
                     );
                 }
             }
-
-            Map<String, List<NoteElementResponse>> groupedNoteElements = noteElements.stream().collect(
-                    Collectors.groupingBy(
-                            noteElementResponse -> noteElementResponse.getElement().codeModule()
-                    )
-            );
-
-            if (!groupedNoteElements.isEmpty()) {
-                noteModules.forEach(
-                        noteModuleResponse -> noteModuleResponse.setNotesElement(
-                                groupedNoteElements.get(noteModuleResponse.getCodeModule())
+            if (noteElements != null && !noteElements.isEmpty()) {
+                Map<String, List<NoteElementResponse>> groupedNoteElements = noteElements.stream().collect(
+                        Collectors.groupingBy(
+                                noteElement -> noteElement.getSessionId() + noteElement.getElement().codeModule()
                         )
                 );
+
+                if (!groupedNoteElements.isEmpty()) {
+                    noteModules.forEach(
+                            noteModuleResponse -> noteModuleResponse.setNotesElement(
+                                    groupedNoteElements.get(noteModuleResponse.getSessionId() + noteModuleResponse.getCodeModule())
+                            )
+                    );
+                }
             }
 
         }
