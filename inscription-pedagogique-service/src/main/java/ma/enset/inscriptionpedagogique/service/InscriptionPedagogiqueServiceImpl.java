@@ -41,9 +41,9 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
 
         if (repository.existsById(request.id())) {
             throw new ElementAlreadyExistsException(
-                CoreConstants.BusinessExceptionMessage.ALREADY_EXISTS,
-                new Object[] {ELEMENT_TYPE, ID_FIELD_NAME, request.id()},
-                null
+                    CoreConstants.BusinessExceptionMessage.ALREADY_EXISTS,
+                    new Object[]{ELEMENT_TYPE, ID_FIELD_NAME, request.id()},
+                    null
             );
         }
 
@@ -62,12 +62,12 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
     public List<InscriptionResponse> saveAll(List<InscriptionCreationRequest> request) throws ElementAlreadyExistsException, DuplicateEntryException {
 
         Set<String> inscriptionIds = request.stream()
-            .map(InscriptionCreationRequest::id).collect(Collectors.toSet());
+                .map(InscriptionCreationRequest::id).collect(Collectors.toSet());
 
         if (inscriptionIds.size() != request.size()) {
             throw new DuplicateEntryException(
-                CoreConstants.BusinessExceptionMessage.DUPLICATE_ENTRY,
-                new Object[]{ELEMENT_TYPE}
+                    CoreConstants.BusinessExceptionMessage.DUPLICATE_ENTRY,
+                    new Object[]{ELEMENT_TYPE}
             );
         }
 
@@ -75,30 +75,30 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
 
         if (!foundInscriptions.isEmpty()) {
             throw new ElementAlreadyExistsException(
-                CoreConstants.BusinessExceptionMessage.MANY_ALREADY_EXISTS,
-                new Object[] {ELEMENT_TYPE},
-                foundInscriptions.stream()
-                    .map(InscriptionPedagogique::getId)
-                    .toList()
+                    CoreConstants.BusinessExceptionMessage.MANY_ALREADY_EXISTS,
+                    new Object[]{ELEMENT_TYPE},
+                    foundInscriptions.stream()
+                            .map(InscriptionPedagogique::getId)
+                            .toList()
             );
         }
 
         allEtudiantsExist(
-            request.stream()
-                .map(InscriptionCreationRequest::codeEtudiant)
-                .collect(Collectors.toSet())
+                request.stream()
+                        .map(InscriptionCreationRequest::codeEtudiant)
+                        .collect(Collectors.toSet())
         );
 
         filiereClient.allFilieresExist(
-            request.stream()
-                .map(InscriptionCreationRequest::codeFiliere)
-                .collect(Collectors.toSet())
+                request.stream()
+                        .map(InscriptionCreationRequest::codeFiliere)
+                        .collect(Collectors.toSet())
         );
 
         sessionUniversitaireClient.allSessionsUniversitaireExist(
-            request.stream()
-                .map(InscriptionCreationRequest::codeSessionUniversitaire)
-                .collect(Collectors.toSet())
+                request.stream()
+                        .map(InscriptionCreationRequest::codeSessionUniversitaire)
+                        .collect(Collectors.toSet())
         );
 
         List<InscriptionPedagogique> inscriptions = mapper.toInscriptionEntityList(request);
@@ -110,15 +110,15 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
     public boolean existAllByIds(Set<String> ids) throws ElementNotFoundException {
 
         List<String> foundInscriptions = repository.findAllById(ids)
-            .stream().map(InscriptionPedagogique::getId).toList();
+                .stream().map(InscriptionPedagogique::getId).toList();
 
         if (ids.size() != foundInscriptions.size()) {
             throw new ElementNotFoundException(
-                CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
-                new Object[] {ELEMENT_TYPE},
-                ids.stream()
-                    .filter(id -> !foundInscriptions.contains(id))
-                    .toList()
+                    CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
+                    new Object[]{ELEMENT_TYPE},
+                    ids.stream()
+                            .filter(id -> !foundInscriptions.contains(id))
+                            .toList()
             );
         }
 
@@ -129,19 +129,19 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
     public InscriptionResponse findById(String id, boolean includeEtudiantInfo) throws ElementNotFoundException {
 
         InscriptionResponse response = mapper.toInscriptionResponse(
-            repository.findById(id).orElseThrow(() ->
-                new ElementNotFoundException(
-                    CoreConstants.BusinessExceptionMessage.NOT_FOUND,
-                    new Object[] {ELEMENT_TYPE, ID_FIELD_NAME, id},
-                    null
+                repository.findById(id).orElseThrow(() ->
+                        new ElementNotFoundException(
+                                CoreConstants.BusinessExceptionMessage.NOT_FOUND,
+                                new Object[]{ELEMENT_TYPE, ID_FIELD_NAME, id},
+                                null
+                        )
                 )
-            )
         );
 
         if (includeEtudiantInfo) {
             mapper.fillStudentInfo(
-                utilisateurClient.getEtudiantById(response.etudiant().getCode()).getBody(),
-                response.etudiant()
+                    utilisateurClient.getEtudiantById(response.etudiant().getCode()).getBody(),
+                    response.etudiant()
             );
         }
 
@@ -155,16 +155,16 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
 
         if (ids.size() != response.size()) {
             throw new ElementNotFoundException(
-                CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
-                new Object[] {ELEMENT_TYPE},
-                ids.stream()
-                    .filter(
-                        id -> !response.stream()
-                                        .map(InscriptionResponse::id)
-                                        .toList()
-                                        .contains(id)
-                    )
-                    .toList()
+                    CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
+                    new Object[]{ELEMENT_TYPE},
+                    ids.stream()
+                            .filter(
+                                    id -> !response.stream()
+                                            .map(InscriptionResponse::id)
+                                            .toList()
+                                            .contains(id)
+                            )
+                            .toList()
             );
         }
 
@@ -181,7 +181,7 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
         if (!response.isEmpty()) {
             handleEtudiantInfoInclusion(includeEtudiantInfo, response);
         }
-        
+
         return response;
     }
 
@@ -192,12 +192,12 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
 
         if (includeEtudiantInfo && !response.records().isEmpty()) {
             Set<String> codesEtudiant = response.records().stream()
-                .map(inscriptionResponse -> inscriptionResponse.etudiant().getCode())
-                .collect(Collectors.toSet());
+                    .map(inscriptionResponse -> inscriptionResponse.etudiant().getCode())
+                    .collect(Collectors.toSet());
 
             mapper.fillInscriptionResponseListStudentInfo(
-                Objects.requireNonNull(utilisateurClient.getAllEtudiantsByIds(codesEtudiant).getBody()),
-                response.records()
+                    Objects.requireNonNull(utilisateurClient.getAllEtudiantsByIds(codesEtudiant).getBody()),
+                    response.records()
             );
         }
 
@@ -208,11 +208,11 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
     public InscriptionResponse update(String id, InscriptionUpdateRequest request) throws ElementNotFoundException {
 
         InscriptionPedagogique inscription = repository.findById(id).orElseThrow(() ->
-            new ElementNotFoundException(
-                CoreConstants.BusinessExceptionMessage.NOT_FOUND,
-                new Object[] {ELEMENT_TYPE, ID_FIELD_NAME, id},
-                null
-            )
+                new ElementNotFoundException(
+                        CoreConstants.BusinessExceptionMessage.NOT_FOUND,
+                        new Object[]{ELEMENT_TYPE, ID_FIELD_NAME, id},
+                        null
+                )
         );
 
         mapper.updateInscriptionEntityFromDTO(request, inscription);
@@ -224,12 +224,12 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
     public List<InscriptionResponse> updateAll(List<InscriptionUpdateRequest> request) throws ElementNotFoundException, DuplicateEntryException {
 
         Set<String> inscriptionIds = request.stream()
-            .map(InscriptionUpdateRequest::id).collect(Collectors.toSet());
+                .map(InscriptionUpdateRequest::id).collect(Collectors.toSet());
 
         if (inscriptionIds.size() != request.size()) {
             throw new DuplicateEntryException(
-                CoreConstants.BusinessExceptionMessage.DUPLICATE_ENTRY,
-                new Object[]{ELEMENT_TYPE}
+                    CoreConstants.BusinessExceptionMessage.DUPLICATE_ENTRY,
+                    new Object[]{ELEMENT_TYPE}
             );
         }
 
@@ -237,16 +237,16 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
 
         if (inscriptions.size() != inscriptionIds.size()) {
             throw new ElementNotFoundException(
-                CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
-                new Object[] {ELEMENT_TYPE},
-                inscriptionIds.stream()
-                    .filter(
-                        id -> !inscriptions.stream()
+                    CoreConstants.BusinessExceptionMessage.MANY_NOT_FOUND,
+                    new Object[]{ELEMENT_TYPE},
+                    inscriptionIds.stream()
+                            .filter(
+                                    id -> !inscriptions.stream()
                                             .map(InscriptionPedagogique::getId)
                                             .toList()
                                             .contains(id)
-                    )
-                    .toList()
+                            )
+                            .toList()
             );
         }
 
@@ -260,9 +260,9 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
 
         if (!repository.existsById(id)) {
             throw new ElementNotFoundException(
-                CoreConstants.BusinessExceptionMessage.NOT_FOUND,
-                new Object[] {ELEMENT_TYPE, ID_FIELD_NAME, id},
-                null
+                    CoreConstants.BusinessExceptionMessage.NOT_FOUND,
+                    new Object[]{ELEMENT_TYPE, ID_FIELD_NAME, id},
+                    null
             );
         }
 
@@ -298,12 +298,12 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
 
         if (includeEtudiantInfo) {
             Set<String> codesEtudiant = response.stream()
-                .map(inscriptionResponse -> inscriptionResponse.etudiant().getCode())
-                .collect(Collectors.toSet());
+                    .map(inscriptionResponse -> inscriptionResponse.etudiant().getCode())
+                    .collect(Collectors.toSet());
 
             mapper.fillInscriptionResponseListStudentInfo(
-                Objects.requireNonNull(utilisateurClient.getAllEtudiantsByIds(codesEtudiant).getBody()),
-                response
+                    Objects.requireNonNull(utilisateurClient.getAllEtudiantsByIds(codesEtudiant).getBody()),
+                    response
             );
         }
     }
@@ -316,10 +316,17 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
         return repository.findAll(buildQueryExample(inscription));
     }
 
+    @Override
+    public List<InscriptionResponse> findAllByCodeEtudiant(String codeEtudiant) {
+        return mapper.toInscriptionResponseList(
+                repository.findAllByCodeEtudiant(codeEtudiant)
+        );
+    }
+
     private Example<InscriptionPedagogique> buildQueryExample(InscriptionPedagogique inscription) {
 
         ExampleMatcher matcher = ExampleMatcher.matching()
-            .withIgnorePaths("note");
+                .withIgnorePaths("note");
 
         return Example.of(inscription, matcher);
     }
@@ -335,7 +342,7 @@ public class InscriptionPedagogiqueServiceImpl implements InscriptionPedagogique
 
     private void injectCustomEtudiantMessage(ExceptionResponse response) {
         String customMessage = response.getMessage()
-            .replaceAll("(Utilisateur|User)", "Etudiant");
+                .replaceAll("(Utilisateur|User)", "Etudiant");
 
         response.setMessage(customMessage);
     }

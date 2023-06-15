@@ -8,6 +8,7 @@ import org.springframework.data.domain.Persistable;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
+@Builder
 public class Element implements Persistable<String> {
     @Id
     @Column(nullable = false, updatable = false)

@@ -8,7 +8,8 @@ import org.springframework.data.domain.Persistable;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-public class Semestre implements Persistable<String>  {
+@Builder
+public class Semestre implements Persistable<String> {
     @Id
     @Column(unique = true, nullable = false, updatable = false)
     private String codeSemestre;

@@ -12,6 +12,7 @@ import ma.enset.utilisateur.repository.UtilisateurRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -99,7 +100,7 @@ public class Seeder implements CommandLineRunner {
                         .build()
         );
 
-        List<Utilisateur> utilisateurs = List.of(
+        List<Utilisateur> utilisateurs = new ArrayList<>(List.of(
 
                 Utilisateur.builder()
                         .code("DAAIF_AZIZ")
@@ -147,6 +148,77 @@ public class Seeder implements CommandLineRunner {
                         .sexe("H")
                         .photo("https://media.licdn.com/dms/image/C5603AQHC7jeV10j_EA/profile-displayphoto-shrink_800_800/0/1572034975660?e=2147483647&v=beta&t=7dj2ZO-ZlmenF-rXuaEQkDke4IkRcJdif8sSpALTutc")
                         .build()
+        ));
+
+        List<Utilisateur> etudiants = List.of(
+                Utilisateur.builder()
+                        .code("ahmed.elbouchouki")
+                        .nom("Elbouchouki")
+                        .prenom("Ahmed")
+                        .photo("https://media.licdn.com/dms/image/D4E03AQF2V2pByQaSTQ/profile-displayphoto-shrink_800_800/0/1686001861776?e=2147483647&v=beta&t=TeiVvhj6cjnVnewX-_mxQfC45UtYnzG0VTQ8SLGtRkk")
+                        .pays("Maroc")
+                        .ville("Marrakech")
+                        .cne("G133982342")
+                        .adresse("Rue 12, Marrakech")
+                        .cin("EE940338")
+                        .telephone("0680792904")
+                        .dateNaissance(LocalDate.of(2001, 12, 1))
+                        .roles(List.of(Role.builder().roleId("ETUDIANT").build()))
+                        .build(),
+                Utilisateur.builder()
+                        .code("aymane.ouahmane")
+                        .nom("Ouahmane")
+                        .prenom("Aymane")
+                        .pays("Maroc")
+                        .ville("Kenitra")
+                        .cne("G13123142")
+                        .adresse("Rue 12, Kenitra")
+                        .cin("K12331242")
+                        .telephone("06123123")
+                        .dateNaissance(LocalDate.of(2000, 1, 12))
+                        .roles(List.of(Role.builder().roleId("ETUDIANT").build()))
+                        .build(),
+                Utilisateur.builder()
+                        .code("mohammed.benchelbikh")
+                        .nom("Benchelbikh")
+                        .prenom("Mohammed")
+                        .photo("https://media.licdn.com/dms/image/C4E03AQEzZ6VQIn812A/profile-displayphoto-shrink_800_800/0/1667856446208?e=2147483647&v=beta&t=txLjBKBovYJuzGZU-Gr3iV-OBNcqgghKdr8kyvcjHuw")
+                        .pays("Maroc")
+                        .ville("Fes")
+                        .cne("G133982342")
+                        .cin("F292248")
+                        .adresse("Hay Salam")
+                        .telephone("0681241323")
+                        .dateNaissance(LocalDate.of(2000, 2, 22))
+                        .roles(List.of(Role.builder().roleId("ETUDIANT").build()))
+                        .build(),
+                Utilisateur.builder()
+                        .code("yacoub.benhamama")
+                        .nom("Benhamama")
+                        .prenom("Yacoub")
+                        .pays("Maroc")
+                        .ville("Casablanca")
+                        .cne("G122837234")
+                        .adresse("Lore ipsum")
+                        .cin("C124324")
+                        .telephone("0612354623")
+                        .dateNaissance(LocalDate.of(2000, 5, 12))
+                        .roles(List.of(Role.builder().roleId("ETUDIANT").build()))
+                        .build(),
+                Utilisateur.builder()
+                        .code("zakaria.elmourtazak")
+                        .nom("EL Mourtazak")
+                        .prenom("Zakaria")
+                        .pays("Maroc")
+                        .adresse("Rue 2, Hay El Hana")
+                        .photo("https://media.licdn.com/dms/image/C4E03AQGCpHYxBW6p9g/profile-displayphoto-shrink_800_800/0/1667857437731?e=2147483647&v=beta&t=z3rsm3PajWdzZ5ZRtf32NwDIscX9p4-As5Rdzd5oRuo")
+                        .ville("Casablanca")
+                        .cne("G135234234")
+                        .cin("C523242")
+                        .telephone("061231623")
+                        .dateNaissance(LocalDate.of(1999, 1, 30))
+                        .roles(List.of(Role.builder().roleId("ETUDIANT").build()))
+                        .build()
         );
 
         log.info("Seeding roles...");
@@ -154,6 +226,7 @@ public class Seeder implements CommandLineRunner {
         log.info("Roles seeded successfully.");
 
         log.info("Seeding utilisateurs...");
+        utilisateurs.addAll(etudiants);
         utilisateurRepository.saveAll(utilisateurs);
         log.info("Utilisateurs seeded successfully.");
 

@@ -4,13 +4,15 @@ import jakarta.persistence.*;
 import jakarta.ws.rs.DefaultValue;
 import lombok.*;
 
+import java.util.UUID;
+
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @Data
 public class Session {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private String idSession;
     @Column(nullable = false)
     private String idInscription;
@@ -27,4 +29,12 @@ public class Session {
     private SessionResult sessionResult = SessionResult.EN_COURS;
 
     private String previousSessionId;
+
+    @PrePersist
+    private void generateIdIfNotPresent() {
+        if (idSession == null || idSession.isEmpty()) {
+            idSession = UUID.randomUUID().toString();
+        }
+    }
+
 }

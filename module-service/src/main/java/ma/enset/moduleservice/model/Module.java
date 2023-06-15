@@ -8,6 +8,7 @@ import org.springframework.data.domain.Persistable;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
+@Builder
 public class Module implements Persistable<String> {
     @Id
     @Column(unique = true, nullable = false, updatable = false)
