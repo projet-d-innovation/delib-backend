@@ -1,27 +1,28 @@
 server:
-    port:
+  port: ${SPRING_PORT}
 
 spring:
-    application:
-        name: semestre-service
+  application:
+    name: semestre-service
 
-    datasource:
-        url:
-        username:
-        password:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username:  ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
 
-    jpa:
-        hibernate:
-            ddl-auto: update
-        generate-ddl: true
-        database-platform:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    generate-ddl: true
+    database-platform: ${SPRING_JPA_DATABASE_PLATFORM}
 
-    messages:
-        basename: messages.messages
+  messages:
+    basename: messages.messages
+    encoding: UTF-8
 
 eureka:
-    instance:
-        prefer-ip-address: true
-    client:
-        service-url:
-            defaultZone:
+  instance:
+    prefer-ip-address: true
+  client:
+    service-url:
+      defaultZone: ${SPRING_EUREKA_URI}
