@@ -109,8 +109,3 @@ buildNumber.properties
 *_BASE_*.txt
 *_LOCAL_*.txt
 *_REMOTE_*.txt
-
-### Spring/Spring boot ###
-# Dev application properties
-application-dev.properties
-application-dev.yml

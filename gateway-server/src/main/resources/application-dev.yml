@@ -1,0 +1,12 @@
+server:
+  port: 8080
+
+logging:
+  level:
+    org.springframework.cloud.gateway: TRACE
+    org:
+      springframework:
+        cloud:
+          gateway:
+            route:
+              RouteDefinitionRouteLocator: TRACE

@@ -8,6 +8,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
+@Builder
 public class Session {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

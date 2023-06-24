@@ -7,6 +7,7 @@ import org.springframework.data.domain.Persistable;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @Data
 public class Module implements Persistable<String> {
     @Id
