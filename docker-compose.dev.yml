@@ -1,0 +1,281 @@
+version: '3.8'
+services:
+  mysql:
+    image: mysql:latest
+    container_name: deliberation-db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DATABASE_PASSWORD}
+      MYSQL_TCP_PORT: ${DATABASE_PORT}
+    ports:
+      - "${DATABASE_PORT}:${DATABASE_PORT}"
+    volumes:
+      - ~/volumes/mysql:/var/lib/mysql
+    networks:
+      - deliberation-network
+
+  eureka:
+    container_name: eureka-server
+    hostname: ${EUREKA_HOST}
+    image: eureka-server:1.0-SNAPSHOT
+    env_file:
+      - .env.dev
+    ports:
+      - "${EUREKA_PORT}:${EUREKA_PORT}"
+    expose:
+      - "${EUREKA_PORT}"
+    environment:
+      - SPRING_SERVICE_NAME=eureka-server
+      - SPRING_PORT=${EUREKA_PORT}
+    networks:
+      - deliberation-network
+
+  deliberation:
+    container_name: deliberation-service
+    image: deliberation-service:1.0-SNAPSHOT
+    env_file:
+      - .env.dev
+    ports:
+      - "${DELIBERATION_PORT}:${DELIBERATION_PORT}"
+    expose:
+      - "${DELIBERATION_PORT}"
+    depends_on:
+      - mysql
+      - eureka
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:${DATABASE_PORT}/deliberation?useSSL=true&createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=${DATABASE_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DATABASE_PASSWORD}
+      - SPRING_PORT=${DELIBERATION_PORT}
+      - SPRING_JPA_DATABASE_PLATFORM=${DATABASE_PLATFORM}
+      - SPRING_EUREKA_URI=http://${EUREKA_HOST}:${EUREKA_PORT}/eureka
+    networks:
+      - deliberation-network
+
+  element:
+    container_name: element-service
+    image: element-service:1.0-SNAPSHOT
+    env_file:
+      - .env.dev
+    ports:
+      - "${ELEMENT_PORT}:${ELEMENT_PORT}"
+    expose:
+      - "${ELEMENT_PORT}"
+    depends_on:
+      - mysql
+      - eureka
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:${DATABASE_PORT}/element?useSSL=true&createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=${DATABASE_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DATABASE_PASSWORD}
+      - SPRING_PORT=${ELEMENT_PORT}
+      - SPRING_JPA_DATABASE_PLATFORM=${DATABASE_PLATFORM}
+      - SPRING_EUREKA_URI=http://${EUREKA_HOST}:${EUREKA_PORT}/eureka
+    networks:
+      - deliberation-network
+
+  module:
+    container_name: module-service
+    image: module-service:1.0-SNAPSHOT
+    env_file:
+      - .env.dev
+    ports:
+      - "${MODULE_PORT}:${MODULE_PORT}"
+    expose:
+      - "${MODULE_PORT}"
+    depends_on:
+      - mysql
+      - eureka
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:${DATABASE_PORT}/module?useSSL=true&createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=${DATABASE_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DATABASE_PASSWORD}
+      - SPRING_PORT=${MODULE_PORT}
+      - SPRING_JPA_DATABASE_PLATFORM=${DATABASE_PLATFORM}
+      - SPRING_EUREKA_URI=http://${EUREKA_HOST}:${EUREKA_PORT}/eureka
+    networks:
+      - deliberation-network
+
+  filiere:
+    container_name: filiere-service
+    image: filiere-service:1.0-SNAPSHOT
+    env_file:
+      - .env.dev
+    ports:
+      - "${FILIERE_PORT}:${FILIERE_PORT}"
+    expose:
+      - "${FILIERE_PORT}"
+    depends_on:
+      - mysql
+      - eureka
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:${DATABASE_PORT}/filiere?useSSL=true&createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=${DATABASE_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DATABASE_PASSWORD}
+      - SPRING_PORT=${FILIERE_PORT}
+      - SPRING_JPA_DATABASE_PLATFORM=${DATABASE_PLATFORM}
+      - SPRING_EUREKA_URI=http://${EUREKA_HOST}:${EUREKA_PORT}/eureka
+    networks:
+      - deliberation-network
+
+  departement:
+    container_name: departement-service
+    image: departement-service:1.0-SNAPSHOT
+    env_file:
+      - .env.dev
+    ports:
+      - "${DEPARTEMENT_PORT}:${DEPARTEMENT_PORT}"
+    expose:
+      - "${DEPARTEMENT_PORT}"
+    depends_on:
+      - mysql
+      - eureka
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:${DATABASE_PORT}/departement?useSSL=true&createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=${DATABASE_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DATABASE_PASSWORD}
+      - SPRING_PORT=${DEPARTEMENT_PORT}
+      - SPRING_JPA_DATABASE_PLATFORM=${DATABASE_PLATFORM}
+      - SPRING_EUREKA_URI=http://${EUREKA_HOST}:${EUREKA_PORT}/eureka
+    networks:
+      - deliberation-network
+
+  utilisateur:
+    container_name: utilisateur-service
+    image: utilisateur-service:1.0-SNAPSHOT
+    env_file:
+      - .env.dev
+    ports:
+      - "${UTILISATEUR_PORT}:${UTILISATEUR_PORT}"
+    expose:
+      - "${UTILISATEUR_PORT}"
+    depends_on:
+      - mysql
+      - eureka
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:${DATABASE_PORT}/utilisateur?useSSL=true&createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=${DATABASE_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DATABASE_PASSWORD}
+      - SPRING_PORT=${UTILISATEUR_PORT}
+      - SPRING_JPA_DATABASE_PLATFORM=${DATABASE_PLATFORM}
+      - SPRING_EUREKA_URI=http://${EUREKA_HOST}:${EUREKA_PORT}/eureka
+    networks:
+      - deliberation-network
+
+  semestre:
+    container_name: semestre-service
+    image: semestre-service:1.0-SNAPSHOT
+    env_file:
+      - .env.dev
+    ports:
+      - "${SEMESTRE_PORT}:${SEMESTRE_PORT}"
+    expose:
+      - "${SEMESTRE_PORT}"
+    depends_on:
+      - mysql
+      - eureka
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:${DATABASE_PORT}/semestre?useSSL=true&createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=${DATABASE_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DATABASE_PASSWORD}
+      - SPRING_PORT=${SEMESTRE_PORT}
+      - SPRING_JPA_DATABASE_PLATFORM=${DATABASE_PLATFORM}
+      - SPRING_EUREKA_URI=http://${EUREKA_HOST}:${EUREKA_PORT}/eureka
+    networks:
+      - deliberation-network
+
+  session-universitaire:
+    container_name: session-universitaire-service
+    image: session-universitaire-service:1.0-SNAPSHOT
+    env_file:
+      - .env.dev
+    ports:
+      - "${SESSION_UNIVERSITAIRE_PORT}:${SESSION_UNIVERSITAIRE_PORT}"
+    expose:
+      - "${SESSION_UNIVERSITAIRE_PORT}"
+    depends_on:
+      - mysql
+      - eureka
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:${DATABASE_PORT}/session-universitaire?useSSL=true&createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=${DATABASE_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DATABASE_PASSWORD}
+      - SPRING_PORT=${SESSION_UNIVERSITAIRE_PORT}
+      - SPRING_JPA_DATABASE_PLATFORM=${DATABASE_PLATFORM}
+      - SPRING_EUREKA_URI=http://${EUREKA_HOST}:${EUREKA_PORT}/eureka
+    networks:
+      - deliberation-network
+
+  inscription-pedagogique:
+    container_name: inscription-pedagogique-service
+    image: inscription-pedagogique-service:1.0-SNAPSHOT
+    env_file:
+      - .env.dev
+    ports:
+      - "${INSCRIPTION_DEPAGOGIQUE_PORT}:${INSCRIPTION_DEPAGOGIQUE_PORT}"
+    expose:
+      - "${INSCRIPTION_DEPAGOGIQUE_PORT}"
+    depends_on:
+      - mysql
+      - eureka
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:${DATABASE_PORT}/inscription-pedagogique?useSSL=true&createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=${DATABASE_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DATABASE_PASSWORD}
+      - SPRING_PORT=${INSCRIPTION_DEPAGOGIQUE_PORT}
+      - SPRING_JPA_DATABASE_PLATFORM=${DATABASE_PLATFORM}
+      - SPRING_EUREKA_URI=http://${EUREKA_HOST}:${EUREKA_PORT}/eureka
+
+    networks:
+      - deliberation-network
+
+  note:
+    container_name: note-service
+    image: note-service:1.0-SNAPSHOT
+    env_file:
+      - .env.dev
+    ports:
+      - "${NOTE_PORT}:${NOTE_PORT}"
+    expose:
+      - "${NOTE_PORT}"
+    depends_on:
+      - mysql
+      - eureka
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:${DATABASE_PORT}/note?useSSL=true&createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=${DATABASE_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DATABASE_PASSWORD}
+      - SPRING_PORT=${NOTE_PORT}
+      - SPRING_JPA_DATABASE_PLATFORM=${DATABASE_PLATFORM}
+      - SPRING_EUREKA_URI=http://${EUREKA_HOST}:${EUREKA_PORT}/eureka
+    networks:
+      - deliberation-network
+
+  gateway:
+    container_name: gateway-server
+    image: gateway-server:1.0-SNAPSHOT
+    env_file:
+      - .env.dev
+    ports:
+      - "${GATEWAY_PORT}:${GATEWAY_PORT}"
+    expose:
+      - "${GATEWAY_PORT}"
+    depends_on:
+      - eureka
+      - deliberation
+      - element
+      - module
+      - filiere
+      - departement
+      - utilisateur
+      - semestre
+      - session-universitaire
+      - inscription-pedagogique
+      - note
+    environment:
+      - SPRING_EUREKA_URI=http://${EUREKA_HOST}:${EUREKA_PORT}/eureka
+      - SPRING_PORT=${GATEWAY_PORT}
+    networks:
+      - deliberation-network
+
+networks:
+  deliberation-network:

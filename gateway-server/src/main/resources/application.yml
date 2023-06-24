@@ -1,5 +1,5 @@
 server:
-  port:
+  port: ${SPRING_PORT}
 
 spring:
   application:
@@ -61,8 +61,6 @@ springdoc:
         name: Session Universitaire Service
         displayName: Session Universitaire Service
 
-
-
 logging:
   level:
     org.springframework.cloud.gateway: TRACE
@@ -78,4 +76,4 @@ eureka:
     prefer-ip-address: true
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka
+      defaultZone: ${SPRING_EUREKA_URI}
