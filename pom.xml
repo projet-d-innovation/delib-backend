@@ -126,6 +126,9 @@
                 <artifactId>jib-maven-plugin</artifactId>
                 <version>3.2.1</version>
                 <configuration>
+                    <from>
+                        <image>azul/zulu-openjdk:17-jre</image>
+                    </from>
                     <to>
                         <image>
                             ${project.artifactId}:${project.version}
