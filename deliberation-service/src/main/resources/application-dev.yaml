@@ -1,0 +1,31 @@
+server:
+  port: 50013
+
+spring:
+  application:
+    name: deliberation-service
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/deliberation-db?useSSL=true&createDatabaseIfNotExist=true
+    username: root
+    password: elbouchouki
+
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
+    show-sql: false
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        format_sql: false
+
+  messages:
+    basename: messages.messages
+    encoding: UTF-8
+
+eureka:
+  instance:
+    prefer-ip-address: true
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
